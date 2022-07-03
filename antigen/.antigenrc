@@ -1,0 +1,9 @@
+# https://github.com/unixorn/awesome-zsh-plugins
+
+antigen bundles <<EOBUNDLES
+zsh-users/zsh-autosuggestions
+zsh-users/zsh-completions
+zdharma-continuum/fast-syntax-highlighting
+EOBUNDLES
+
+antigen apply
