@@ -7,60 +7,31 @@
       "filler": "-",
       "segments": [
         {
-          "foreground": "blue",
+          "foreground": "black",
+          "background": "blue",
           "style": "accordion",
-          "template": "⦋ Maarten ⦌",
+          "template": " mjh ",
           "type": "session"
         },
         {
           "type": "path",
           "style": "plain",
-          "foreground": "cyan",
-          "template": "<darkGray>-</>⦋ {{ .Path }} ⦌",
+          "foreground": "black",
+          "background": "green",
+          "template": " {{ .Path }} ",
           "properties": {
             "style": "agnoster"
           }
         },
         {
-          "foreground": "green",
+          "foreground": "black",
+          "background": "yellow",
           "properties": {
             "branch_icon": ""
           },
           "style": "plain",
-          "template": "<darkGray>-</>⦋ {{ .HEAD }} ⦌",
+          "template": " {{ .HEAD }} ",
           "type": "git"
-        }
-      ],
-      "type": "prompt"
-    },
-    {
-      "alignment": "right",
-      "segments": [
-        {
-          "type": "php",
-          "style": "plain",
-          "foreground": "magenta",
-          "template": "⦋ PHP: {{ .Full }} ⦌<darkGray>-</>",
-          "properties": {
-            "display_mode": "files"
-          }
-        },
-        {
-          "type": "node",
-          "style": "plain",
-          "foreground": "red",
-          "template": "⦋ NODE: {{ .Full }} ⦌<darkGray>-</>"
-        },
-        {
-          "type": "executiontime",
-          "style": "plain",
-          "foreground": "cyan",
-          "template": "⦋ {{ .FormattedMs }} ⦌",
-          "properties": {
-            "threshold": 0,
-            "style": "roundrock",
-            "always_enabled": true
-          }
         }
       ],
       "type": "prompt"
@@ -72,7 +43,7 @@
         {
           "foreground": "green",
           "style": "plain",
-          "template": "   ",
+          "template": "  ",
           "type": "text"
         }
       ],
@@ -80,8 +51,8 @@
     }
   ],
   "transient_prompt": {
-    "foreground": "green",
-    "template": "   "
+    "foreground": "white",
+    "template": "  "
   },
   "version": 2
 }
