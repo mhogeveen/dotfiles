@@ -16,16 +16,16 @@
         {
           "type": "path",
           "style": "plain",
-          "foreground": "black",
-          "background": "green",
+          "foreground": "blue",
+          "background": "black",
           "template": " {{ .Path }} ",
           "properties": {
             "style": "agnoster"
           }
         },
         {
-          "foreground": "black",
-          "background": "yellow",
+          "foreground": "white",
+          "background": "default",
           "properties": {
             "branch_icon": ""
           },
