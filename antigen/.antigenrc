@@ -4,6 +4,8 @@ antigen bundles <<EOBUNDLES
 zsh-users/zsh-autosuggestions
 zsh-users/zsh-completions
 zdharma-continuum/fast-syntax-highlighting
+wfxr/forgit
+Aloxaf/fzf-tab
 EOBUNDLES
 
 antigen apply
