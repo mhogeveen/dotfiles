@@ -1,5 +1,10 @@
 # vim:fileencoding=utf-8:foldmethod=marker
 
+# Custom key mappings
+
+map ctrl+cmd+l set_colors -a -c ~/.config/kitty/themes/GithubLightDefault.conf
+map ctrl+cmd+o set_colors -a -c ~/.config/kitty/themes/GithubDarkDefault.conf
+
 #: Fonts {{{
 
 #: kitty has very powerful font management. You can configure
@@ -24,7 +29,7 @@ bold_italic_font PragmataPro Mono Liga Bold Italic
 #:     italic_font      Operator Mono Book Italic
 #:     bold_italic_font Operator Mono Medium Italic
 
-font_size 13.0
+font_size 14.0
 
 #: Font size (in pts)
 
@@ -47,7 +52,7 @@ font_size 13.0
 #: support, because it will force kitty to always treat the text as
 #: LTR, which FriBidi expects for terminals.
 
-adjust_line_height  1
+adjust_line_height  120%
 # adjust_column_width 0
 
 #: Change the size of each character cell kitty renders. You can use
@@ -205,14 +210,14 @@ cursor_shape beam
 
 #: Defines the thickness of the underline cursor (in pts)
 
-cursor_blink_interval .7
+# cursor_blink_interval .7
 
 #: The interval (in seconds) at which to blink the cursor. Set to zero
 #: to disable blinking. Negative values mean use system default. Note
 #: that numbers smaller than repaint_delay will be limited to
 #: repaint_delay.
 
-cursor_stop_blinking_after 15.0
+# cursor_stop_blinking_after 15.0
 
 #: Stop blinking cursor after the specified number of seconds of
 #: keyboard inactivity.  Set to zero to never stop blinking.
@@ -922,7 +927,7 @@ hide_window_decorations yes
 
 #: The foreground and background colors
 
-background_opacity 0.9
+background_opacity 0.95
 
 #: The opacity of the background. A number between 0 and 1, where 1 is
 #: opaque and 0 is fully transparent.  This will only work if
@@ -1095,7 +1100,7 @@ editor micro
 #: to yes means that any background processes still using the terminal
 #: can fail silently because their stdout/stderr/stdin no longer work.
 
-# allow_remote_control no
+allow_remote_control yes
 
 #: Allow other programs to control kitty. If you turn this on other
 #: programs can control all aspects of kitty, including sending text
@@ -2022,6 +2027,10 @@ editor micro
 
 
 # BEGIN_KITTY_THEME
-# Mayukai
+# Github Light Default
 include current-theme.conf
 # END_KITTY_THEME
+
+# Fig Kitty Integration: Enabled
+
+# End of Fig Kitty Integration
