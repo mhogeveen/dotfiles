@@ -2,7 +2,8 @@
 
 This repo serves as a easy starting point for use of my own workspace configuration on other systems.
 
-![Setup screenshot](/screengrab.png)
+![dashboard](./dashboard.png "NeoVim Dashboard")
+![in-action](./in-action.png "NeoVim In Action")
 
 ## 🧱 Dependencies
 
