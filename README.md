@@ -17,7 +17,7 @@ This repo serves as a easy starting point for use of my own workspace configurat
 
 ## 🔨 Usage
 
-Make sure GNU Stow is installed
+Make sure GNU Stow is installed:
 
 ```bash
 stow --version # expected output: stow (GNU Stow) version x.x.x
@@ -26,4 +26,28 @@ stow --version # expected output: stow (GNU Stow) version x.x.x
 brew install stow
 ```
 
-W.I.P.
+After making sure the `stow` is installed, clone this repository in your user root:
+
+```bash
+git clone https://github.com/mhogeveen/dotfiles ~/.dotfiles
+
+cd .dotfiles
+
+```
+
+Then run one of three make commands to handle all packages at once,
+
+```bash
+make init # stow all dotfiles which will overwrite existing files
+# or
+make add # restow all dotfiles
+# or
+make delete # delete all dotfiles (unlink them all)
+```
+
+or
+
+
+```bash
+stow --verbose (--adopt or --restow) <package name>
+```
