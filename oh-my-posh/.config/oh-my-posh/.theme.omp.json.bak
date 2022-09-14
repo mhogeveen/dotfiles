@@ -1,0 +1,20 @@
+{
+  "$schema": "https://raw.githubusercontent.com/JanDeDobbeleer/oh-my-posh/main/themes/schema.json",
+  "blocks": [
+    {
+      "alignment": "left",
+      "type": "prompt",
+      "break": "hide",
+      "filler": "-",
+      "segments": [
+        {
+          "foreground": "#45F1C2",
+          "style": "plain",
+          "template": "\f302 {{ .UserName }}",
+          "type": "session"
+        }
+      ]
+    }
+  ],
+  "version": 0.1
+}
