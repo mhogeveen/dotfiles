@@ -5,6 +5,7 @@ PATH=~/opt/bin:$PATH
 export GPG_TTY=$TTY
 export PATH="$HOME/.composer/vendor/bin:$PATH"
 export PATH="$HOME/bin:$PATH"
+export MANPAGER="nvim +Man!"
 
 # Set shell options
 setopt autocd       # Using the AUTOCD option, you can simply type the name of a directory, and it will become the current directory.
