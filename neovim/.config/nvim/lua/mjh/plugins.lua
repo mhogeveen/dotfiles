@@ -119,5 +119,5 @@ packer.startup(function(use)
 	use({ "TimUntersberger/neogit" })
 
 	-- Colorizer
-	use({ "norcalli/nvim-colorizer.lua" })
+	use({ "NvChad/nvim-colorizer.lua" })
 end)
