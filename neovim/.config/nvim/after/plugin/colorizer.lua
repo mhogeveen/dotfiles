@@ -4,7 +4,7 @@ if not status then
 end
 
 colorizer.setup({
-	filetypes = { "*" },
+	filetypes = { "*", "!packer" },
 	user_default_options = {
 		RGB = true, -- #RGB hex codes
 		RRGGBB = true, -- #RRGGBB hex codes
