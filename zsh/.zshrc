@@ -37,6 +37,7 @@ alias c='clear'
 alias lg='lazygit'
 alias n='nvim'
 alias e='exit'
+alias grep='rg'
 alias :q='exit'
 alias ip='ipconfig getifaddr en0'
 alias localphp="${HOME}/Library/Application\ Support/Local/lightning-services/php-8.0.0+2/bin/darwin/bin/php"
