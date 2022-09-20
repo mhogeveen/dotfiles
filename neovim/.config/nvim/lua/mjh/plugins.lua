@@ -118,4 +118,7 @@ packer.startup(function(use)
 
 	-- Colorizer
 	use({ "NvChad/nvim-colorizer.lua" })
+
+	-- Stabilize
+	use({ "luukvbaal/stabilize.nvim" })
 end)
