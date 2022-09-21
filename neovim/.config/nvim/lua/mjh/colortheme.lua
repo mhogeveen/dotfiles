@@ -34,7 +34,7 @@ configs["kanagawa"] = {
 }
 
 configs["catppuccin"] = {
-	transparent_background = true,
+	transparent_background = false,
 	dim_inactive = {
 		enabled = false,
 		shade = "dark",
@@ -49,10 +49,6 @@ configs["catppuccin"] = {
 		telescope = true,
 		which_key = true,
 	},
-}
-
-configs["rose-pine"] = {
-	dark_variant = "main", -- main, moon
 }
 
 -- Set Catppuccin flavour (can be set with the :Catppuccin <flavour> cmd on the fly)
