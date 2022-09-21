@@ -1,8 +1,3 @@
-local status, navic = pcall(require, "nvim-navic")
-if not status then
-	return
-end
-
 local function lsp_highlight_document(client)
 	-- Set autocommands conditional on server_capabilities
 	if client.server_capabilities.document_highlight then
@@ -37,5 +32,4 @@ end
 return function(client, bufnr)
 	lsp_highlight_document(client)
 	lsp_keymaps(bufnr)
-	navic.attach(client, bufnr)
 end

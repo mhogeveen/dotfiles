@@ -87,9 +87,6 @@ packer.startup(function(use)
 		"romgrk/barbar.nvim",
 	})
 
-	-- Winbar
-	use({ "SmiteshP/nvim-navic" })
-
 	-- Statusline
 	use({
 		"nvim-lualine/lualine.nvim",
