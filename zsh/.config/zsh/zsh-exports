@@ -1,0 +1,12 @@
+# Extend PATH.
+PATH=~/opt/bin:$PATH
+
+# Export environment variables.
+export GPG_TTY=$TTY
+export PATH="$HOME/.composer/vendor/bin:$PATH"
+export PATH="$HOME/bin:$PATH"
+export MANPAGER="nvim +Man!"
+
+# Autoload functions.
+autoload -Uz compinit
+compinit
