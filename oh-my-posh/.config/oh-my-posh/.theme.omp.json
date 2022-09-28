@@ -7,7 +7,7 @@
       "filler": "-",
       "segments": [
         {
-          "foreground": "black",
+          "foreground": "#000",
           "background": "blue",
           "style": "accordion",
           "template": " mjh ",
