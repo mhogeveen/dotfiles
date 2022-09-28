@@ -48,6 +48,7 @@ configs["catppuccin"] = {
 		treesitter = true,
 		telescope = true,
 		which_key = true,
+		illuminate = true,
 	},
 }
 
