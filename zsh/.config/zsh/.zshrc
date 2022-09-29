@@ -5,6 +5,7 @@ source "$ZDOTDIR/zsh-functions"
 zsh_add_file "zsh-exports"
 zsh_add_file "zsh-options"
 zsh_add_file "zsh-aliases"
+zsh_add_file "zsh-vim-mode"
 
 # Plugins
 zsh_add_plugin "zsh-users/zsh-autosuggestions"
