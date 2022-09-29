@@ -12,6 +12,9 @@ alias localphp="${HOME}/Library/Application\ Support/Local/lightning-services/ph
 alias localcomposer="${HOME}/Library/Application\ Support/Local/lightning-services/php-8.0.0+2/bin/darwin/bin/php /Applications/Local.app/Contents/Resources/extraResources/bin/composer/composer.phar"
 alias ycu="ncu --packageManager yarn --format group --interactive"
 alias tmux="tmux -f ${HOME}/.tmux.conf"
+alias rm="rm -i"
+alias mv="mv -i"
+alias cp="cp -i"
 
 # Wordpress related aliases
 alias clone:sb-starter="git clone git@bitbucket.org:socialbrothers/wordpress-starter-theme.git"
