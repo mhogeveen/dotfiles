@@ -124,4 +124,7 @@ packer.startup(function(use)
 
   -- Illuminate
   use({ "RRethy/vim-illuminate" })
+
+  -- Gitsigns
+  use({ "lewis6991/gitsigns.nvim" })
 end)
