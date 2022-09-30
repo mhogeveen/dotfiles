@@ -1,11 +1,11 @@
 local status, bufferline = pcall(require, "bufferline")
 if not status then
-  return
+	return
 end
 
-bufferline.setup({
-  auto_hide = true,
-  closable = false,
-  insert_at_end = true,
-  maximum_padding = 1,
-})
+-- bufferline.setup({
+--   auto_hide = true,
+--   closable = false,
+--   insert_at_end = true,
+--   maximum_padding = 1,
+-- })
