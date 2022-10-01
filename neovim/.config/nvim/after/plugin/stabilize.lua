@@ -1,6 +1,7 @@
 local status, stabilize = pcall(require, "stabilize")
 if not status then
-	return
+  print("Stabilize is not installed")
+  return
 end
 
 stabilize.setup()

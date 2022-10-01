@@ -1,12 +1,10 @@
-local status_ok, nvim_tree = pcall(require, "nvim-tree")
-if not status_ok then
+local status, nvim_tree = pcall(require, "nvim-tree")
+if not status then
+  print("Nvim-tree is not installed")
   return
 end
 
-local config_status_ok, nvim_tree_config = pcall(require, "nvim-tree.config")
-if not config_status_ok then
-  return
-end
+local nvim_tree_config = require("nvim-tree.config")
 
 -- Close nvim if NvimTree is last open window
 vim.api.nvim_create_autocmd("BufEnter", {

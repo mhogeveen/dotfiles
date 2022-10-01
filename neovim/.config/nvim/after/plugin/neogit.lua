@@ -1,5 +1,6 @@
 local status, neogit = pcall(require, "neogit")
 if not status then
+  print("Neogit is not installed")
   return
 end
 

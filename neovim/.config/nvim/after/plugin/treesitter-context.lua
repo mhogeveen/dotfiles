@@ -1,5 +1,6 @@
 local status, context = pcall(require, "treesitter-context")
 if not status then
+  print("Treesitter-context is not installed")
   return
 end
 

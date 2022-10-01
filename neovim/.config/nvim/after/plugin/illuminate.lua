@@ -1,5 +1,6 @@
 local status, illuminate = pcall(require, "illuminate")
 if not status then
+  print("Illuminate is not installed")
   return
 end
 

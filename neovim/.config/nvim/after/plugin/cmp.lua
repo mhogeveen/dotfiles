@@ -1,10 +1,12 @@
 local status_cmp, cmp = pcall(require, "cmp")
 if not status_cmp then
+  print("CMP is not installed")
   return
 end
 
 local status_luasnip, luasnip = pcall(require, "luasnip")
 if not status_luasnip then
+  print("Luasnip is not installed")
   return
 end
 
