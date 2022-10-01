@@ -39,19 +39,11 @@ map("n", "<leader>t", ":Neogit<cr>", opts)
 -- Telescope
 map("n", "<leader>ff", ":Telescope find_files<CR>", opts)
 map("n", "<leader>fg", ":Telescope git_files<CR>", opts)
-map("n", "<leader>fb", ":Telescope buffers<CR>", opts)
 map("n", "<leader>fr", ":Telescope live_grep<CR>", opts)
-map("n", "<leader>p", ":Telescope buffers<CR>", opts)
 
--- Barbar
--- map("n", "<space>,", ":BufferPrevious<CR>", opts)
--- map("n", "<space>.", ":BufferNext<CR>", opts)
--- map("n", "<space>c", ":BufferClose<CR>", opts)
--- map("n", "<space>p", ":BufferPick<CR>", opts)
--- map("n", "<space>bb", ":BufferOrderByBufferNumber<CR>", opts)
--- map("n", "<space>bd", ":BufferOrderByDirectory<CR>", opts)
--- map("n", "<space>bl", ":BufferOrderByLanguage<CR>", opts)
--- map("n", "<space>bw", ":BufferOrderByWindowNumber<CR>", opts)
+-- Buffer stuff
+map("n", "<leader>b", ":Telescope buffers<CR>", opts)
+map("n", "<leader>c", ":bd<CR>", opts)
 
 -- Visual Mode --
 -- Move lines up and down

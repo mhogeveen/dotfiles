@@ -82,11 +82,6 @@ packer.startup(function(use)
 		"jose-elias-alvarez/null-ls.nvim",
 	})
 
-	-- Bufferline
-	-- use({
-	--   "romgrk/barbar.nvim",
-	-- })
-
 	-- Statusline
 	use({
 		"nvim-lualine/lualine.nvim",
