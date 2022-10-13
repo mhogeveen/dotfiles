@@ -43,7 +43,7 @@ map("n", "<leader>fr", ":Telescope live_grep<CR>", opts)
 
 -- Buffer stuff
 map("n", "<leader>b", ":Telescope buffers<CR>", opts)
-map("n", "<leader>c", ":bd<CR>", opts)
+map("n", "<leader>c", ":bp|bd #<CR>", opts)
 
 -- Visual Mode --
 -- Move lines up and down
