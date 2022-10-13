@@ -122,4 +122,10 @@ packer.startup(function(use)
 
 	-- Gitsigns
 	use({ "lewis6991/gitsigns.nvim" })
+
+	-- Modes
+	use({
+		"mvllow/modes.nvim",
+		tag = "v0.2.0",
+	})
 end)
