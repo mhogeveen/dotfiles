@@ -67,19 +67,24 @@ packer.startup(function(use)
 		run = "make",
 	})
 
-	-- LSP's
+	-- LSP
 	use({
 		"williamboman/mason.nvim",
 		"williamboman/mason-lspconfig.nvim",
 		"neovim/nvim-lspconfig",
-		"hrsh7th/cmp-nvim-lsp",
+		"jose-elias-alvarez/null-ls.nvim",
+	})
+
+	-- Completion
+	use({
+		"hrsh7th/nvim-cmp",
 		"hrsh7th/cmp-buffer",
 		"hrsh7th/cmp-path",
-		"hrsh7th/cmp-cmdline",
-		"hrsh7th/nvim-cmp",
+		"hrsh7th/cmp-nvim-lsp",
+		"hrsh7th/cmp-nvim-lua",
 		"L3MON4D3/LuaSnip",
-		"rafamadriz/friendly-snippets",
-		"jose-elias-alvarez/null-ls.nvim",
+		"saadparwaiz1/cmp_luasnip",
+		"onsails/lspkind.nvim",
 	})
 
 	-- Statusline
@@ -136,4 +141,7 @@ packer.startup(function(use)
 	--   run = "deno task --quiet build:fast",
 	--   branch = "separate-process",
 	-- })
+
+	-- Neo-minimap
+	use({ "ziontee113/neo-minimap" })
 end)
