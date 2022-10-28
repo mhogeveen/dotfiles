@@ -10,6 +10,8 @@ if not status_luasnip then
 	return
 end
 
+require("luasnip.loaders.from_vscode").lazy_load()
+
 local status_lspkind, lspkind = pcall(require, "lspkind")
 if not status_lspkind then
 	print("Lspkind is not installed")

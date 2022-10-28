@@ -85,6 +85,7 @@ packer.startup(function(use)
 		"L3MON4D3/LuaSnip",
 		"saadparwaiz1/cmp_luasnip",
 		"onsails/lspkind.nvim",
+		"rafamadriz/friendly-snippets",
 	})
 
 	-- Statusline
