@@ -1,5 +1,5 @@
-local map = vim.keymap.set
 local opts = { noremap = true, silent = true }
+local map = vim.keymap.set
 
 --Remap space as leader key
 map("", "<Space>", "<Nop>", opts)
@@ -53,3 +53,9 @@ map("v", "<C-n>", ":m '>+1<CR>gv=gv", opts)
 -- Stay in indent mode
 map("v", "<", "<gv", opts)
 map("v", ">", ">gv", opts)
+
+-- Insert Mode --
+-- Luasnip
+map("i", "<Tab>", function()
+	require("luasnip").jump(1)
+end, { silent = true })
