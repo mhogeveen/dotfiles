@@ -136,13 +136,6 @@ packer.startup(function(use)
 		tag = "v0.2.0",
 	})
 
-	-- Peek
-	-- use({
-	--   "toppair/peek.nvim",
-	--   run = "deno task --quiet build:fast",
-	--   branch = "separate-process",
-	-- })
-
-	-- Neo-minimap
-	use({ "ziontee113/neo-minimap" })
+	-- Fidget
+	use({ "j-hui/fidget.nvim" })
 end)
