@@ -56,9 +56,9 @@ map("v", ">", ">gv", opts)
 
 -- Insert Mode --
 -- Luasnip
-map({ "i", "s" }, "<Tab>", function()
-	local ls = require("luasnip")
-	if ls.expand_or_jumpable() then
-		ls.expand_or_jump()
-	end
-end, { silent = true })
+-- map({ "i", "s" }, "<Tab>", function()
+-- 	local ls = require("luasnip")
+-- 	if ls.expand_or_jumpable() then
+-- 		ls.expand_or_jump()
+-- 	end
+-- end, { silent = true })
