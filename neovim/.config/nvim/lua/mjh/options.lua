@@ -19,6 +19,7 @@ local options = {
 	swapfile = false,
 	showcmd = false,
 	cmdheight = 1,
+	inccommand = "split",
 	hlsearch = false,
 	laststatus = 2,
 	shell = "zsh",
