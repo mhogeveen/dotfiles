@@ -1,33 +1,41 @@
 local status, whichkey = pcall(require, "which-key")
 if not status then
-	print("Which-key is not installed")
-	return
+  print("Which-key is not installed")
+  return
 end
 
 whichkey.setup({
-	window = {
-		border = "single", -- none, single, double, shadow
-	},
+  window = {
+    border = "single", -- none, single, double, shadow
+  },
 })
 
 whichkey.register({
-	-- Diagnostics
-	["gl"] = { "Show line diagnostics" },
-	["gr"] = { "Show references" },
-	["gd"] = { "Go to definition" },
-	["gD"] = { "Go to declaration" },
-	["gh"] = { "Show hover panel" },
+  ["g"] = {
+    name = "LSP",
+    D = { "Go to declaration" },
+    h = { "Show hover panel" },
+    d = { "Go to definition" },
+    t = { "Go to type definition" },
+    i = { "Go to implementation" },
+    s = { "Signature help" },
+    r = { "Show references" },
+    R = { "Rename" },
+    l = { "Show line diagnostics" },
+    f = { "Format" },
+    a = { "Code actions" },
+  },
 
-	-- Leader
-	["<leader>e"] = { "Toggle tree explorer" },
-	["<leader>t"] = { "Neogit" },
-	["<leader>b"] = { "Buffer list" },
-	["<leader>c"] = { "Close buffer" },
-	["<leader>f"] = {
-		name = "Telescope",
-		f = { "Find File" },
-		g = { "Git files" },
-		r = { "Live grep" },
-		b = { "Buffers" },
-	},
+  -- Leader
+  ["<leader>e"] = { "Toggle tree explorer" },
+  ["<leader>t"] = { "Neogit" },
+  ["<leader>b"] = { "Buffer list" },
+  ["<leader>c"] = { "Close buffer" },
+  ["<leader>f"] = {
+    name = "Telescope",
+    f = { "Find File" },
+    g = { "Git files" },
+    r = { "Live grep" },
+    b = { "Buffers" },
+  },
 })
