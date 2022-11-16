@@ -1,23 +1,21 @@
-# Source useful functions
-source "$ZDOTDIR/zsh-functions"
+# Check if Zap is installed, if so: source
+# https://github.com/zap-zsh/zap
+[ -f "$HOME/.local/share/zap/zap.zsh" ] && source "$HOME/.local/share/zap/zap.zsh"
 
-# Normal files to source
-zsh_add_file "zsh-exports"
-zsh_add_file "zsh-options"
-zsh_add_file "zsh-aliases"
-zsh_add_file "zsh-vim-mode"
+# Source useful # Normal files to source
+[ -f "$ZDOTDIR/prompt.zsh" ] && source "$ZDOTDIR/prompt.zsh"
+[ -f "$ZDOTDIR/exports.zsh" ] && source "$ZDOTDIR/exports.zsh"
+[ -f "$ZDOTDIR/options.zsh" ] && source "$ZDOTDIR/options.zsh"
+[ -f "$ZDOTDIR/aliases.zsh" ] && source "$ZDOTDIR/aliases.zsh"
 
 # Plugins
-zsh_add_plugin "zsh-users/zsh-autosuggestions"
-zsh_add_plugin "zsh-users/zsh-syntax-highlighting"
-zsh_add_plugin "hlissner/zsh-autopair"
+plug "zsh-users/zsh-autosuggestions"
+plug "zsh-users/zsh-syntax-highlighting"
+plug "hlissner/zsh-autopair"
+plug "zap-zsh/vim"
 
 # Add fnm to shell
 eval "$(fnm env --use-on-cd)"
 
 # Add zoxide to shell
 eval "$(zoxide init zsh)"
-
-# Add oh-my-posh to shell
-eval "$(oh-my-posh init zsh --config ~/.config/oh-my-posh/.theme.omp.json)"
-enable_poshtransientprompt
