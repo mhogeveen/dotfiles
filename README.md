@@ -2,16 +2,16 @@
 
 This repo serves as a easy starting point for use of my own workspace configuration on other systems.
 
-![dashboard](./dashboard.png "NeoVim Dashboard")
-![in-action](./in-action.png "NeoVim In Action")
+![dashboard](./screengrab1.png "NeoVim Dashboard")
+![in-action](./screengrab2.png "NeoVim In Action")
+![terminal](./screengrab3.png "Tmux & Lazygit")
 
 ## 🧱 Dependencies
 
 - [stow](https://formulae.brew.sh/formula/stow#default): Symlink manager
 - [kitty](https://github.com/kovidgoyal/kitty): Terminal emulator
 - [tmux](https://github.com/tmux/tmux): Terminal multiplexer
-- [oh-my-posh](https://github.com/JanDeDobbeleer/oh-my-posh): Prompt configuration
-- [antigen](https://github.com/zsh-users/antigen): ZSH plugin manager
+- [zap](https://github.com/zap-zsh/zap): ZSH plugin manager
 - [zoxide](https://github.com/ajeetdsouza/zoxide): Smarter cd command
 - [fnm](https://github.com/Schniz/fnm): Node version manager
 
@@ -26,7 +26,7 @@ stow --version # expected output: stow (GNU Stow) version x.x.x
 brew install stow
 ```
 
-After making sure the `stow` is installed, clone this repository in your user root:
+After making sure `stow` is installed, clone this repository in your user root:
 
 ```bash
 git clone https://github.com/mhogeveen/dotfiles ~/.dotfiles
