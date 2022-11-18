@@ -7,14 +7,14 @@ end
 local nvim_tree_config = require("nvim-tree.config")
 
 -- Close nvim if NvimTree is last open window
--- vim.api.nvim_create_autocmd("BufEnter", {
---   nested = true,
---   callback = function()
---     if #vim.api.nvim_list_wins() == 1 and vim.api.nvim_buf_get_name(0):match("NvimTree_") ~= nil then
---       vim.cmd("quit")
---     end
---   end,
--- })
+vim.api.nvim_create_autocmd("BufEnter", {
+	nested = true,
+	callback = function()
+		if #vim.api.nvim_list_wins() == 1 and vim.api.nvim_buf_get_name(0):match("NvimTree_") ~= nil then
+			vim.cmd("quit")
+		end
+	end,
+})
 
 local tree_cb = nvim_tree_config.nvim_tree_callback
 
@@ -34,7 +34,7 @@ nvim_tree.setup({
 	root_dirs = {},
 	prefer_startup_root = false,
 	sync_root_with_cwd = false,
-	reload_on_bufenter = false,
+	reload_on_bufenter = true,
 	respect_buf_cwd = false,
 	on_attach = "disable", -- function(bufnr). If nil, will use the deprecated mapping strategy
 	remove_keymaps = false, -- boolean (disable totally or not) or list of key (lhs)
@@ -42,7 +42,6 @@ nvim_tree.setup({
 		adaptive_size = false,
 		centralize_selection = false,
 		width = 40,
-		height = 30,
 		hide_root_folder = false,
 		side = "right",
 		preserve_window_proportions = false,
@@ -74,7 +73,7 @@ nvim_tree.setup({
 		group_empty = false,
 		highlight_git = true,
 		full_name = false,
-		highlight_opened_files = "none",
+		highlight_opened_files = "all",
 		root_folder_modifier = ":~",
 		indent_markers = {
 			enable = false,
@@ -89,7 +88,7 @@ nvim_tree.setup({
 		icons = {
 			webdev_colors = true,
 			git_placement = "signcolumn",
-			padding = " ",
+			padding = "  ",
 			symlink_arrow = " ➛ ",
 			show = {
 				file = true,
