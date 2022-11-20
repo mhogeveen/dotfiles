@@ -34,14 +34,14 @@ lualine.setup({
 		lualine_c = {
 			{
 				"branch",
-				icon = "",
+				icon = " ",
 			},
 			{
 				"diff",
 				symbols = {
-					added = " ",
-					modified = " ",
-					removed = " ",
+					added = " ",
+					modified = " ",
+					removed = " ",
 				},
 			},
 		},
