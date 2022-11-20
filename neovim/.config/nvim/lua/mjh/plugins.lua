@@ -41,117 +41,47 @@ packer.init({
 })
 
 packer.startup(function(use)
-	-- Packer
-	use({ "wbthomason/packer.nvim" })
-
-	-- Often used requirements
 	use({
-		"kyazdani42/nvim-web-devicons",
-		"nvim-lua/plenary.nvim",
+		{ "wbthomason/packer.nvim" },
+		{ "kyazdani42/nvim-web-devicons" },
+		{ "nvim-lua/plenary.nvim" },
+		{ "lewis6991/impatient.nvim" },
+		{ "catppuccin/nvim", as = "catppuccin" },
+		{ "kyazdani42/nvim-tree.lua", tag = "nightly" },
+		{ "nvim-telescope/telescope.nvim", tag = "0.1.x" },
+		{ "nvim-telescope/telescope-fzf-native.nvim", run = "make" },
+		{ "nvim-telescope/telescope-ui-select.nvim" },
+		{ "williamboman/mason.nvim" },
+		{ "williamboman/mason-lspconfig.nvim" },
+		{ "neovim/nvim-lspconfig" },
+		{ "jose-elias-alvarez/null-ls.nvim" },
+		{ "hrsh7th/nvim-cmp" },
+		{ "hrsh7th/cmp-buffer" },
+		{ "hrsh7th/cmp-path" },
+		{ "hrsh7th/cmp-nvim-lsp" },
+		{ "hrsh7th/cmp-nvim-lua" },
+		{ "L3MON4D3/LuaSnip" },
+		{ "saadparwaiz1/cmp_luasnip" },
+		{ "onsails/lspkind.nvim" },
+		{ "rafamadriz/friendly-snippets" },
+		{ "nvim-lualine/lualine.nvim" },
+		{ "nvim-treesitter/nvim-treesitter" },
+		{ "nvim-treesitter/nvim-treesitter-context" },
+		{ "nvim-treesitter/playground" },
+		{ "wakatime/vim-wakatime" },
+		{ "folke/which-key.nvim" },
+		{ "windwp/nvim-autopairs" },
+		{ "goolord/alpha-nvim" },
+		{ "numToStr/Comment.nvim" },
+		{ "TimUntersberger/neogit" },
+		{ "NvChad/nvim-colorizer.lua" },
+		{ "luukvbaal/stabilize.nvim" },
+		{ "RRethy/vim-illuminate" },
+		{ "lewis6991/gitsigns.nvim" },
+		{ "j-hui/fidget.nvim" },
+		{ "karb94/neoscroll.nvim" },
+		{ "mvllow/modes.nvim", tag = "v0.2.0" },
 	})
-
-	-- Impatient
-	use({ "lewis6991/impatient.nvim" })
-
-	-- Colorschemes
-	use({
-		"projekt0n/github-nvim-theme",
-		"morhetz/gruvbox",
-		"rebelot/kanagawa.nvim",
-		"folke/tokyonight.nvim",
-	})
-	use({ "catppuccin/nvim", as = "catppuccin" })
-
-	-- Nvim tree
-	use({
-		"kyazdani42/nvim-tree.lua",
-		tag = "nightly", -- optional, updated every week. (see issue #1193)
-	})
-
-	-- Telescope
-	use({
-		"nvim-telescope/telescope.nvim",
-		tag = "0.1.x",
-	})
-	use({
-		"nvim-telescope/telescope-fzf-native.nvim",
-		run = "make",
-	})
-
-	-- LSP
-	use({
-		"williamboman/mason.nvim",
-		"williamboman/mason-lspconfig.nvim",
-		"neovim/nvim-lspconfig",
-		"jose-elias-alvarez/null-ls.nvim",
-	})
-
-	-- Completion
-	use({
-		"hrsh7th/nvim-cmp",
-		"hrsh7th/cmp-buffer",
-		"hrsh7th/cmp-path",
-		"hrsh7th/cmp-nvim-lsp",
-		"hrsh7th/cmp-nvim-lua",
-		"L3MON4D3/LuaSnip",
-		"saadparwaiz1/cmp_luasnip",
-		"onsails/lspkind.nvim",
-		"rafamadriz/friendly-snippets",
-	})
-
-	-- Statusline
-	use({
-		"nvim-lualine/lualine.nvim",
-	})
-
-	-- Treesitter
-	use({
-		"nvim-treesitter/nvim-treesitter",
-		"nvim-treesitter/nvim-treesitter-context",
-		"nvim-treesitter/playground",
-	})
-
-	-- Wakatime
-	use({ "wakatime/vim-wakatime" })
-
-	-- Which key
-	use({ "folke/which-key.nvim" })
-
-	-- Autopair
-	use({ "windwp/nvim-autopairs" })
-
-	-- Startup
-	use({ "goolord/alpha-nvim" })
-
-	-- Comment
-	use({ "numToStr/Comment.nvim" })
-
-	-- Neogit
-	use({ "TimUntersberger/neogit" })
-
-	-- Colorizer
-	use({ "NvChad/nvim-colorizer.lua" })
-
-	-- Stabilize
-	use({ "luukvbaal/stabilize.nvim" })
-
-	-- Illuminate
-	use({ "RRethy/vim-illuminate" })
-
-	-- Gitsigns
-	use({ "lewis6991/gitsigns.nvim" })
-
-	-- Modes
-	use({
-		"mvllow/modes.nvim",
-		tag = "v0.2.0",
-	})
-
-	-- Fidget
-	use({ "j-hui/fidget.nvim" })
-
-	-- Neoscroll
-	use({ "karb94/neoscroll.nvim" })
 
 	-- Automatically set up your configuration after cloning packer.nvim
 	-- Put this at the end after all plugins

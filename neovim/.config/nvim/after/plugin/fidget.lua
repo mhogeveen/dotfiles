@@ -1,11 +1,15 @@
 local status, fidget = pcall(require, "fidget")
 if not status then
-  print("Fidget is not installed")
-  return
+	print("Fidget is not installed")
+	return
 end
 
 fidget.setup({
-  window = {
-    blend = 0,
-  },
+	text = {
+		spinner = "dots_pulse",
+		done = " ",
+	},
+	window = {
+		blend = 0,
+	},
 })
