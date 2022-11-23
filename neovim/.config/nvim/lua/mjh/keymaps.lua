@@ -42,7 +42,7 @@ map("n", "<leader>fg", ":Telescope git_files<CR>", opts)
 map("n", "<leader>fr", ":Telescope live_grep<CR>", opts)
 
 -- Buffer stuff
-map("n", "<leader>b", ":Telescope buffers<CR>", opts)
+-- map("n", "<leader>b", ":Telescope buffers<CR>", opts)
 map("n", "<leader>c", ":bp|bd #<CR>", opts)
 
 -- Visual Mode --
