@@ -12,7 +12,7 @@ local options = {
 	handle = "auto", -- 'bufnr' or 'dynamic' or 'auto'
 	show_icons = true,
 	show_current = true, -- Include current buffer in the list
-	show_modified = true, -- Show buffer modified indicator
+	show_modified = false, -- Show buffer modified indicator
 	modified_icon = "⬤", -- Character to use as modified indicator
 	grayout_current = true, -- Wheter to gray out current buffer entry
 	force_delete = {}, -- List of filetypes / buftypes to use
@@ -45,6 +45,11 @@ local options = {
 		tabsplit = "]",
 		delete = "<Space>",
 		priority = "=",
+	},
+	window = {
+		border = "rounded",
+		title = "",
+		title_pos = "center",
 	},
 }
 

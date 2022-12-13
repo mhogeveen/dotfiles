@@ -81,7 +81,8 @@ packer.startup(function(use)
 		{ "j-hui/fidget.nvim" },
 		{ "karb94/neoscroll.nvim" },
 		{ "mvllow/modes.nvim", tag = "v0.2.0" },
-		{ "toppair/reach.nvim" },
+		{ "mhogeveen/reach.nvim" },
+		{ "famiu/bufdelete.nvim" },
 	})
 
 	-- Automatically set up your configuration after cloning packer.nvim

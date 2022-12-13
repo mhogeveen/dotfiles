@@ -29,18 +29,6 @@ null_ls.setup({
 				})
 			end,
 		}),
-		null_ls.builtins.formatting.eslint_d.with({
-			condition = function(utils)
-				return utils.root_has_file({
-					".eslintrc",
-					".eslintrc.js",
-					".eslintrc.cjs",
-					".eslintrc.yaml",
-					".eslintrc.yml",
-					".eslintrc.json",
-				})
-			end,
-		}),
 		null_ls.builtins.formatting.stylua,
 		null_ls.builtins.formatting.phpcsfixer.with({
 			extra_args = { "--using-cache=no" },
