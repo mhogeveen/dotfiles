@@ -13,14 +13,14 @@ vim.opt.rtp:prepend(lazypath)
 
 local status_packer, lazy = pcall(require, "lazy")
 if not status_packer then
-  print("Packer is not installed")
+  print("Lazy is not installed")
   return
 end
 
 lazy.setup({
   { "kyazdani42/nvim-web-devicons" },
   { "nvim-lua/plenary.nvim" },
-  { "catppuccin/nvim", as = "catppuccin" },
+  { "catppuccin/nvim", as = "catppuccin", lazy = false, priority = 1000 },
   { "kyazdani42/nvim-tree.lua", tag = "nightly" },
   {
     "nvim-telescope/telescope.nvim",
@@ -36,6 +36,7 @@ lazy.setup({
   { "jose-elias-alvarez/null-ls.nvim" },
   {
     "hrsh7th/nvim-cmp",
+    event = "InsertEnter",
     dependencies = {
       "cmp-buffer",
       "cmp-path",
@@ -60,7 +61,7 @@ lazy.setup({
   { "nvim-treesitter/nvim-treesitter-textobjects" },
   { "nvim-treesitter/playground" },
   { "wakatime/vim-wakatime" },
-  { "folke/which-key.nvim" },
+  { "folke/which-key.nvim", lazy = true },
   { "windwp/nvim-autopairs" },
   { "goolord/alpha-nvim" },
   { "numToStr/Comment.nvim" },
