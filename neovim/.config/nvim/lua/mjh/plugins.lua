@@ -74,6 +74,7 @@ lazy.setup({
   { "karb94/neoscroll.nvim" },
   { "mhogeveen/reach.nvim" },
   { "famiu/bufdelete.nvim" },
+  { "mvllow/modes.nvim", tag = "v0.2.0" },
 }, {
   lockfile = "~/.dotfiles/neovim/.config/nvim/lazy-lock.json",
 })
