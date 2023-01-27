@@ -1,55 +1,59 @@
-local opts = { noremap = true, silent = true }
-local map = vim.keymap.set
+local map = function(mode, keymap, command)
+  vim.keymap.set(mode, keymap, command, {
+    noremap = true,
+    silent = true,
+  })
+end
 
 --Remap space as leader key
-map("", "<Space>", "<Nop>", opts)
+map("", "<Space>", "<Nop>")
 vim.g.mapleader = " "
 vim.g.maplocalleader = " "
 
 -- Normal Mode --
 -- Better window navigation
-map("n", "<C-h>", "<C-w>h", opts)
-map("n", "<C-j>", "<C-w>j", opts)
-map("n", "<C-k>", "<C-w>k", opts)
-map("n", "<C-l>", "<C-w>l", opts)
+map("n", "<C-h>", "<C-w>h")
+map("n", "<C-j>", "<C-w>j")
+map("n", "<C-k>", "<C-w>k")
+map("n", "<C-l>", "<C-w>l")
 
 -- Vertical movement
 map("n", "<C-d>", "<C-d>zz")
 map("n", "<C-u>", "<C-u>zz")
 
 -- Resize with arrows
-map("n", "<A-Up>", ":resize +2<CR>", opts)
-map("n", "<A-Down>", ":resize -2<CR>", opts)
-map("n", "<A-Left>", ":vertical resize -2<CR>", opts)
-map("n", "<A-Right>", ":vertical resize +2<CR>", opts)
+map("n", "<A-Up>", ":resize +2<CR>")
+map("n", "<A-Down>", ":resize -2<CR>")
+map("n", "<A-Left>", ":vertical resize -2<CR>")
+map("n", "<A-Right>", ":vertical resize +2<CR>")
 
 -- Move lines up and down
-map("n", "<C-p>", ":m-2<CR>==", opts)
-map("n", "<C-n>", ":m+<CR>==", opts)
+map("n", "<C-p>", ":m-2<CR>==")
+map("n", "<C-n>", ":m+<CR>==")
 
 -- Delete without overwriting yank register
-map("n", "dd", '"_dd', opts)
+map("n", "dd", '"_dd')
 
 -- NvimTree
-map("n", "<leader>e", ":NvimTreeToggle<cr>", opts)
+map("n", "<leader>e", ":NvimTreeToggle<cr>")
 
 -- Neogit
-map("n", "<leader>t", ":Neogit<cr>", opts)
+map("n", "<leader>t", ":Neogit<cr>")
 
 -- Telescope
-map("n", "<leader>ff", ":Telescope find_files<CR>", opts)
-map("n", "<leader>fg", ":Telescope git_files<CR>", opts)
-map("n", "<leader>fr", ":Telescope live_grep<CR>", opts)
+map("n", "<leader>ff", ":Telescope find_files<CR>")
+map("n", "<leader>fg", ":Telescope git_files<CR>")
+map("n", "<leader>fr", ":Telescope live_grep<CR>")
 
 -- Buffer stuff
--- map("n", "<leader>b", ":Telescope buffers<CR>", opts)
-map("n", "<leader>c", ":Bdelete<CR>", opts)
+-- map("n", "<leader>b", ":Telescope buffers<CR>")
+map("n", "<leader>c", ":Bdelete<CR>")
 
 -- Visual Mode --
 -- Move lines up and down
-map("v", "<C-p>", ":m '<-2<CR>gv", opts)
-map("v", "<C-n>", ":m '>+1<CR>gv=gv", opts)
+map("v", "<C-p>", ":m '<-2<CR>gv")
+map("v", "<C-n>", ":m '>+1<CR>gv=gv")
 
 -- Stay in indent mode
-map("v", "<", "<gv", opts)
-map("v", ">", ">gv", opts)
+map("v", "<", "<gv")
+map("v", ">", ">gv")
