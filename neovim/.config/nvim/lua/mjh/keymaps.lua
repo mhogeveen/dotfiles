@@ -53,12 +53,3 @@ map("v", "<C-n>", ":m '>+1<CR>gv=gv", opts)
 -- Stay in indent mode
 map("v", "<", "<gv", opts)
 map("v", ">", ">gv", opts)
-
--- Insert Mode --
--- Luasnip
--- map({ "i", "s" }, "<Tab>", function()
--- 	local ls = require("luasnip")
--- 	if ls.expand_or_jumpable() then
--- 		ls.expand_or_jump()
--- 	end
--- end, { silent = true })
