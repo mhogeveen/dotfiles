@@ -16,13 +16,27 @@ modicator.setup({
   show_warnings = true, -- Show warning if any required option is missing
   highlights = {
     modes = {
-      ["n"] = mocha.blue, -- Normal
-      ["i"] = mocha.green, -- Insert
-      ["v"] = mocha.mauve, -- Visual
-      ["V"] = mocha.mauve, -- Visual Line
-      [""] = mocha.mauve, -- Visual Block
-      ["R"] = mocha.red, -- Replace
-      ["c"] = mocha.peach, -- Command
+      ["n"] = {
+        foreground = mocha.blue, -- Normal
+      },
+      ["i"] = {
+        foreground = mocha.green, -- Insert
+      },
+      ["v"] = {
+        foreground = mocha.mauve, -- Visual
+      },
+      ["V"] = {
+        foreground = mocha.mauve, -- Visual Line
+      },
+      [""] = {
+        foreground = mocha.mauve, -- Visual Block
+      },
+      ["R"] = {
+        foreground = mocha.red, -- Replace
+      },
+      ["c"] = {
+        foreground = mocha.peach, -- Command
+      },
     },
   },
 })
