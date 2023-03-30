@@ -5,30 +5,19 @@ if not status then
 end
 
 local lsp_formatting = function(bufnr)
-	vim.lsp.buf.format({
-		-- filter = function(client)
-		--   return client.name ~= "tsserver"
-		-- end,
-		bufnr = bufnr,
-	})
+  vim.lsp.buf.format({
+    -- filter = function(client)
+    --   return client.name ~= "tsserver"
+    -- end,
+    bufnr = bufnr,
+  })
 end
 
 local augroup = vim.api.nvim_create_augroup("LspFormatting", {})
 
 null_ls.setup({
   sources = {
-    null_ls.builtins.diagnostics.eslint_d.with({
-      condition = function(utils)
-        return utils.root_has_file({
-          ".eslintrc",
-          ".eslintrc.js",
-          ".eslintrc.cjs",
-          ".eslintrc.yaml",
-          ".eslintrc.yml",
-          ".eslintrc.json",
-        })
-      end,
-    }),
+    null_ls.builtins.diagnostics.eslint,
     null_ls.builtins.formatting.stylua,
     null_ls.builtins.formatting.phpcsfixer.with({
       extra_args = { "--using-cache=no" },
