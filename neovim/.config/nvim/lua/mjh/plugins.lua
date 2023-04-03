@@ -74,16 +74,18 @@ lazy.setup({
   { "windwp/nvim-autopairs",                      event = "InsertEnter" },
   { "goolord/alpha-nvim" },
   { "numToStr/Comment.nvim",                      event = "BufRead" },
-  { "TimUntersberger/neogit" },
   { "NvChad/nvim-colorizer.lua" },
-  { "luukvbaal/stabilize.nvim" },
   { "RRethy/vim-illuminate",                      event = "VeryLazy" },
   { "lewis6991/gitsigns.nvim",                    event = "BufRead" },
   { "j-hui/fidget.nvim" },
   { "karb94/neoscroll.nvim" },
   { "mhogeveen/reach.nvim" },
   { "famiu/bufdelete.nvim" },
-  { "melkster/modicator.nvim",                    lazy = true },
+  {
+    "folke/todo-comments.nvim",
+    dependencies = { "nvim-lua/plenary.nvim" },
+  },
+  { "melkster/modicator.nvim", lazy = true },
 }, {
   lockfile = "~/.dotfiles/neovim/.config/nvim/lazy-lock.json",
 })
