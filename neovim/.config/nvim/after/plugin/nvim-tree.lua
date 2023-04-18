@@ -33,7 +33,7 @@ nvim_tree.setup({
   sync_root_with_cwd = false,
   reload_on_bufenter = true,
   respect_buf_cwd = false,
-  on_attach = "disable", -- function(bufnr). If nil, will use the deprecated mapping strategy
+  on_attach = "disable",  -- function(bufnr). If nil, will use the deprecated mapping strategy
   remove_keymaps = false, -- boolean (disable totally or not) or list of key (lhs)
   view = {
     adaptive_size = false,
@@ -49,8 +49,8 @@ nvim_tree.setup({
       custom_only = false,
       list = {
         { key = { "l", "<CR>", "o" }, cb = tree_cb("edit") },
-        { key = "h", cb = tree_cb("close_node") },
-        { key = "v", cb = tree_cb("vsplit") },
+        { key = "h",                  cb = tree_cb("close_node") },
+        { key = "v",                  cb = tree_cb("vsplit") },
       },
     },
     float = {
@@ -91,7 +91,7 @@ nvim_tree.setup({
         file = true,
         folder = true,
         folder_arrow = false,
-        git = true,
+        git = false,
       },
       glyphs = {
         default = "",
@@ -139,10 +139,10 @@ nvim_tree.setup({
     show_on_dirs = false,
     debounce_delay = 50,
     icons = {
-      hint = "",
-      info = "",
-      warning = "",
-      error = "",
+      hint = "H",    -- 
+      info = "I",    -- 
+      warning = "W", -- 
+      error = "E",   -- 
     },
   },
   filters = {
