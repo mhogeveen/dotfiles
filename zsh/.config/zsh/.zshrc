@@ -19,3 +19,11 @@ eval "$(fnm env --use-on-cd)"
 
 # Add zoxide to shell
 eval "$(zoxide init zsh)"
+
+# pnpm
+export PNPM_HOME="/Users/maartenhogeveen/Library/pnpm"
+case ":$PATH:" in
+  *":$PNPM_HOME:"*) ;;
+  *) export PATH="$PNPM_HOME:$PATH" ;;
+esac
+# pnpm end
