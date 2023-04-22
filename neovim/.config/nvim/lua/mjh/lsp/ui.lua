@@ -10,6 +10,7 @@ lspwindows.default_options.border = "single"
 -- Configure vim diagnostics
 vim.diagnostic.config({
   virtual_text = false,
+  update_in_insert = true,
   float = {
     border = "single",
   },
