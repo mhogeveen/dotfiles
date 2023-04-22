@@ -1,19 +1,8 @@
 local status, null_ls = pcall(require, "null-ls")
 if not status then
-  print("Null-ls is not installed")
+  print("'null-ls' is not installed")
   return
 end
-
-local lsp_formatting = function(bufnr)
-  vim.lsp.buf.format({
-    -- filter = function(client)
-    --   return client.name ~= "tsserver"
-    -- end,
-    bufnr = bufnr,
-  })
-end
-
-local augroup = vim.api.nvim_create_augroup("LspFormatting", {})
 
 null_ls.setup({
   sources = {
@@ -22,19 +11,25 @@ null_ls.setup({
     null_ls.builtins.formatting.phpcsfixer.with({
       extra_args = { "--using-cache=no" },
     }),
-    null_ls.builtins.formatting.rustfmt,
     null_ls.builtins.formatting.prettierd,
     null_ls.builtins.formatting.trim_newlines,
     null_ls.builtins.formatting.trim_whitespace,
   },
   on_attach = function(client, bufnr)
+    local augroup = vim.api.nvim_create_augroup("LspFormatting", {})
     if client.supports_method("textDocument/formatting") then
       vim.api.nvim_clear_autocmds({ group = augroup, buffer = bufnr })
       vim.api.nvim_create_autocmd("BufWritePre", {
         group = augroup,
         buffer = bufnr,
         callback = function()
-          lsp_formatting(bufnr)
+          -- vim.lsp.buf.format({
+          --   bufnr = bufnr,
+          --   filter = function()
+          --     return client.name == "null-ls"
+          --   end,
+          -- })
+          vim.lsp.buf.format()
         end,
       })
     end
