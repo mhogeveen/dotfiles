@@ -18,11 +18,20 @@ if not status_packer then
 end
 
 lazy.setup({
-  { "folke/lazy.nvim",             tag = "stable" },
-  { "kyazdani42/nvim-web-devicons" },
+  { "folke/lazy.nvim",            tag = "stable" },
+  { "nvim-tree/nvim-web-devicons" },
   { "nvim-lua/plenary.nvim" },
-  { "catppuccin/nvim",             name = "catppuccin", lazy = false, priority = 1000 },
-  { "kyazdani42/nvim-tree.lua",    tag = "nightly" },
+  {
+    "catppuccin/nvim",
+    name = "catppuccin",
+    lazy = false,
+    priority = 1000,
+  },
+  {
+    "theblob42/drex.nvim",
+    cmd = { "DrexDrawerOpen", "DrexDrawerClose", "DrexDrawerToggle" },
+    event = "VeryLazy",
+  },
   {
     "nvim-telescope/telescope.nvim",
     branch = "0.1.x",
@@ -78,7 +87,8 @@ lazy.setup({
     "folke/todo-comments.nvim",
     event = "VeryLazy",
     dependencies = {
-      "nvim-lua/plenary.nvim" }
+      "nvim-lua/plenary.nvim",
+    },
   },
   { "melkster/modicator.nvim", event = "VeryLazy" },
 }, {

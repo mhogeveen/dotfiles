@@ -35,7 +35,7 @@ map("n", "<C-n>", ":m+<CR>==")
 map("n", "dd", '"_dd')
 
 -- NvimTree
-map("n", "<leader>e", ":NvimTreeToggle<cr>")
+map("n", "<leader>e", ":DrexDrawerToggle<cr>")
 
 -- Neogit
 map("n", "<leader>t", ":Neogit<cr>")
