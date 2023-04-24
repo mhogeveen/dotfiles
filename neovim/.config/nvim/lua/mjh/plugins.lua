@@ -91,6 +91,13 @@ lazy.setup({
     },
   },
   { "melkster/modicator.nvim", event = "VeryLazy" },
+  {
+    "iamcco/markdown-preview.nvim",
+    build = function()
+      vim.fn["mkdp#util#install"]()
+    end,
+    ft = "markdown",
+  },
 }, {
   lockfile = "~/.dotfiles/neovim/.config/nvim/lazy-lock.json",
 })
