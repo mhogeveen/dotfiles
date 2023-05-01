@@ -30,5 +30,11 @@ devicons.setup({
       cterm_color = "68",
       name = "Dockerfile",
     },
+    ["dockerfile"] = {
+      icon = "",
+      color = "#458ee6",
+      cterm_color = "68",
+      name = "Dockerfile",
+    },
   },
 })
