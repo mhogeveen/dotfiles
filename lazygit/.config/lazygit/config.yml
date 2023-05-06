@@ -14,22 +14,22 @@ gui:
   theme:
     lightTheme: false
     activeBorderColor:
-    - green
-    - bold
+      - green
+      - bold
     inactiveBorderColor:
-    - white
+      - white
     optionsTextColor:
-    - blue
+      - blue
     selectedLineBgColor:
-    - black
+      - black
     selectedRangeBgColor:
-    - blue
+      - blue
     cherryPickedCommitBgColor:
-    - cyan
+      - cyan
     cherryPickedCommitFgColor:
-    - blue
+      - blue
     unstagedChangesColor:
-    - red
+      - red
   commitLength:
     show: true
   skipNoStagedFilesWarning: false
@@ -54,9 +54,11 @@ git:
   skipHookPrefix: WIP
   autoFetch: true
   autoRefresh: true
-  branchLogCmd: git log --graph --color=always --abbrev-commit --decorate --date=relative
+  branchLogCmd:
+    git log --graph --color=always --abbrev-commit --decorate --date=relative
     --pretty=medium {{branchName}} --
-  allBranchesLogCmd: git log --graph --all --color=always --abbrev-commit --decorate
+  allBranchesLogCmd:
+    git log --graph --all --color=always --abbrev-commit --decorate
     --date=relative  --pretty=medium
   overrideGpg: false
   disableForcePushing: false
@@ -88,12 +90,12 @@ keybinding:
     nextItem: <down>
     prevItem-alt: k
     nextItem-alt: j
-    prevPage: ','
+    prevPage: ","
     nextPage: .
     scrollLeft: H
     scrollRight: L
     gotoTop: <
-    gotoBottom: '>'
+    gotoBottom: ">"
     prevBlock: <left>
     nextBlock: <right>
     prevBlock-alt: h
@@ -101,16 +103,16 @@ keybinding:
     nextBlock-alt2: <tab>
     prevBlock-alt2: <backtab>
     jumpToBlock:
-    - "1"
-    - "2"
-    - "3"
-    - "4"
-    - "5"
+      - "1"
+      - "2"
+      - "3"
+      - "4"
+      - "5"
     nextMatch: "n"
     prevMatch: "N"
     startSearch: /
     optionMenu: x
-    optionMenu-alt1: '?'
+    optionMenu-alt1: "?"
     select: <space>
     goInto: <enter>
     confirm: <enter>
@@ -125,14 +127,14 @@ keybinding:
     scrollDownMain-alt1: J
     scrollUpMain-alt2: <c-u>
     scrollDownMain-alt2: <c-d>
-    executeCustomCommand: ':'
+    executeCustomCommand: ":"
     createRebaseOptionsMenu: m
     pushFiles: P
     pullFiles: p
     refresh: R
     createPatchOptionsMenu: <c-p>
-    nextTab: ']'
-    prevTab: '['
+    nextTab: "]"
+    prevTab: "["
     nextScreenMode: +
     prevScreenMode: _
     undo: z
@@ -144,10 +146,10 @@ keybinding:
     openRecentRepos: <c-r>
     submitEditorText: <enter>
     appendNewline: <a-enter>
-    extrasMenu: '@'
+    extrasMenu: "@"
     toggleWhitespaceInDiffView: <c-w>
-    increaseContextInDiffView: '}'
-    decreaseContextInDiffView: '{'
+    increaseContextInDiffView: "}"
+    decreaseContextInDiffView: "{"
   status:
     checkForUpdate: u
     recentRepos: <enter>
@@ -164,7 +166,7 @@ keybinding:
     toggleStagedAll: a
     viewResetOptions: D
     fetch: f
-    toggleTreeView: '`'
+    toggleTreeView: "`"
     openMergeTool: M
     openStatusFilter: <c-b>
   branches:
@@ -220,8 +222,8 @@ keybinding:
     update: u
     bulkMenu: b
 os:
-  openCommand: open -- {{filename}}
-  openLinkCommand: open {{link}}
+  open: open -- {{filename}}
+  openLink: open {{link}}
 disableStartupPopups: false
 customCommands: []
 services: {}
