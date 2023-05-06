@@ -7,10 +7,12 @@
 [ -f "$ZDOTDIR/exports.zsh" ] && source "$ZDOTDIR/exports.zsh"
 [ -f "$ZDOTDIR/options.zsh" ] && source "$ZDOTDIR/options.zsh"
 [ -f "$ZDOTDIR/aliases.zsh" ] && source "$ZDOTDIR/aliases.zsh"
+[ -f "$ZDOTDIR/keymaps.zsh" ] && source "$ZDOTDIR/keymaps.zsh"
 
 # Plugins
 plug "zsh-users/zsh-autosuggestions"
 plug "zsh-users/zsh-syntax-highlighting"
+plug "zsh-users/zsh-history-substring-search"
 plug "hlissner/zsh-autopair"
 plug "zap-zsh/vim"
 
