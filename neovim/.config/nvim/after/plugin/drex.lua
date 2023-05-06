@@ -13,7 +13,7 @@ drex.configure({
     others = "",
   },
   colored_icons = true,
-  hide_cursor = true,
+  hide_cursor = false,
   hijack_netrw = true,
   sorting = function(a, b)
     local aname, atype = a[1], a[2]
