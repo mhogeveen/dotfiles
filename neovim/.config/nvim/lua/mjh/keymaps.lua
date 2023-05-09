@@ -57,3 +57,6 @@ map("v", "<C-n>", ":m '>+1<CR>gv=gv")
 -- Stay in indent mode
 map("v", "<", "<gv")
 map("v", ">", ">gv")
+
+-- Sort selection
+map("v", "<C-s>", ":'<,'>sort<CR>")
