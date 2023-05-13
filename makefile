@@ -6,3 +6,7 @@ delete:
 
 init:
 	@stow --verbose --adopt */
+
+up:
+	@brew upgrade
+	@brew bundle
