@@ -2,10 +2,6 @@
 
 This repo serves as a easy starting point for use of my own workspace configuration on other systems.
 
-![dashboard](./screengrab1.png "NeoVim Dashboard")
-![in-action](./screengrab2.png "NeoVim In Action")
-![terminal](./screengrab3.png "Tmux & Lazygit")
-
 ## Tools
 
 - [stow](https://formulae.brew.sh/formula/stow#default): Symlink manager
@@ -55,3 +51,9 @@ Update all brew packages (will build this out more in the future):
 ```bash
 make up
 ```
+
+## Screenshots
+
+![dashboard](./screengrab1.png "NeoVim Dashboard")
+![in-action](./screengrab2.png "NeoVim In Action")
+![terminal](./screengrab3.png "Tmux & Lazygit")
