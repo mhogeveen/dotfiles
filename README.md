@@ -1,4 +1,4 @@
-# ⚙️ Dotfiles Repository
+# Dotfiles Repository
 
 This repo serves as a easy starting point for use of my own workspace configuration on other systems.
 
@@ -6,16 +6,15 @@ This repo serves as a easy starting point for use of my own workspace configurat
 ![in-action](./screengrab2.png "NeoVim In Action")
 ![terminal](./screengrab3.png "Tmux & Lazygit")
 
-## 🧱 Dependencies
+## Tools
 
 - [stow](https://formulae.brew.sh/formula/stow#default): Symlink manager
-- [kitty](https://github.com/kovidgoyal/kitty): Terminal emulator
-- [tmux](https://github.com/tmux/tmux): Terminal multiplexer
+- [wezterm](https://github.com/wez/wezterm): Terminal emulator
 - [zap](https://github.com/zap-zsh/zap): ZSH plugin manager
-- [zoxide](https://github.com/ajeetdsouza/zoxide): Smarter cd command
+- [zoxide](https://github.com/ajeetdsouza/zoxide): Smarter `cd` command
 - [fnm](https://github.com/Schniz/fnm): Node version manager
 
-## 🔨 Usage
+## Usage
 
 Make sure GNU Stow is installed:
 
@@ -47,7 +46,12 @@ make delete # delete all dotfiles (unlink them all)
 
 or
 
-
 ```bash
 stow --verbose (--adopt or --restow) <package name>
+```
+
+Update all brew packages (will build this out more in the future):
+
+```bash
+make up
 ```
