@@ -66,6 +66,7 @@ lazy.setup({
   { "L3MON4D3/LuaSnip",                            dependencies = { "friendly-snippets" } },
   { "rafamadriz/friendly-snippets",                lazy = true },
   { "onsails/lspkind.nvim" },
+  { "simrat39/symbols-outline.nvim" },
   { "nvim-lualine/lualine.nvim" },
   { "nvim-treesitter/nvim-treesitter",             build = ":TSUpdate" },
   { "nvim-treesitter/nvim-treesitter-context",     dependencies = { "nvim-treesitter/nvim-treesitter" } },

@@ -34,11 +34,11 @@ map("n", "<C-n>", ":m+<CR>==")
 -- Delete without overwriting yank register
 map("n", "dd", '"_dd')
 
--- NvimTree
+-- Filetree explorer
 map("n", "<leader>e", ":DrexDrawerToggle<cr>")
 
--- Neogit
-map("n", "<leader>t", ":Neogit<cr>")
+-- Symbols outline
+map("n", "<leader>s", ":SymbolsOutline<CR>")
 
 -- Telescope
 map("n", "<leader>ff", ":Telescope find_files<CR>")
