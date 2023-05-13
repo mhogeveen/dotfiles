@@ -25,7 +25,7 @@ config.color_scheme = "Catppuccin Mocha"
 
 -- Window
 config.window_padding = { left = 10, right = 10, top = 10, bottom = 10 }
-config.window_decorations = "NONE | RESIZE"
+config.window_decorations = "RESIZE"
 
 -- Tabbar
 config.enable_tab_bar = true
@@ -33,6 +33,7 @@ config.use_fancy_tab_bar = false
 config.tab_bar_at_bottom = true
 config.show_tab_index_in_tab_bar = true
 config.hide_tab_bar_if_only_one_tab = true
+config.tab_and_split_indices_are_zero_based = true
 
 -- Keybindings
 config.leader = { key = "a", mods = "CTRL", timeout_milliseconds = 500 }
@@ -69,7 +70,7 @@ for i = 0, 9 do
   table.insert(config.keys, {
     key = tostring(i),
     mods = 'LEADER',
-    action = act.ActivateTab(i - 1),
+    action = act.ActivateTab(i),
   })
 end
 
