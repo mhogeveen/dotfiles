@@ -5,10 +5,10 @@ if not ok then
 end
 
 -- Set up UI styling
-require('mjh.lsp.ui')
+require("mjh.lsp.ui")
 
 -- Set up LSP's
-local merge_configs = require('mjh.lsp.configs.default')
+local merge_configs = require("mjh.lsp.configs.default")
 
 lspconfig.bashls.setup(merge_configs({}))
 lspconfig.cssls.setup(merge_configs({}))
@@ -16,6 +16,7 @@ lspconfig.eslint.setup(merge_configs({}))
 lspconfig.html.setup(merge_configs({}))
 lspconfig.intelephense.setup(merge_configs({}))
 lspconfig.jsonls.setup(merge_configs({}))
-lspconfig.lua_ls.setup(merge_configs(require('mjh.lsp.configs.lua_ls')))
+lspconfig.lua_ls.setup(merge_configs(require("mjh.lsp.configs.lua_ls")))
 lspconfig.marksman.setup(merge_configs({}))
-lspconfig.tsserver.setup(merge_configs({}))
+-- lspconfig.tsserver.setup(merge_configs({}))
+lspconfig.vtsls.setup(merge_configs({}))
