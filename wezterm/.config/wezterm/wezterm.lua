@@ -4,13 +4,7 @@ if not status then
 end
 
 local act = wezterm.action
-local config = {}
-
--- In newer versions of wezterm, use the config_builder which will
--- help provide clearer error messages
-if wezterm.config_builder then
-  config = wezterm.config_builder()
-end
+local config = wezterm.config_builder()
 
 -- General
 config.automatically_reload_config = true
@@ -60,16 +54,16 @@ config.keys = {
   { key = "l", mods = "LEADER", action = act.ActivatePaneDirection("Right") },
   { key = "k", mods = "LEADER", action = act.ActivatePaneDirection("Up") },
   { key = "j", mods = "LEADER", action = act.ActivatePaneDirection("Down") },
-  { key = 'p', mods = 'LEADER', action = act.ActivateTabRelative(-1) },
-  { key = 'n', mods = 'LEADER', action = act.ActivateTabRelative(1) },
-  { key = '[', mods = 'LEADER', action = act.MoveTabRelative(-1) },
-  { key = ']', mods = 'LEADER', action = act.MoveTabRelative(1) },
+  { key = "p", mods = "LEADER", action = act.ActivateTabRelative(-1) },
+  { key = "n", mods = "LEADER", action = act.ActivateTabRelative(1) },
+  { key = "[", mods = "LEADER", action = act.MoveTabRelative(-1) },
+  { key = "]", mods = "LEADER", action = act.MoveTabRelative(1) },
 }
 
 for i = 0, 9 do
   table.insert(config.keys, {
     key = tostring(i),
-    mods = 'LEADER',
+    mods = "LEADER",
     action = act.ActivateTab(i),
   })
 end
