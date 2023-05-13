@@ -9,6 +9,7 @@ export EDITOR="nvim"
 export TERMINAL="kitty"
 export BROWSER="arc"
 export MANPAGER="nvim +Man!"
+export HOMEBREW_BUNDLE_FILE="$HOME/.dotfiles/homebrew/Brewfile"
 
 # Autoload functions.
 autoload -Uz compinit
