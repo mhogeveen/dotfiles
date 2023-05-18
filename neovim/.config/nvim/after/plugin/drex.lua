@@ -43,36 +43,9 @@ drex.configure({
       ["q"] = { "<cmd>DrexDrawerClose<CR>", { desc = "close drawer" } },
       ["l"] = { '<cmd>lua require("drex.elements").expand_element()<CR>', { desc = "expand element" } },
       ["h"] = { '<cmd>lua require("drex.elements").collapse_directory()<CR>', { desc = "collapse directory" } },
-      ["<right>"] = { '<cmd>lua require("drex.elements").expand_element()<CR>', { desc = "expand element" } },
-      ["<left>"] = {
-        '<cmd>lua require("drex.elements").collapse_directory()<CR>',
-        { desc = "collapse directory" },
-      },
-      ["<2-LeftMouse>"] = {
-        '<LeftMouse><cmd>lua require("drex.elements").expand_element()<CR>',
-        {
-          desc = "expand element",
-        },
-      },
-      ["<RightMouse>"] = {
-        '<LeftMouse><cmd>lua require("drex.elements").collapse_directory()<CR>',
-        {
-          desc = "collapse directory",
-        },
-      },
       ["<C-v>"] = { '<cmd>lua require("drex.elements").open_file("vs")<CR>', { desc = "open file in vsplit" } },
       ["<C-x>"] = { '<cmd>lua require("drex.elements").open_file("sp")<CR>', { desc = "open file in split" } },
-      ["<C-t>"] = {
-        '<cmd>lua require("drex.elements").open_file("tabnew", true)<CR>',
-        {
-          desc = "open file in new tab",
-        },
-      },
-      -- ['<C-l>']         = { '<cmd>lua require("drex.elements").open_directory()<CR>', {
-      --   desc = 'open directory in new buffer' } },
-      -- ['<C-h>']         = { '<cmd>lua require("drex.elements").open_parent_directory()<CR>', {
-      --   desc = 'open parent directory in new buffer' } },
-      ["<F5>"] = { '<cmd>lua require("drex").reload_directory()<CR>', { desc = "reload" } },
+      ["<C-r>"] = { '<cmd>lua require("drex").reload_directory()<CR>', { desc = "reload" } },
       ["gj"] = {
         '<cmd>lua require("drex.actions.jump").jump_to_next_sibling()<CR>',
         {
