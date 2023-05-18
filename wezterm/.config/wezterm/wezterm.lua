@@ -21,13 +21,20 @@ config.color_scheme = "Catppuccin Mocha"
 config.window_padding = { left = 10, right = 10, top = 10, bottom = 10 }
 config.window_decorations = "RESIZE"
 
--- Tabbar
+-- Tab
 config.enable_tab_bar = true
 config.use_fancy_tab_bar = false
 config.tab_bar_at_bottom = true
 config.show_tab_index_in_tab_bar = true
 config.hide_tab_bar_if_only_one_tab = true
 config.tab_and_split_indices_are_zero_based = true
+
+-- Pane
+config.pane_focus_follows_mouse = true
+config.inactive_pane_hsb = {
+  saturation = 1,
+  brightness = 1,
+}
 
 -- Keybindings
 config.leader = { key = "a", mods = "CTRL", timeout_milliseconds = 500 }
