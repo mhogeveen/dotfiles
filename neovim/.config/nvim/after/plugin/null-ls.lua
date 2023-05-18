@@ -11,6 +11,7 @@ null_ls.setup({
     null_ls.builtins.formatting.phpcsfixer.with({
       extra_args = { "--using-cache=no" },
     }),
+    null_ls.builtins.formatting.rustfmt,
     null_ls.builtins.formatting.prettierd,
     null_ls.builtins.formatting.trim_newlines,
     null_ls.builtins.formatting.trim_whitespace,
@@ -23,12 +24,6 @@ null_ls.setup({
         group = augroup,
         buffer = bufnr,
         callback = function()
-          -- vim.lsp.buf.format({
-          --   bufnr = bufnr,
-          --   filter = function()
-          --     return client.name == "null-ls"
-          --   end,
-          -- })
           vim.lsp.buf.format()
         end,
       })
