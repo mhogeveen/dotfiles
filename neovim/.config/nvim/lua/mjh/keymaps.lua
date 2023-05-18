@@ -35,7 +35,13 @@ map("n", "<C-n>", ":m+<CR>==")
 map("n", "dd", '"_dd')
 
 -- Filetree explorer
-map("n", "<leader>e", ":DrexDrawerToggle<cr>")
+map("n", "<leader>e", function()
+  if vim.tbl_contains({"drex", "alpha"}, vim.bo.filetype) then
+    vim.cmd([[:DrexDrawerToggle]])
+  else
+    vim.cmd([[:DrexDrawerFindFileAndFocus]])
+  end
+end)
 
 -- Symbols outline
 map("n", "<leader>s", ":SymbolsOutline<CR>")
