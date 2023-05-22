@@ -9,7 +9,7 @@ delete:
 init:
 	@stow --verbose --adopt */
 
-up: brew zap pnpm
+up: brew zap pnpm rust
 
 brew:
 	@brew upgrade
@@ -20,3 +20,6 @@ zap:
 
 pnpm:
 	@pnpm up --global --latest
+
+rust:
+	@rustup update
