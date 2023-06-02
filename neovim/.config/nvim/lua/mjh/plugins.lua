@@ -67,6 +67,7 @@ lazy.setup({
   { "rafamadriz/friendly-snippets",                lazy = true },
   { "onsails/lspkind.nvim" },
   { "simrat39/symbols-outline.nvim" },
+  { "petertriho/nvim-scrollbar",                   event = "VeryLazy" },
   { "nvim-lualine/lualine.nvim" },
   { "nvim-treesitter/nvim-treesitter",             build = ":TSUpdate" },
   { "nvim-treesitter/nvim-treesitter-context",     dependencies = { "nvim-treesitter/nvim-treesitter" } },
