@@ -15,28 +15,25 @@ local mocha = catppuccin.get_palette("mocha")
 modicator.setup({
   show_warnings = true, -- Show warning if any required option is missing
   highlights = {
-    modes = {
-      ["n"] = {
-        foreground = mocha.blue, -- Normal
-      },
-      ["i"] = {
-        foreground = mocha.green, -- Insert
-      },
-      ["v"] = {
-        foreground = mocha.mauve, -- Visual
-      },
-      ["V"] = {
-        foreground = mocha.mauve, -- Visual Line
-      },
-      [""] = {
-        foreground = mocha.mauve, -- Visual Block
-      },
-      ["R"] = {
-        foreground = mocha.red, -- Replace
-      },
-      ["c"] = {
-        foreground = mocha.peach, -- Command
-      },
+    -- Default options for bold/italic
+    defaults = {
+      bold = false,
+      italic = false,
     },
   },
 })
+
+local mode_color_map = {
+  ["NormalMode"] = mocha.blue,
+  ["InsertMode"] = mocha.green,
+  ["VisualMode"] = mocha.mauve,
+  ["CommandMode"] = mocha.peach,
+  ["ReplaceMode"] = mocha.red,
+  ["SelectMode"] = mocha.mauve,
+}
+
+for mode, color in pairs(mode_color_map) do
+  vim.api.nvim_set_hl(0, mode, {
+    fg = color,
+  })
+end
