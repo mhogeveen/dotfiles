@@ -28,6 +28,13 @@ lazy.setup({
     priority = 1000,
   },
   {
+    "folke/noice.nvim",
+    event = "VeryLazy",
+    dependencies = {
+      "MunifTanjim/nui.nvim",
+    },
+  },
+  {
     "theblob42/drex.nvim",
     cmd = { "DrexDrawerOpen", "DrexDrawerClose", "DrexDrawerToggle" },
     event = "VeryLazy",
@@ -81,10 +88,14 @@ lazy.setup({
   { "NvChad/nvim-colorizer.lua",                   event = "VeryLazy" },
   { "RRethy/vim-illuminate",                       event = "VeryLazy" },
   { "lewis6991/gitsigns.nvim",                     event = "BufRead" },
-  { "j-hui/fidget.nvim",                           event = "VeryLazy" },
-  { "karb94/neoscroll.nvim",                       event = "VeryLazy" },
-  { "mhogeveen/reach.nvim",                        event = "VeryLazy" },
-  { "famiu/bufdelete.nvim",                        event = "VeryLazy" },
+  {
+    "j-hui/fidget.nvim",
+    event = "VeryLazy",
+    tag = "legacy",
+  },
+  { "karb94/neoscroll.nvim", event = "VeryLazy" },
+  { "mhogeveen/reach.nvim",  event = "VeryLazy" },
+  { "famiu/bufdelete.nvim",  event = "VeryLazy" },
   {
     "folke/todo-comments.nvim",
     event = "VeryLazy",
