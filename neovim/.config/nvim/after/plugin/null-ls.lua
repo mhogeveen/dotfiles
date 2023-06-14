@@ -13,8 +13,12 @@ null_ls.setup({
     }),
     null_ls.builtins.formatting.rustfmt,
     null_ls.builtins.formatting.prettierd,
-    null_ls.builtins.formatting.trim_newlines,
-    null_ls.builtins.formatting.trim_whitespace,
+    null_ls.builtins.formatting.trim_newlines.with({
+      disabled_filetypes = { "md" },
+    }),
+    null_ls.builtins.formatting.trim_whitespace.with({
+      disabled_filetypes = { "md" },
+    }),
   },
   on_attach = function(client, bufnr)
     local augroup = vim.api.nvim_create_augroup("LspFormatting", {})
