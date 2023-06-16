@@ -88,14 +88,9 @@ lazy.setup({
   { "NvChad/nvim-colorizer.lua",                   event = "VeryLazy" },
   { "RRethy/vim-illuminate",                       event = "VeryLazy" },
   { "lewis6991/gitsigns.nvim",                     event = "BufRead" },
-  {
-    "j-hui/fidget.nvim",
-    event = "VeryLazy",
-    tag = "legacy",
-  },
-  { "karb94/neoscroll.nvim", event = "VeryLazy" },
-  { "mhogeveen/reach.nvim",  event = "VeryLazy" },
-  { "famiu/bufdelete.nvim",  event = "VeryLazy" },
+  { "karb94/neoscroll.nvim",                       event = "VeryLazy" },
+  { "mhogeveen/reach.nvim",                        event = "VeryLazy" },
+  { "famiu/bufdelete.nvim",                        event = "VeryLazy" },
   {
     "folke/todo-comments.nvim",
     event = "VeryLazy",
