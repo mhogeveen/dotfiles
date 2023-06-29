@@ -25,13 +25,13 @@ theme.setup({
   },
   integrations = {
     cmp = true,
-    gitsigns = true,
-    illuminate = true,
-    noice = true,
-    telescope = true,
     treesitter = true,
     treesitter_context = true,
+    telescope = true,
     which_key = true,
+    illuminate = true,
+    fidget = true,
+    gitsigns = true,
   },
   highlight_overrides = {
     mocha = function(colors)
