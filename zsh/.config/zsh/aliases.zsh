@@ -15,3 +15,14 @@ alias tmux="tmux -f ${HOME}/.tmux.conf"
 alias rm="rm -i"
 alias mv="mv -i"
 alias cp="cp -i"
+
+alias glog-pretty='git log --pretty="%C(Yellow)%h  %C(reset)%ad (%C(Green)%cr%C(reset))%x09 %C(Cyan)%an: %C(reset)%s" --date=short'
+
+glog-pretty-from() {
+  command="git log --pretty=\"%C(Yellow)%h  %C(reset)%ad (%C(Green)%cr%C(reset))%x09 %C(Cyan)%an: %C(reset)%s\" --date=short $1...HEAD "
+  if [ -n "$2" ]; then
+    command+="-- components/$2"
+  fi
+
+  eval "$command"
+}
