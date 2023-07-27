@@ -140,3 +140,35 @@ drex.configure({
   end,
   on_leave = nil,
 })
+
+vim.keymap.set("n", "<leader>e", function()
+  if vim.tbl_contains({ "drex", "alpha", "", "TelescopePrompt" }, vim.bo.filetype) then
+    require("drex.drawer").toggle()
+  else
+    require("drex.drawer").find_element("%", true, true)
+  end
+end, {
+  noremap = true,
+  silent = true,
+})
+
+vim.api.nvim_create_autocmd("BufEnter", {
+  group = vim.api.nvim_create_augroup("DrexDrawerWindow", {}),
+  pattern = "*",
+  callback = function(args)
+    if vim.api.nvim_get_current_win() == require("drex.drawer").get_drawer_window() then
+      local is_drex_buffer = function(b)
+        local ok, syntax = pcall(vim.api.nvim_buf_get_option, b, "syntax")
+        return ok and syntax == "drex"
+      end
+      local prev_buf = vim.fn.bufnr("#")
+
+      if is_drex_buffer(prev_buf) and not is_drex_buffer(args.buf) then
+        vim.api.nvim_set_current_buf(prev_buf)
+        vim.schedule(function()
+          vim.cmd([['"]]) -- restore former cursor position
+        end)
+      end
+    end
+  end,
+})
