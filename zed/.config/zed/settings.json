@@ -1,0 +1,36 @@
+// To see all of Zed's default settings without changing your
+// custom settings, run the `open default settings` command
+// from the command palette or from `Zed` application menu.
+{
+  "theme": "One Dark",
+  "base_keymap": "VSCode",
+  "telemetry": {
+    "diagnostics": false,
+    "metrics": false
+  },
+  "features": {
+    "copilot": false
+  },
+  "vim_mode": true,
+  "buffer_font_family": "BlexMono Nerd Font Mono",
+  "buffer_font_size": 14,
+  "buffer_line_height": {
+    "custom": 1.5
+  },
+  "extend_comment_on_newline": false,
+  "ensure_final_newline_on_save": false,
+  "project_panel": {
+    "default_width": 300,
+    "dock": "right",
+    "file_icons": true,
+    "folder_icons": true,
+    "git_status": true,
+    "indent_size": 10
+  },
+  "inlay_hints": {
+    "enabled": true,
+    "show_type_hints": true,
+    "show_parameter_hints": true,
+    "show_other_hints": true
+  }
+}
