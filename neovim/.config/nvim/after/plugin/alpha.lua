@@ -13,8 +13,7 @@ theme.section.buttons.val = {
   theme.button("f", "  - Find file", ":Telescope find_files<CR>"),
   theme.button("r", "  - Recent", ":Telescope oldfiles<CR>"),
   theme.button("n", "  - Nvim Config", ":cd ~/.dotfiles/neovim/.config/nvim | e .<CR>"),
-  theme.button("t", "  - Kitty Config", ":cd ~/.dotfiles/kitty/.config/kitty | e .<CR>"),
-  theme.button("q", "  - Quit", ":qa<CR>"),
+  theme.button("q", "  - Quit", ":qa<CR>"),
 }
 theme.section.buttons.opts.spacing = 0
 
