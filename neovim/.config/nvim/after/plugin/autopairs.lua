@@ -4,6 +4,8 @@ if not status_autopairs then
   return
 end
 
+local Rule = require("nvim-autopairs.rule")
+
 local status_cmp_autopairs, cmp_autopairs = pcall(require, "nvim-autopairs.completion.cmp")
 if not status_cmp_autopairs then
   return
@@ -31,6 +33,11 @@ autopairs.setup({
     keys = "qwertyuiopzxcvbnmasdfghjkl",
     highlight_grey = "LineNr",
   },
+})
+
+autopairs.add_rules({
+  Rule("<", ">", { "rust" }),
+  Rule("|", "|", { "rust" }),
 })
 
 cmp.event:on("confirm_done", cmp_autopairs.on_confirm_done({ map_char = { tex = "" } }))
