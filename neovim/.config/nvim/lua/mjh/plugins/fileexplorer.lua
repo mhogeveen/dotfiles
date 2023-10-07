@@ -3,7 +3,6 @@ return {
   dependencies = {
     'kyazdani42/nvim-web-devicons',
   },
-  cmd = { 'DrexDrawerOpen', 'DrexDrawerClose', 'DrexDrawerToggle' },
   event = 'VeryLazy',
   config = function()
     require('drex.config').configure {
@@ -43,9 +42,12 @@ return {
         ['n'] = {
           ['v'] = 'V',
           ['q'] = { '<cmd>DrexDrawerClose<CR>', { desc = 'close drawer' } },
-          ['l'] = { '<cmd>lua require("drex.elements").expand_element()<CR>', {
-            desc = 'expand element',
-          } },
+          ['l'] = {
+            '<cmd>lua require("drex.elements").expand_element()<CR>',
+            {
+              desc = 'expand element',
+            },
+          },
           ['h'] = {
             '<cmd>lua require("drex.elements").collapse_directory()<CR>',
             {
@@ -58,9 +60,12 @@ return {
               desc = 'open file in vsplit',
             },
           },
-          ['<C-x>'] = { '<cmd>lua require("drex.elements").open_file("sp")<CR>', {
-            desc = 'open file in split',
-          } },
+          ['<C-x>'] = {
+            '<cmd>lua require("drex.elements").open_file("sp")<CR>',
+            {
+              desc = 'open file in split',
+            },
+          },
           ['<C-r>'] = { '<cmd>lua require("drex").reload_directory()<CR>', {
             desc = 'reload',
           } },
@@ -82,15 +87,24 @@ return {
               desc = 'jump to parent element',
             },
           },
-          ['s'] = { '<cmd>lua require("drex.actions.stats").stats()<CR>', {
-            desc = 'show element stats',
-          } },
-          ['a'] = { '<cmd>lua require("drex.actions.files").create()<CR>', {
-            desc = 'create element',
-          } },
-          ['d'] = { '<cmd>lua require("drex.actions.files").delete("line")<CR>', {
-            desc = 'delete element',
-          } },
+          ['s'] = {
+            '<cmd>lua require("drex.actions.stats").stats()<CR>',
+            {
+              desc = 'show element stats',
+            },
+          },
+          ['a'] = {
+            '<cmd>lua require("drex.actions.files").create()<CR>',
+            {
+              desc = 'create element',
+            },
+          },
+          ['d'] = {
+            '<cmd>lua require("drex.actions.files").delete("line")<CR>',
+            {
+              desc = 'delete element',
+            },
+          },
           ['D'] = {
             '<cmd>lua require("drex.actions.files").delete("clipboard")<CR>',
             {
@@ -109,9 +123,12 @@ return {
               desc = 'cut & move (clipboard)',
             },
           },
-          ['r'] = { '<cmd>lua require("drex.actions.files").rename()<CR>', {
-            desc = 'rename element',
-          } },
+          ['r'] = {
+            '<cmd>lua require("drex.actions.files").rename()<CR>',
+            {
+              desc = 'rename element',
+            },
+          },
           ['R'] = {
             '<cmd>lua require("drex.actions.files").multi_rename("clipboard")<CR>',
             {
@@ -127,18 +144,24 @@ return {
           ['M'] = { '<cmd>DrexMark<CR>', { desc = 'mark element' } },
           ['u'] = { '<cmd>DrexUnmark<CR>', { desc = 'unmark element' } },
           ['m'] = { '<cmd>DrexToggle<CR>', { desc = 'toggle element' } },
-          ['cc'] = { '<cmd>lua require("drex.clipboard").clear_clipboard()<CR>', {
-            desc = 'clear clipboard',
-          } },
+          ['cc'] = {
+            '<cmd>lua require("drex.clipboard").clear_clipboard()<CR>',
+            {
+              desc = 'clear clipboard',
+            },
+          },
           ['cs'] = {
             '<cmd>lua require("drex.clipboard").open_clipboard_window()<CR>',
             {
               desc = 'edit clipboard',
             },
           },
-          ['y'] = { '<cmd>lua require("drex.actions.text").copy_name()<CR>', {
-            desc = 'copy element name',
-          } },
+          ['y'] = {
+            '<cmd>lua require("drex.actions.text").copy_name()<CR>',
+            {
+              desc = 'copy element name',
+            },
+          },
           ['Y'] = {
             '<cmd>lua require("drex.actions.text").copy_relative_path()<CR>',
             {
@@ -153,9 +176,12 @@ return {
           },
         },
         ['v'] = {
-          ['d'] = { ':lua require("drex.actions.files").delete("visual")<CR>', {
-            desc = 'delete elements',
-          } },
+          ['d'] = {
+            ':lua require("drex.actions.files").delete("visual")<CR>',
+            {
+              desc = 'delete elements',
+            },
+          },
           ['r'] = {
             ':lua require("drex.actions.files").multi_rename("visual")<CR>',
             {
@@ -165,9 +191,12 @@ return {
           ['M'] = { ':DrexMark<CR>', { desc = 'mark elements' } },
           ['u'] = { ':DrexUnmark<CR>', { desc = 'unmark elements' } },
           ['m'] = { ':DrexToggle<CR>', { desc = 'toggle elements' } },
-          ['y'] = { ':lua require("drex.actions.text").copy_name(true)<CR>', {
-            desc = 'copy element names',
-          } },
+          ['y'] = {
+            ':lua require("drex.actions.text").copy_name(true)<CR>',
+            {
+              desc = 'copy element names',
+            },
+          },
           ['Y'] = {
             ':lua require("drex.actions.text").copy_relative_path(true)<CR>',
             { desc = 'copy element relative paths' },
@@ -192,9 +221,11 @@ return {
 
     vim.keymap.set('n', '<leader>e', function()
       if vim.tbl_contains({ 'drex', 'alpha', '', 'TelescopePrompt' }, vim.bo.filetype) then
-        require('drex.drawer').toggle()
+        vim.cmd 'DrexDrawerToggle'
+        -- require('drex.drawer').toggle()
       else
-        require('drex.drawer').find_element('%', true, true)
+        vim.comd 'DrexDrawerFindFileAndFocus'
+        -- require('drex.drawer').find_element('%', true, true)
       end
     end, {
       noremap = true,
