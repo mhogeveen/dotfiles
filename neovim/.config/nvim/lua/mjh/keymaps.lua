@@ -1,8 +1,8 @@
 local map = function(mode, keymap, command)
-	vim.keymap.set(mode, keymap, command, {
-		noremap = true,
-		silent = true,
-	})
+  vim.keymap.set(mode, keymap, command, {
+    noremap = true,
+    silent = true,
+  })
 end
 
 --Remap space as leader key

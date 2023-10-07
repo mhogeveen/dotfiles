@@ -8,6 +8,6 @@ hs.alert.defaultStyle.fillColor = { white = 0, alpha = 0.9 }
 hs.alert.defaultStyle.strokeColor = { white = 0, alpha = 0 }
 hs.alert.defaultStyle.fadeInDuration = 0
 hs.alert.defaultStyle.fadeOutDuration = 0
-hs.alert.defaultStyle.textFont  = "PragmataPro"
+hs.alert.defaultStyle.textFont = 'PragmataPro'
 hs.alert.defaultStyle.textSize = 14
-hs.alert.defaultStyle.textStyle = { paragraphStyle = {alignment = "center"} }
+hs.alert.defaultStyle.textStyle = { paragraphStyle = { alignment = 'center' } }
