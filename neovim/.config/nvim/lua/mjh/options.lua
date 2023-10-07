@@ -2,12 +2,12 @@ local options = {
 	number = true,
 	relativenumber = false,
 	cursorline = true,
-	signcolumn = "yes",
+	signcolumn = 'yes',
 	ttimeoutlen = 10,
 	timeoutlen = 500,
 	updatetime = 50,
 	numberwidth = 4,
-	mouse = "a",
+	mouse = 'a',
 	title = true,
 	autoindent = true,
 	smartindent = true,
@@ -19,10 +19,10 @@ local options = {
 	swapfile = false,
 	showcmd = false,
 	cmdheight = 1,
-	inccommand = "split",
+	inccommand = 'split',
 	hlsearch = false,
 	laststatus = 2,
-	shell = "zsh",
+	shell = 'zsh',
 	smarttab = true,
 	breakindent = true,
 	shiftwidth = 2,
@@ -31,7 +31,7 @@ local options = {
 	expandtab = true,
 	wrap = false,
 	termguicolors = true,
-	clipboard = "unnamedplus",
+	clipboard = 'unnamedplus',
 	conceallevel = 0,
 	pumheight = 10,
 	showmode = false,
@@ -39,11 +39,11 @@ local options = {
 	splitright = true,
 	scrolloff = 8,
 	sidescrolloff = 8,
-	whichwrap = "b,s,<,>,[,]",
-	completeopt = "menu,menuone,noselect",
+	whichwrap = 'b,s,<,>,[,]',
+	completeopt = 'menu,menuone,noselect',
 }
 
-vim.opt.shortmess:append("c")
+vim.opt.shortmess:append 'c'
 
 for k, v in pairs(options) do
 	vim.opt[k] = v
