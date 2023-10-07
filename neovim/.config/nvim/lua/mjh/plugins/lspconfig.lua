@@ -91,7 +91,7 @@ return {
 
     -- Configure vim diagnostics
     vim.diagnostic.config {
-      virtual_text = true,
+      virtual_text = false,
       update_in_insert = true,
     }
   end,
