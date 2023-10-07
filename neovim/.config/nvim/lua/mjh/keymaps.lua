@@ -43,8 +43,10 @@ map('n', '<leader>fg', ':Telescope git_files<CR>')
 map('n', '<leader>fr', ':Telescope live_grep<CR>')
 
 -- Buffer stuff
-----map("n", "<leader>c", ":Bdelete<CR>")
-----map("n", "<leader>b", ":ReachToggle<CR>")
+map('n', '<leader>c', function()
+  require('mini.bufremove').delete()
+end)
+map('n', '<leader>b', ':ReachToggle<CR>')
 
 -- Visual Mode --
 -- Move lines up and down
