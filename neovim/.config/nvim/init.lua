@@ -1,6 +1,4 @@
-require("mjh.options")
-require("mjh.keymaps")
-require("mjh.plugins")
-require("mjh.colortheme")
-require("mjh.lsp")
-require("mjh.autocmd")
+require "mjh.options"
+require "mjh.autocmds"
+require "mjh.keymaps"
+require "mjh.lazy"

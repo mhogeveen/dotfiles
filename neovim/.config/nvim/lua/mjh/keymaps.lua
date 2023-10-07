@@ -36,18 +36,19 @@ map("n", "dd", '"_dd')
 
 -- Filetree explorer
 -- look in the drex.lua file
+map("n", "<leader>e", ":Explore<CR>")
 
 -- Symbols outline
-map("n", "<leader>s", ":SymbolsOutline<CR>")
+----map("n", "<leader>s", ":SymbolsOutline<CR>")
 
 -- Telescope
-map("n", "<leader>ff", ":Telescope find_files<CR>")
-map("n", "<leader>fg", ":Telescope git_files<CR>")
-map("n", "<leader>fr", ":Telescope live_grep<CR>")
+----map("n", "<leader>ff", ":Telescope find_files<CR>")
+----map("n", "<leader>fg", ":Telescope git_files<CR>")
+----map("n", "<leader>fr", ":Telescope live_grep<CR>")
 
 -- Buffer stuff
-map("n", "<leader>c", ":Bdelete<CR>")
-map("n", "<leader>b", ":ReachToggle<CR>")
+----map("n", "<leader>c", ":Bdelete<CR>")
+----map("n", "<leader>b", ":ReachToggle<CR>")
 
 -- Visual Mode --
 -- Move lines up and down
