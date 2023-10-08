@@ -221,11 +221,9 @@ return {
 
     vim.keymap.set('n', '<leader>e', function()
       if vim.tbl_contains({ 'drex', 'alpha', '', 'TelescopePrompt' }, vim.bo.filetype) then
-        vim.cmd 'DrexDrawerToggle'
-        -- require('drex.drawer').toggle()
+        require('drex.drawer').toggle()
       else
-        vim.comd 'DrexDrawerFindFileAndFocus'
-        -- require('drex.drawer').find_element('%', true, true)
+        require('drex.drawer').find_element('%', true, true)
       end
     end, {
       noremap = true,
