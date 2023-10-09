@@ -11,10 +11,10 @@ vim.api.nvim_create_autocmd('TextYankPost', {
 })
 
 -- Format on save using formatter.nvim
-vim.api.nvim_create_autocmd('BufWritePost', {
-  group = vim.api.nvim_create_augroup('LspFormatting', {}),
-  pattern = '*',
-  callback = function()
-    vim.cmd 'FormatWrite'
-  end,
-})
+-- vim.api.nvim_create_autocmd('BufWritePost', {
+--   group = vim.api.nvim_create_augroup('LspFormatting', {}),
+--   pattern = '*',
+--   callback = function()
+--     vim.cmd 'FormatWrite'
+--   end,
+-- })

@@ -65,7 +65,7 @@ return {
       set_buf_keymap('[d', ':lua vim.diagnostic.goto_prev()<CR>')
       set_buf_keymap('gl', ':lua vim.diagnostic.open_float()<CR>')
       set_buf_keymap(']d', ':lua vim.diagnostic.goto_next()<CR>')
-      set_buf_keymap('gf', ':lua vim.lsp.buf.format()<CR>')
+      -- set_buf_keymap('gf', ':lua vim.lsp.buf.format()<CR>')
       set_buf_keymap('ga', ':lua vim.lsp.buf.code_action()<CR>')
     end)
 
