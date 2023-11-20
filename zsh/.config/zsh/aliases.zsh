@@ -16,13 +16,21 @@ alias rm="rm -i"
 alias mv="mv -i"
 alias cp="cp -i"
 
-alias glog-pretty='git log --pretty="%C(Yellow)%h  %C(reset)%ad (%C(Green)%cr%C(reset))%x09 %C(Cyan)%an: %C(reset)%s" --date=short'
+alias glog-pretty='git log --pretty="%C(Yellow)%h  %C(reset)%ad (%C(Green)%cr%C(reset))%x09 %C(reset)%s %C(Cyan)@%an" --date=short'
 
 glog-pretty-from() {
-  command="git log --pretty=\"%C(Yellow)%h  %C(reset)%ad (%C(Green)%cr%C(reset))%x09 %C(Cyan)%an: %C(reset)%s\" --date=short $1...HEAD "
+  command="git log --pretty=\"%C(Yellow)%h  %C(reset)%ad (%C(Green)%cr%C(reset))%x09 %C(reset)%s %C(Cyan)@%an\" --date=short $1...HEAD"
   if [ -n "$2" ]; then
     command+="-- components/$2"
   fi
 
   eval "$command"
+}
+
+replace-all() {
+  if [ -n "$2" ]; then
+    echo "Usage: replace-all <FIND> <REPLACE>"
+  fi
+
+  eval "rg $2 --files-with-matches | xargs sed -i '' -e 's/$2/$3/g'"
 }
