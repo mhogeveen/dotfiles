@@ -15,7 +15,7 @@ local function tab_title(tab_info)
   return tab_info.active_pane.title
 end
 
-wezterm.on('format-tab-title', function(tab, tabs, panes, config, hover, max_width)
+wezterm.on('format-tab-title', function(tab, tabs, _, _, _, max_width) -- tab, tabs, panes, config, hover, max_width
   local is_last_tab = #tabs == (tab.tab_index + 1)
   local divider = is_last_tab and ' ' or ' | '
 
