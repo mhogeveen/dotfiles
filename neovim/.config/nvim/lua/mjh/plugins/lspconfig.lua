@@ -45,6 +45,7 @@ return {
       'tsserver',
       'rust_analyzer',
       'stylelint_lsp',
+      'gopls',
     }
 
     lsp_zero.on_attach(function(_, bufnr)
