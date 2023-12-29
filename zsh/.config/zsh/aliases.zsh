@@ -18,7 +18,7 @@ alias cp="cp -i"
 
 alias glog-pretty='git log --pretty="%C(Yellow)%h  %C(reset)%ad (%C(Green)%cr%C(reset))%x09 %C(reset)%s %C(Cyan)@%an" --date=short'
 
-glog-pretty-from() {
+function glog-pretty-from {
   command="git log --pretty=\"%C(Yellow)%h  %C(reset)%ad (%C(Green)%cr%C(reset))%x09 %C(reset)%s %C(Cyan)@%an\" --date=short $1...HEAD"
   if [ -n "$2" ]; then
     command+="-- components/$2"
@@ -27,7 +27,7 @@ glog-pretty-from() {
   eval "$command"
 }
 
-replace-all() {
+function replace-all {
   if [ -n "$2" ]; then
     echo "Usage: replace-all <FIND> <REPLACE>"
   fi
