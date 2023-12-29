@@ -34,3 +34,17 @@ function replace-all {
 
   eval "rg $2 --files-with-matches | xargs sed -i '' -e 's/$2/$3/g'"
 }
+
+function br {
+    local cmd cmd_file code
+    cmd_file=$(mktemp)
+    if broot --outcmd "$cmd_file" "$@"; then
+        cmd=$(<"$cmd_file")
+        command rm -f "$cmd_file"
+        eval "$cmd"
+    else
+        code=$?
+        command rm -f "$cmd_file"
+        return "$code"
+    fi
+}
