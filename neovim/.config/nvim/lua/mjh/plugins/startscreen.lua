@@ -1,6 +1,8 @@
 return {
+  --- https://github.com/goolord/alpha-nvim
   'goolord/alpha-nvim',
-  config = function()
+  dependencies = { 'nvim-tree/nvim-web-devicons' },
+  opts = function()
     local theme = require 'alpha.themes.dashboard'
     local ascii = require 'mjh.utils.ascii'
 
@@ -25,8 +27,6 @@ return {
       theme.section.footer,
     }
 
-    require('alpha').setup(theme.opts)
-
-    vim.cmd [[ autocmd FileType alpha setlocal nofoldenable ]]
+    return theme.opts
   end,
 }

@@ -1,6 +1,16 @@
 return {
+  --- https://github.com/mhogeveen/reach.nvim
   'mhogeveen/reach.nvim',
-  event = 'VeryLazy',
+  keys = {
+    {
+      '<leader>b',
+      ':ReachToggle<CR>',
+      mode = 'n',
+      desc = 'Toggle buffer manager',
+      noremap = true,
+      silent = true,
+    },
+  },
   config = function()
     local reach = require 'reach'
 

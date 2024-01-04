@@ -34,20 +34,6 @@ map('n', '<C-n>', ':m+<CR>==')
 -- Delete without overwriting yank register
 map('n', 'dd', '"_dd')
 
--- Filetree explorer
--- look in the drex.lua file
-
--- Telescope
-map('n', '<leader>ff', ':Telescope find_files<CR>')
-map('n', '<leader>fg', ':Telescope git_files<CR>')
-map('n', '<leader>fr', ':Telescope live_grep<CR>')
-
--- Buffer stuff
-map('n', '<leader>c', function()
-  require('mini.bufremove').delete()
-end)
-map('n', '<leader>b', ':ReachToggle<CR>')
-
 -- Visual Mode --
 -- Move lines up and down
 map('v', '<C-p>', ":m '<-2<CR>gv")

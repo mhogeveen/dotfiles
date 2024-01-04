@@ -1,68 +1,87 @@
 return {
   {
+    -- https://github.com/catppuccin/nvim
     'catppuccin/nvim',
     name = 'catppuccin',
-    lazy = false,
+    lazy = true,
     priority = 1000,
-    config = function()
+    init = function()
       -- Set Catppuccin flavour (can be set with the :Catppuccin <flavour> cmd on the fly)
       vim.g.catppuccin_flavour = 'mocha' -- latte, frappe, macchiato, mocha
-
-      -- Run theme setup function
-      require('catppuccin').setup {
-        transparent_background = false,
-        styles = {
-          comments = { 'italic' },
-          conditionals = {},
-          loops = {},
-          functions = { 'italic' },
-          keywords = {},
-          strings = {},
-          variables = {},
-          numbers = {},
-          booleans = {},
-          properties = {},
-          types = {},
-          operators = {},
-        },
-        integrations = {
-          cmp = true,
-          treesitter = true,
-          telescope = true,
-          fidget = true,
-          gitsigns = true,
-        },
-        highlight_overrides = {
-          mocha = function(colors)
-            return {
-              FidgetTitle = { fg = colors.blue, bg = colors.none },
-              FidgetTask = { fg = colors.blue, bg = colors.none },
-              NormalFloat = { bg = colors.none },
-            }
-          end,
-        },
-      }
-
       -- Set colorscheme with Vim cmd
       vim.cmd 'colorscheme catppuccin'
     end,
-  },
-  {
-    'melkster/modicator.nvim',
-    event = 'VeryLazy',
-    config = function()
-      local mocha = require('catppuccin.palettes').get_palette 'mocha'
-
-      require('modicator').setup {
-        show_warnings = false, -- Show warning if any required option is missing
-        highlights = {
-          -- Default options for bold/italic
-          defaults = {
-            bold = false,
-            italic = false,
+    opts = {
+      transparent_background = false,
+      styles = {
+        comments = { 'italic' },
+        conditionals = {},
+        loops = {},
+        functions = { 'italic' },
+        keywords = { 'italic' },
+        strings = {},
+        variables = {},
+        numbers = {},
+        booleans = {},
+        properties = {},
+        types = {},
+        operators = {},
+      },
+      integrations = {
+        alpha = true,
+        cmp = true,
+        fidget = false,
+        gitsigns = true,
+        native_lsp = {
+          enabled = true,
+          virtual_text = {
+            errors = { 'italic' },
+            hints = { 'italic' },
+            warnings = { 'italic' },
+            information = { 'italic' },
+          },
+          underlines = {
+            errors = { 'underline' },
+            hints = { 'underline' },
+            warnings = { 'underline' },
+            information = { 'underline' },
+          },
+          inlay_hints = {
+            background = true,
           },
         },
-      }
+        telescope = true,
+        treesitter = true,
+      },
+      highlight_overrides = {
+        mocha = function(colors)
+          return {
+            NormalFloat = { bg = colors.none },
+          }
+        end,
+      },
+    },
+  },
+  {
+    --- https://github.com/mawkler/modicator.nvim
+    'mawkler/modicator.nvim',
+    dependencies = {
+      'catppuccin/nvim',
+    },
+    event = 'BufEnter',
+    opts = {
+      show_warnings = false,
+      highlights = {
+        defaults = {
+          bold = false,
+          italic = false,
+        },
+      },
+    },
+    config = function(_, opts)
+      require('modicator').setup(opts)
+
+      local mocha = require('catppuccin.palettes').get_palette 'mocha'
 
       local mode_color_map = {
         ['NormalMode'] = mocha.blue,

@@ -1,31 +1,34 @@
 return {
+  --- https://github.com/windwp/nvim-autopairs
   'windwp/nvim-autopairs',
   dependencies = { 'hrsh7th/nvim-cmp' },
+  enable = false,
   event = 'InsertEnter',
-  config = function()
+  opts = {
+    check_ts = true,
+    ts_config = {
+      lua = { 'string', 'source' },
+      javascript = { 'string', 'template_string' },
+      java = false,
+    },
+    disable_filetype = { 'TelescopePrompt', 'spectre_panel' },
+    fast_wrap = {
+      map = '<M-e>',
+      chars = { '{', '[', '(', '"', "'", '`' },
+      pattern = string.gsub([[ [%'%"%)%>%]%)%}%,] ]], '%s+', ''),
+      offset = 0, -- Offset from pattern match
+      end_key = '$',
+      keys = 'qwertyuiopzxcvbnmasdfghjkl',
+      highlight_grey = 'LineNr',
+    },
+  },
+  config = function(_, opts)
     local autopairs = require 'nvim-autopairs'
     local rule = require 'nvim-autopairs.rule'
     local cmp_autopairs = require 'nvim-autopairs.completion.cmp'
     local cmp = require 'cmp'
 
-    autopairs.setup {
-      check_ts = true,
-      ts_config = {
-        lua = { 'string', 'source' },
-        javascript = { 'string', 'template_string' },
-        java = false,
-      },
-      disable_filetype = { 'TelescopePrompt', 'spectre_panel' },
-      fast_wrap = {
-        map = '<M-e>',
-        chars = { '{', '[', '(', '"', "'", '`' },
-        pattern = string.gsub([[ [%'%"%)%>%]%)%}%,] ]], '%s+', ''),
-        offset = 0, -- Offset from pattern match
-        end_key = '$',
-        keys = 'qwertyuiopzxcvbnmasdfghjkl',
-        highlight_grey = 'LineNr',
-      },
-    }
+    autopairs.setup(opts)
 
     autopairs.add_rules {
       rule('<', '>', { 'rust' }),
