@@ -80,15 +80,15 @@ end
 
 config.key_tables = {
   resize_pane = {
-    { key = 'LeftArrow',  action = act.AdjustPaneSize { 'Left', 2 } },
-    { key = 'h',          action = act.AdjustPaneSize { 'Left', 2 } },
+    { key = 'LeftArrow', action = act.AdjustPaneSize { 'Left', 2 } },
+    { key = 'h', action = act.AdjustPaneSize { 'Left', 2 } },
     { key = 'RightArrow', action = act.AdjustPaneSize { 'Right', 2 } },
-    { key = 'l',          action = act.AdjustPaneSize { 'Right', 2 } },
-    { key = 'UpArrow',    action = act.AdjustPaneSize { 'Up', 2 } },
-    { key = 'k',          action = act.AdjustPaneSize { 'Up', 2 } },
-    { key = 'DownArrow',  action = act.AdjustPaneSize { 'Down', 2 } },
-    { key = 'j',          action = act.AdjustPaneSize { 'Down', 2 } },
-    { key = 'Escape',     action = 'PopKeyTable' },
+    { key = 'l', action = act.AdjustPaneSize { 'Right', 2 } },
+    { key = 'UpArrow', action = act.AdjustPaneSize { 'Up', 2 } },
+    { key = 'k', action = act.AdjustPaneSize { 'Up', 2 } },
+    { key = 'DownArrow', action = act.AdjustPaneSize { 'Down', 2 } },
+    { key = 'j', action = act.AdjustPaneSize { 'Down', 2 } },
+    { key = 'Escape', action = 'PopKeyTable' },
   },
 }
 
