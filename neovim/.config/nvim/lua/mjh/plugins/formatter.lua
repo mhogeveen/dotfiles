@@ -13,9 +13,7 @@ return {
           null_ls.builtins.diagnostics.eslint,
           null_ls.builtins.diagnostics.stylelint,
           null_ls.builtins.formatting.stylua,
-          null_ls.builtins.formatting.phpcsfixer.with {
-            extra_args = { '--using-cache=no' },
-          },
+          --- rustfmt is installed via rustup
           null_ls.builtins.formatting.rustfmt,
           null_ls.builtins.formatting.prettierd,
           null_ls.builtins.formatting.stylelint,

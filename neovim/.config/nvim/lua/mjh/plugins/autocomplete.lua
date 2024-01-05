@@ -48,7 +48,7 @@ return {
         { name = 'cmp_tabnine' },
         { name = 'luasnip' },
         { name = 'path' },
-        { name = 'buffer', keyword_length = 5 },
+        { name = 'buffer',     keyword_length = 5 },
       },
       formatting = lsp_zero.cmp_format(),
       window = {

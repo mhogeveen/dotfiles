@@ -1,13 +1,73 @@
 return {
+  --- https://github.com/neovim/nvim-lspconfig
   'neovim/nvim-lspconfig',
+  lazy = true,
   dependencies = {
-    'hrsh7th/cmp-nvim-lsp',
+    {
+      --- https://github.com/williamboman/mason.nvim
+      'williamboman/mason.nvim',
+      lazy = true,
+      config = false,
+    },
+    {
+      --- https://github.com/williamboman/mason-lspconfig.nvim
+      'williamboman/mason-lspconfig.nvim',
+      lazy = true,
+      config = false,
+    },
+    {
+      --- https://github.com/VonHeikemen/lsp-zero.nvim
+      'VonHeikemen/lsp-zero.nvim',
+      branch = 'v3.x',
+      lazy = true,
+      config = false,
+      init = function()
+        -- Disable automatic setup, we are doing it manually
+        vim.g.lsp_zero_extend_cmp = 0
+        vim.g.lsp_zero_extend_lspconfig = 0
+        vim.g.lsp_zero_ui_float_border = 'single'
+      end,
+    },
   },
-  cmd = 'LspInfo',
+  cmd = { 'LspInfo', 'Mason' },
   event = { 'BufReadPre', 'BufNewFile' },
   config = function()
     local lsp_zero = require 'lsp-zero'
+    local mason = require 'mason'
+    local mason_lspconfig = require 'mason-lspconfig'
 
+    local ensure_installed = {
+      dap = {},
+      formatters = {
+        'prettierd',
+        'stylua',
+      },
+      linters = {},
+      ls = {
+        'bashls',
+        'cssls',
+        'eslint',
+        'gopls',
+        'html',
+        'intelephense',
+        'jsonls',
+        'lua_ls',
+        'marksman',
+        'stylelint_lsp',
+        'tsserver',
+      },
+    }
+
+    mason.setup()
+    mason_lspconfig.setup {
+      ensure_installed = vim.tbl_extend(
+        'force',
+        ensure_installed.dap,
+        ensure_installed.formatters,
+        ensure_installed.linters,
+        ensure_installed.ls
+      ),
+    }
     lsp_zero.extend_lspconfig()
 
     lsp_zero.configure('lua_ls', {
@@ -23,6 +83,7 @@ return {
       },
     })
 
+    --- rust-analyzer is installed via rustup
     lsp_zero.configure('rust_analyzer', {
       server = {
         standalone = true,
@@ -33,20 +94,7 @@ return {
       filetypes = { 'css', 'less', 'scss', 'sass' },
     })
 
-    lsp_zero.setup_servers {
-      'bashls',
-      'cssls',
-      'eslint',
-      'html',
-      'intelephense',
-      'jsonls',
-      'lua_ls',
-      'marksman',
-      'tsserver',
-      'rust_analyzer',
-      'stylelint_lsp',
-      'gopls',
-    }
+    lsp_zero.setup_servers(ensure_installed.ls)
 
     lsp_zero.on_attach(function(_, bufnr)
       local opts = { noremap = true, silent = true }
