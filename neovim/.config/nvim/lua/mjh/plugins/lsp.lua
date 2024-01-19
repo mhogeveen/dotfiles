@@ -118,23 +118,6 @@ return {
       set_buf_keymap('ga', ':lua vim.lsp.buf.code_action()<CR>')
     end)
 
-    lsp_zero.format_on_save {
-      format_opts = {
-        async = false,
-        timeout_ms = 10000,
-        formatting_options = {
-          -- @see https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#formattingOptions
-          insertSpaces = false,
-          trimTrailingWhitespace = true,
-          insertFinalNewline = false,
-          trimFinalNewlines = true,
-        },
-      },
-      servers = {
-        ['stylelint_lsp'] = { 'css', 'less', 'scss', 'sass' },
-      },
-    }
-
     -- Set window styles
     require('lspconfig.ui.windows').default_options.border = 'single'
 
