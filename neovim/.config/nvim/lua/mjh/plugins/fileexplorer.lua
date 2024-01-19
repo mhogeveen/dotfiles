@@ -2,6 +2,7 @@ return {
   {
     --- https://github.com/stevearc/oil.nvim
     'stevearc/oil.nvim',
+    enabled = false,
     dependencies = {
       'kyazdani42/nvim-web-devicons',
     },
@@ -174,7 +175,7 @@ return {
     dependencies = {
       'kyazdani42/nvim-web-devicons',
     },
-    enabled = false,
+    enabled = true,
     event = 'VeryLazy',
     config = function()
       require('drex.config').configure {
