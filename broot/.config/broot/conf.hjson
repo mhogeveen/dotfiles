@@ -24,7 +24,7 @@
 # you can launch broot with `br -H`).
 # A popular flag is the `g` one which displays git related info.
 #
-# default_flags:
+default_flags: -ihg --no-tree
 
 ###############################################################
 # Terminal's title
@@ -50,7 +50,10 @@
 # (you really should read https://dystroy.org/broot/modal/
 # before as it may not suit everybody even among vim users)
 #
-# modal: true
+# You may start either in 'command' mode, or in 'input' mode
+#
+modal: true
+initial_mode: command
 
 ###############################################################
 # Whether to mark the selected line with a triangle
@@ -98,7 +101,7 @@ show_selection_mark: true
 # this section as per the examples)
 #
 special_paths: {
-    "/media" : "no-enter" // comment it if desired
+    # "/media" : "no-enter" // comment it if desired
     # "/media/slow-backup-disk"    : no-enter
     # "/home/dys/useless"    : hide
     # "/home/dys/my-link-I-want-to-explore"    : enter
@@ -111,7 +114,7 @@ special_paths: {
 # to cancel (for example when you just opened broot), uncomment
 # this parameter
 #
-# quit_on_last_cancel: true
+quit_on_last_cancel: true
 
 ###############################################################
 # Search modes
@@ -168,6 +171,15 @@ content_search_max_file_size: 10MB
 # max_panels_count: 2
 
 ###############################################################
+# Update work dir
+#
+# By default, broot process' work dir is kept in sync with the
+# current's panel root. If you want to keep it unchanged,
+# uncomment this setting
+#
+# update_work_dir: false
+
+###############################################################
 # Imports
 #
 # While it's possible to have all configuration in one file,
@@ -191,8 +203,8 @@ imports: [
         ]
         # (un)comment to choose your preferred skin
         //file: skins/dark-blue.hjson
-        file: skins/catppuccin-macchiato.hjson
-        //file: skins/catppuccin-mocha.hjson
+        //file: skins/catppuccin-macchiato.hjson
+        file: skins/catppuccin-mocha.hjson
         //file: skins/dark-gruvbox.hjson
         //file: skins/dark-orange.hjson
         //file: skins/solarized-dark.hjson

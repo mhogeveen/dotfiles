@@ -1,0 +1,4 @@
+rcmd - a : open -a "Arc"
+rcmd - w : open -a "Wezterm"
+rcmd - t : open -a "Microsoft Teams (work or school)"
+rcmd - s : open -a "Slack"
