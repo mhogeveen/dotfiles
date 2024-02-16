@@ -1,3 +1,4 @@
+MAKEFLAGS += --jobs
 SHELL := /bin/zsh
 
 all:
@@ -14,6 +15,7 @@ up: brew zap pnpm rust nvim
 brew:
 	@brew upgrade
 	@brew bundle
+	@cd ~/.dotfiles/homebrew/ && brew bundle dump -f
 
 zap:
 	@source $(ZAP_DIR)/zap.zsh && zap update self && zap update all
