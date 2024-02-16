@@ -6,6 +6,7 @@ return {
     {
       --- https://github.com/williamboman/mason.nvim
       'williamboman/mason.nvim',
+      cmd = { 'MasonUpdate' },
       lazy = true,
       config = {
         ui = {

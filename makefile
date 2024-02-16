@@ -9,7 +9,7 @@ delete:
 init:
 	@stow --verbose --adopt */
 
-up: brew zap pnpm rust
+up: brew zap pnpm rust nvim
 
 brew:
 	@brew upgrade
@@ -23,3 +23,7 @@ pnpm:
 
 rust:
 	@rustup update
+
+nvim:
+	@nvim --headless "+Lazy! sync" +qa && echo "Updated Neovim plugins"
+	@nvim --headless "+MasonUpdate" +qa
