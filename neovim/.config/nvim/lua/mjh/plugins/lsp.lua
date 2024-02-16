@@ -7,7 +7,13 @@ return {
       --- https://github.com/williamboman/mason.nvim
       'williamboman/mason.nvim',
       lazy = true,
-      config = false,
+      config = {
+        ui = {
+          border = 'single',
+          height = 0.8,
+          width = 0.8,
+        },
+      },
     },
     {
       --- https://github.com/williamboman/mason-lspconfig.nvim
