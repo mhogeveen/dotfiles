@@ -14,15 +14,8 @@ vim.api.nvim_create_autocmd('TextYankPost', {
 vim.api.nvim_create_autocmd('LspAttach', {
   group = vim.api.nvim_create_augroup('mjh-lsp-attach', { clear = true }),
   callback = function(event)
-    local isMethodSupported = false
-
-    for _, client in ipairs(vim.lsp.get_active_clients { event.buf }) do
-      if client.supports_method 'textDocument/documentHighlight' then
-        isMethodSupported = true
-      end
-    end
-
-    if isMethodSupported then
+    local client = vim.lsp.get_client_by_id(event.data.client_id)
+    if client and client.server_capabilities.documentHighlightProvider then
       vim.api.nvim_create_autocmd({ 'CursorHold', 'CursorHoldI' }, {
         buffer = event.buf,
         callback = vim.lsp.buf.document_highlight,
