@@ -1,7 +1,7 @@
 return {
   --- https://github.com/hrsh7th/nvim-cmp
   'hrsh7th/nvim-cmp',
-  event = 'InsertEnter',
+  event = { 'InsertEnter', 'CmdlineEnter' },
   dependencies = {
     --- https://github.com/L3MON4D3/LuaSnip
     'L3MON4D3/LuaSnip',
@@ -20,7 +20,7 @@ return {
     --- https://github.com/tzachar/cmp-tabnine
     'tzachar/cmp-tabnine',
     --- https://github.com/rafamadriz/friendly-snippets
-    'rafamadriz/friendly-snippets',
+    { 'rafamadriz/friendly-snippets', enabled = false },
   },
   opts = function()
     local cmp = require 'cmp'
@@ -37,10 +37,8 @@ return {
         ['<C-Space>'] = cmp.mapping.complete(),
         ['<C-n>'] = cmp.mapping.select_next_item(),
         ['<C-p>'] = cmp.mapping.select_prev_item(),
-        ['<CR>'] = cmp.mapping.confirm {
-          select = false,
-          behavior = cmp.ConfirmBehavior.Insert,
-        },
+        ['<C-y>'] = cmp.mapping.confirm { select = true },
+        ['<C-e>'] = cmp.mapping.abort(),
       },
       sources = cmp.config.sources {
         { name = 'nvim_lua' },
@@ -48,7 +46,7 @@ return {
         { name = 'cmp_tabnine' },
         { name = 'luasnip' },
         { name = 'path' },
-        { name = 'buffer',     keyword_length = 5 },
+        { name = 'buffer', keyword_length = 5 },
       },
       formatting = lsp_zero.cmp_format(),
       window = {
