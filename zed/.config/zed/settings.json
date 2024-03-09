@@ -2,7 +2,7 @@
 // custom settings, run the `open default settings` command
 // from the command palette or from `Zed` application menu.
 {
-  "theme": "Rosé Pine Moon",
+  "theme": "Catppuccin Mocha",
   "base_keymap": "VSCode",
   "telemetry": {
     "diagnostics": false,
