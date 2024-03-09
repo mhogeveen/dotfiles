@@ -3,9 +3,6 @@ return {
     --- https://github.com/stevearc/oil.nvim
     'stevearc/oil.nvim',
     enabled = false,
-    dependencies = {
-      'kyazdani42/nvim-web-devicons',
-    },
     keys = {
       {
         '<leader>ee',
@@ -172,9 +169,6 @@ return {
   },
   {
     'theblob42/drex.nvim',
-    dependencies = {
-      'kyazdani42/nvim-web-devicons',
-    },
     enabled = true,
     event = 'VeryLazy',
     config = function()

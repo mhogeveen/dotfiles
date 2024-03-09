@@ -1,7 +1,6 @@
 return {
   --- https://github.com/goolord/alpha-nvim
   'goolord/alpha-nvim',
-  dependencies = { 'nvim-tree/nvim-web-devicons' },
   opts = function()
     local theme = require 'alpha.themes.dashboard'
     local ascii = require 'mjh.utils.ascii'
