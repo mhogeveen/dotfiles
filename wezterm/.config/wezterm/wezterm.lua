@@ -4,7 +4,6 @@ if not status then
 end
 
 require 'tab_title'
-require 'user_var'
 
 local act = wezterm.action
 local config = wezterm.config_builder()
@@ -21,8 +20,7 @@ config.line_height = 1.2
 config.color_scheme = 'Catppuccin Mocha'
 
 -- Window
-config.window_padding = { left = 10, right = 10, top = 10, bottom = 10 }
--- config.window_padding = { left = 0, right = 0, top = 0, bottom = 0 }
+config.window_padding = { left = 0, right = 0, top = 0, bottom = 0 }
 config.window_decorations = 'RESIZE'
 
 -- Tab
