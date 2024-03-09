@@ -30,8 +30,7 @@ PROMPT+='%F{blue}%1~%f '
 PROMPT+=$'${vcs_info_msg_0_}\n'
 # Print double chevron in green if previous command was succesful,
 # otherwise print double chevron in red
-PROMPT+='%(?.%F{green}.%F{red})%f '
-#  (old icon which doesn't work anymore with BlexMono patched font)
+PROMPT+='%(?.%F{green}>.%F{red}>)%f '
 
 # ---------------------------
 # Right Prompt
