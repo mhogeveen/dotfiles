@@ -1,8 +1,8 @@
 return {
   --- https://github.com/windwp/nvim-autopairs
   'windwp/nvim-autopairs',
+  enabled = false,
   dependencies = { 'hrsh7th/nvim-cmp' },
-  enable = false,
   event = 'InsertEnter',
   opts = {
     check_ts = true,
