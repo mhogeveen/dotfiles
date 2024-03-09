@@ -11,14 +11,8 @@ return {
       silent = true,
     },
   },
-  config = function()
-    local reach = require 'reach'
-
-    reach.setup {
-      notifications = true,
-    }
-
-    local options = {
+  opts = function()
+    return {
       handle = 'auto', -- 'bufnr' or 'dynamic' or 'auto'
       show_icons = true,
       show_current = true, -- Include current buffer in the list
@@ -50,8 +44,8 @@ return {
       },
       -- A map of action to key that should be used to invoke it
       actions = {
-        split = '-',
-        vertsplit = '|',
+        split = '<C-h>',
+        vertsplit = '<C-v>',
         tabsplit = ']',
         delete = '<Space>',
         priority = '=',
@@ -62,9 +56,16 @@ return {
         title_pos = 'center',
       },
     }
+  end,
+  config = function(_, opts)
+    local reach = require 'reach'
+
+    reach.setup {
+      notifications = true,
+    }
 
     vim.api.nvim_create_user_command('ReachToggle', function()
-      reach.buffers(options)
+      reach.buffers(opts)
     end, {})
   end,
 }
