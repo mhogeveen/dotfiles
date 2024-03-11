@@ -35,6 +35,26 @@ return {
         stylelint = {
           args = { '--fix', '--stdin', '--stdin-filename', '$FILENAME' },
           command = require('conform.util').from_node_modules 'stylelint',
+          condition = function(ctx)
+            local found = vim.fs.find({
+              'stylelint.config.js',
+              '.stylelintrc.js',
+              'stylelint.config.mjs',
+              '.stylelintrc.mjs',
+              'stylelint.config.cjs',
+              '.stylelintrc.cjs',
+              '.stylelintrc.json',
+              '.stylelintrc.yaml',
+              '.stylelintrc.yml',
+              '.stylelintrc',
+            }, { upward = true, path = ctx.dirname })[1]
+
+            if found then
+              return true
+            else
+              return false
+            end
+          end,
         },
       },
     }
