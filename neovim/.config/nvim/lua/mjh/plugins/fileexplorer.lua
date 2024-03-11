@@ -168,17 +168,20 @@ return {
     },
   },
   {
+    --- https://github.com/TheBlob42/drex.nvim
     'theblob42/drex.nvim',
     enabled = true,
     event = 'VeryLazy',
     config = function()
+      local icons = require 'mjh.utils.icons'
+
       require('drex.config').configure {
         icons = {
-          file_default = '',
-          dir_open = '',
-          dir_closed = '',
-          link = '',
-          others = '',
+          file_default = icons.file_default,
+          dir_open = icons.dir_open,
+          dir_closed = icons.dir_closed,
+          link = icons.file_symlink,
+          others = icons.file_dot_file,
         },
         colored_icons = true,
         hide_cursor = false,

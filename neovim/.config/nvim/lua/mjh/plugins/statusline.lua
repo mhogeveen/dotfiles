@@ -2,64 +2,67 @@ return {
   --- https://github.com/nvim-lualine/lualine.nvim
   'nvim-lualine/lualine.nvim',
   lazy = true,
-  opts = {
-    options = {
-      icons_enabled = true,
-      theme = 'catppuccin', -- auto, catppuccin
-      component_separators = { left = '', right = '' },
-      section_separators = { left = '', right = '' },
-      disabled_filetypes = {
-        statusline = {},
-        winbar = {},
-      },
-      ignore_focus = {},
-      always_divide_middle = true,
-      globalstatus = true,
-      refresh = {
-        statusline = 1000,
-        tabline = 1000,
-        winbar = 1000,
-      },
-    },
-    sections = {
-      lualine_a = { 'mode' },
-      lualine_b = {
-        {
-          'filename',
-          file_status = false,
+  opts = function()
+    local icons = require 'mjh.utils.icons'
+    return {
+      options = {
+        icons_enabled = true,
+        theme = 'catppuccin', -- auto, catppuccin
+        component_separators = { left = '', right = '' },
+        section_separators = { left = '', right = '' },
+        disabled_filetypes = {
+          statusline = {},
+          winbar = {},
+        },
+        ignore_focus = {},
+        always_divide_middle = true,
+        globalstatus = true,
+        refresh = {
+          statusline = 1000,
+          tabline = 1000,
+          winbar = 1000,
         },
       },
-      lualine_c = {
-        {
-          'branch',
-          icon = '',
-        },
-        {
-          'diff',
-          symbols = {
-            added = '+',
-            modified = '~',
-            removed = '-',
+      sections = {
+        lualine_a = { 'mode' },
+        lualine_b = {
+          {
+            'filename',
+            file_status = false,
           },
         },
+        lualine_c = {
+          {
+            'branch',
+            icon = '',
+          },
+          {
+            'diff',
+            symbols = {
+              added = icons.gitsigns.add,
+              modified = icons.gitsigns.change,
+              removed = icons.gitsigns.delete,
+            },
+          },
+        },
+        lualine_x = {},
+        lualine_y = {
+          'bo:filetype',
+        },
+        lualine_z = { 'location' },
       },
-      lualine_x = {},
-      lualine_y = {
-        'bo:filetype',
+      inactive_sections = {
+        lualine_a = {},
+        lualine_b = {},
+        lualine_c = { 'filename' },
+        lualine_x = { 'location' },
+        lualine_y = {},
+        lualine_z = {},
       },
-      lualine_z = { 'location' },
-    },
-    inactive_sections = {
-      lualine_a = {},
-      lualine_b = {},
-      lualine_c = { 'filename' },
-      lualine_x = { 'location' },
-      lualine_y = {},
-      lualine_z = {},
-    },
-    tabline = {},
-    winbar = {},
-    inactive_winbar = {},
-    extensions = {},
-  },
+      tabline = {},
+      winbar = {},
+      inactive_winbar = {},
+      extensions = {},
+    }
+  end,
 }
