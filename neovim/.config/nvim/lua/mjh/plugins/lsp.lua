@@ -62,6 +62,7 @@ return {
         'marksman',
         'stylelint_lsp',
         'tsserver',
+        'terraformls',
       },
     }
 
