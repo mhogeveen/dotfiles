@@ -4,7 +4,7 @@ return {
   branch = '0.1.x',
   keys = {
     {
-      '<leader>ff',
+      'ff',
       ':Telescope find_files<CR>',
       mode = 'n',
       desc = 'Telescope - find files',
@@ -12,7 +12,7 @@ return {
       silent = true,
     },
     {
-      '<leader>fg',
+      'fg',
       ':Telescope git_files<CR>',
       mode = 'n',
       desc = 'Telescope - git files',
@@ -20,7 +20,7 @@ return {
       silent = true,
     },
     {
-      '<leader>fr',
+      'fr',
       ':Telescope live_grep<CR>',
       mode = 'n',
       desc = 'Telescope - grep',
