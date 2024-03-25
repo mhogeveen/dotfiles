@@ -6,7 +6,6 @@ return {
   cmd = { 'TSUpdateSync', 'TSUpdate', 'TSInstall' },
   dependencies = {
     { 'nvim-treesitter/nvim-treesitter-textobjects' },
-    { 'nvim-treesitter/playground', enabled = false },
   },
   init = function(plugin)
     require('lazy.core.loader').add_to_rtp(plugin)
