@@ -41,6 +41,7 @@ local options = {
   sidescrolloff = 8,
   whichwrap = 'b,s,<,>,[,]',
   completeopt = 'menu,menuone,noselect',
+  undofile = true,
 }
 
 vim.opt.shortmess:append 'c'
