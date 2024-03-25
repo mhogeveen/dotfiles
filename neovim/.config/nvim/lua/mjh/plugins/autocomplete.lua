@@ -19,8 +19,6 @@ return {
     'saadparwaiz1/cmp_luasnip',
     --- https://github.com/tzachar/cmp-tabnine
     'tzachar/cmp-tabnine',
-    --- https://github.com/rafamadriz/friendly-snippets
-    { 'rafamadriz/friendly-snippets', enabled = false },
   },
   opts = function()
     local cmp = require 'cmp'
