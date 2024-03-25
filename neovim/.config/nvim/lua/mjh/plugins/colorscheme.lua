@@ -1,102 +1,63 @@
 return {
-  {
-    -- https://github.com/catppuccin/nvim
-    'catppuccin/nvim',
-    name = 'catppuccin',
-    lazy = true,
-    priority = 1000,
-    init = function()
-      -- Set Catppuccin flavour (can be set with the :Catppuccin <flavour> cmd on the fly)
-      vim.g.catppuccin_flavour = 'mocha' -- latte, frappe, macchiato, mocha
-      -- Set colorscheme with Vim cmd
-      vim.cmd 'colorscheme catppuccin'
-    end,
-    opts = {
-      transparent_background = false,
-      styles = {
-        comments = { 'italic' },
-        conditionals = {},
-        loops = {},
-        functions = { 'italic' },
-        keywords = { 'italic' },
-        strings = {},
-        variables = {},
-        numbers = {},
-        booleans = {},
-        properties = {},
-        types = {},
-        operators = {},
-      },
-      integrations = {
-        alpha = true,
-        cmp = true,
-        fidget = false,
-        gitsigns = true,
-        native_lsp = {
-          enabled = true,
-          virtual_text = {
-            errors = { 'italic' },
-            hints = { 'italic' },
-            warnings = { 'italic' },
-            information = { 'italic' },
-          },
-          underlines = {
-            errors = { 'underline' },
-            hints = { 'underline' },
-            warnings = { 'underline' },
-            information = { 'underline' },
-          },
-          inlay_hints = {
-            background = true,
-          },
+  -- https://github.com/catppuccin/nvim
+  'catppuccin/nvim',
+  name = 'catppuccin',
+  lazy = true,
+  priority = 1000,
+  init = function()
+    -- Set Catppuccin flavour (can be set with the :Catppuccin <flavour> cmd on the fly)
+    vim.g.catppuccin_flavour = 'mocha' -- latte, frappe, macchiato, mocha
+    -- Set colorscheme with Vim cmd
+    vim.cmd 'colorscheme catppuccin'
+  end,
+  opts = {
+    transparent_background = false,
+    styles = {
+      comments = { 'italic' },
+      conditionals = {},
+      loops = {},
+      functions = { 'italic' },
+      keywords = { 'italic' },
+      strings = {},
+      variables = {},
+      numbers = {},
+      booleans = {},
+      properties = {},
+      types = {},
+      operators = {},
+    },
+    integrations = {
+      alpha = true,
+      cmp = true,
+      fidget = false,
+      gitsigns = true,
+      native_lsp = {
+        enabled = true,
+        virtual_text = {
+          errors = { 'italic' },
+          hints = { 'italic' },
+          warnings = { 'italic' },
+          information = { 'italic' },
         },
-        telescope = true,
-        treesitter = true,
-      },
-      highlight_overrides = {
-        mocha = function(colors)
-          return {
-            NormalFloat = { bg = colors.none },
-          }
-        end,
-      },
-    },
-  },
-  {
-    --- https://github.com/mawkler/modicator.nvim
-    'mawkler/modicator.nvim',
-    dependencies = {
-      'catppuccin/nvim',
-    },
-    event = 'BufEnter',
-    opts = {
-      show_warnings = false,
-      highlights = {
-        defaults = {
-          bold = false,
-          italic = false,
+        underlines = {
+          errors = { 'underline' },
+          hints = { 'underline' },
+          warnings = { 'underline' },
+          information = { 'underline' },
+        },
+        inlay_hints = {
+          background = true,
         },
       },
+      telescope = true,
+      treesitter = true,
     },
-    config = function(_, opts)
-      require('modicator').setup(opts)
-
-      local mocha = require('catppuccin.palettes').get_palette 'mocha'
-
-      local mode_color_map = {
-        ['NormalMode'] = mocha.blue,
-        ['InsertMode'] = mocha.green,
-        ['VisualMode'] = mocha.mauve,
-        ['CommandMode'] = mocha.peach,
-        ['ReplaceMode'] = mocha.red,
-        ['SelectMode'] = mocha.mauve,
-      }
-
-      for mode, color in pairs(mode_color_map) do
-        vim.api.nvim_set_hl(0, mode, {
-          fg = color,
-        })
-      end
-    end,
+    highlight_overrides = {
+      mocha = function(colors)
+        return {
+          NormalFloat = { bg = colors.none },
+        }
+      end,
+    },
   },
 }
