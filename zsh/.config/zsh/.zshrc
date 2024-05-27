@@ -12,15 +12,21 @@
 # Plugins
 plug "zsh-users/zsh-autosuggestions"
 plug "zsh-users/zsh-syntax-highlighting"
-plug "zsh-users/zsh-history-substring-search"
-plug "hlissner/zsh-autopair"
-plug "zap-zsh/vim"
+plug "zsh-users/zsh-completions"
+plug "Aloxaf/fzf-tab"
+plug "jeffreytse/zsh-vi-mode"
+
+# Autoload functions
+autoload -Uz compinit && compinit
 
 # Add fnm to shell
 eval "$(fnm env --use-on-cd)"
 
 # Add zoxide to shell
 eval "$(zoxide init zsh)"
+
+# Add fzf to shell
+eval "$(fzf --zsh)"
 
 # pnpm
 export PNPM_HOME="/Users/$USER/Library/pnpm"
