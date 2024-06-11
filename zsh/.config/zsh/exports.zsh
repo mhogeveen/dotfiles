@@ -13,6 +13,7 @@ export HOMEBREW_BUNDLE_FILE="$HOME/.dotfiles/homebrew/Brewfile"
 export HISTSIZE=5000
 export SAVEHIST=$HISTSIZE
 export HISTDUP="erase"
+export KEYTIMEOUT=25
 
 export FZF_DEFAULT_OPTS=" \
 --color=bg+:#313244,bg:#1e1e2e,spinner:#f5e0dc,hl:#f38ba8 \

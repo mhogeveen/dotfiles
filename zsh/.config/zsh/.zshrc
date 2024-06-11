@@ -8,13 +8,13 @@
 [ -f "$ZDOTDIR/options.zsh" ] && source "$ZDOTDIR/options.zsh"
 [ -f "$ZDOTDIR/aliases.zsh" ] && source "$ZDOTDIR/aliases.zsh"
 [ -f "$ZDOTDIR/keymaps.zsh" ] && source "$ZDOTDIR/keymaps.zsh"
+[ -f "$ZDOTDIR/cursor.zsh" ] && source "$ZDOTDIR/cursor.zsh"
 
 # Plugins
 plug "zsh-users/zsh-autosuggestions"
 plug "zsh-users/zsh-syntax-highlighting"
 plug "zsh-users/zsh-completions"
 plug "Aloxaf/fzf-tab"
-plug "jeffreytse/zsh-vi-mode"
 
 # Autoload functions
 autoload -Uz compinit && compinit
