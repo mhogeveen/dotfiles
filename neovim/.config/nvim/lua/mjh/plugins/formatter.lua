@@ -35,26 +35,6 @@ return {
         stylelint = {
           args = { '--fix', '--stdin', '--stdin-filename', '$FILENAME' },
           command = require('conform.util').from_node_modules 'stylelint',
-          condition = function(ctx)
-            local found = vim.fs.find({
-              'stylelint.config.js',
-              '.stylelintrc.js',
-              'stylelint.config.mjs',
-              '.stylelintrc.mjs',
-              'stylelint.config.cjs',
-              '.stylelintrc.cjs',
-              '.stylelintrc.json',
-              '.stylelintrc.yaml',
-              '.stylelintrc.yml',
-              '.stylelintrc',
-            }, { upward = true, path = ctx.dirname })[1]
-
-            if found then
-              return true
-            else
-              return false
-            end
-          end,
         },
       },
     }
@@ -63,7 +43,7 @@ return {
     {
       'gf',
       function()
-        require('conform').format { lsp_fallback = true, async = true, timeout_ms = 500 }
+        require('conform').format { lsp_fallback = true, async = false, timeout_ms = 500 }
       end,
       mode = { 'n', 'v' },
       desc = 'Format file or range (in visual mode)',
