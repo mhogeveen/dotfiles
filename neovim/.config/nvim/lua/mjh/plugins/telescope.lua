@@ -2,6 +2,7 @@ return {
   --- https://github.com/nvim-telescope/telescope.nvim
   'nvim-telescope/telescope.nvim',
   branch = '0.1.x',
+  enabled = false,
   keys = {
     {
       'ff',
