@@ -29,7 +29,7 @@ return {
       format_on_save = {
         lsp_fallback = true,
         async = false,
-        timeout_ms = 500,
+        timeout_ms = 1000,
       },
       formatters = {
         stylelint = {
@@ -43,7 +43,7 @@ return {
     {
       'gf',
       function()
-        require('conform').format { lsp_fallback = true, async = false, timeout_ms = 500 }
+        require('conform').format { lsp_fallback = true, async = false, timeout_ms = 1000 }
       end,
       mode = { 'n', 'v' },
       desc = 'Format file or range (in visual mode)',
