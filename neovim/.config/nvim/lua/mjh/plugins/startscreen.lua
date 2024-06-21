@@ -8,6 +8,9 @@ return {
     theme.section.header.val = ascii.relief
 
     theme.section.buttons.val = {
+      theme.button('ff', 'Find file', ':FzfLua files<CR>'),
+      theme.button('fg', 'Git files', ':FzfLua git_files<CR>'),
+      theme.button('fr', 'Live grep', ':FzfLua live_grep<CR>'),
       -- theme.button('f', 'Find file', ':Telescope find_files<CR>'),
       -- theme.button('g', 'Git files', ':Telescope git_files<CR>'),
       -- theme.button('r', 'Live grep', ':Telescope live_grep<CR>'),
