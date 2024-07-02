@@ -7,36 +7,23 @@ return {
 
     return {
       signs = {
-        add = { hl = 'GitSignsAdd', text = git_icons.add, numhl = 'GitSignsAddNr', linehl = 'GitSignsAddLn' },
+        add = {
+          text = git_icons.add,
+        },
         change = {
-          hl = 'GitSignsChange',
           text = git_icons.change,
-          numhl = 'GitSignsChangeNr',
-          linehl = 'GitSignsChangeLn',
         },
         delete = {
-          hl = 'GitSignsDelete',
           text = git_icons.delete,
-          numhl = 'GitSignsDeleteNr',
-          linehl = 'GitSignsDeleteLn',
         },
         topdelete = {
-          hl = 'GitSignsDelete',
           text = git_icons.topdelete,
-          numhl = 'GitSignsDeleteNr',
-          linehl = 'GitSignsDeleteLn',
         },
         changedelete = {
-          hl = 'GitSignsChange',
           text = git_icons.changedelete,
-          numhl = 'GitSignsChangeNr',
-          linehl = 'GitSignsChangeLn',
         },
         untracked = {
-          hl = 'GitSignsUntracked',
           text = git_icons.untracked,
-          numhl = 'GitSignsUntrackedNr',
-          linehl = 'GitSignsUntrackedLn',
         },
       },
       signcolumn = true, -- Toggle with `:Gitsigns toggle_signs`
@@ -67,9 +54,6 @@ return {
         relative = 'cursor',
         row = 0,
         col = 1,
-      },
-      yadm = {
-        enable = false,
       },
     }
   end,
