@@ -415,12 +415,10 @@ return {
 
       vim.api.nvim_create_autocmd('BufEnter', {
         group = vim.api.nvim_create_augroup('DrexDrawerWindow', {}),
-        pattern = '*',
         callback = function(args)
           if vim.api.nvim_get_current_win() == require('drex.drawer').get_drawer_window() then
             local is_drex_buffer = function(b)
-              local ok, syntax = pcall(vim.api.nvim_buf_get_option, b, 'syntax')
-              return ok and syntax == 'drex'
+              return vim.api.nvim_get_option_value('syntax', { buf = b }) == 'drex'
             end
             local prev_buf = vim.fn.bufnr '#'
 
