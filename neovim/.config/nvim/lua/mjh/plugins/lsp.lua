@@ -114,26 +114,25 @@ return {
     lsp_zero.setup_servers(ensure_installed.ls)
 
     lsp_zero.on_attach(function(_, bufnr)
-      local opts = { noremap = true, silent = true }
-      local function set_buf_keymap(keymap, command)
-        vim.api.nvim_buf_set_keymap(bufnr, 'n', keymap, command, opts)
+      ---@param keymap string
+      ---@param func function
+      local function set_buf_keymap(keymap, func)
+        vim.keymap.set('n', keymap, func, { buffer = bufnr, noremap = true, silent = true })
       end
 
-      set_buf_keymap('gD', ':lua vim.lsp.buf.declaration()<CR>')
-      set_buf_keymap('gh', ':lua vim.lsp.buf.hover()<CR>')
-      set_buf_keymap('gd', ':lua vim.lsp.buf.definition()<CR>')
-      set_buf_keymap('gt', ':lua vim.lsp.buf.type_definition()<CR>')
-      set_buf_keymap('gi', ':FzfLua lsp_implementations<CR>')
-      set_buf_keymap('gs', ':lua vim.lsp.buf.signature_help()<CR>')
-      set_buf_keymap('gS', ':FzfLua lsp_document_symbols<CR>')
-      set_buf_keymap('gr', ':FzfLua lsp_references<CR>')
-      set_buf_keymap('gR', ':lua vim.lsp.buf.rename()<CR>')
-      set_buf_keymap('[d', ':lua vim.diagnostic.goto_prev()<CR>')
-      set_buf_keymap('gl', ':lua vim.diagnostic.open_float()<CR>')
-      set_buf_keymap(']d', ':lua vim.diagnostic.goto_next()<CR>')
-      -- set_buf_keymap('gf', ':lua vim.lsp.buf.format()<CR>')
-      -- set_buf_keymap('ga', ':lua vim.lsp.buf.code_action()<CR>')
-      set_buf_keymap('ga', ':FzfLua lsp_code_actions<CR>')
+      set_buf_keymap('gD', vim.lsp.buf.declaration)
+      set_buf_keymap('gh', vim.lsp.buf.hover)
+      set_buf_keymap('gd', vim.lsp.buf.definition)
+      set_buf_keymap('gt', vim.lsp.buf.type_definition)
+      set_buf_keymap('gi', require('fzf-lua').lsp_implementations)
+      set_buf_keymap('gs', vim.lsp.buf.signature_help)
+      set_buf_keymap('gS', require('fzf-lua').lsp_document_symbols)
+      set_buf_keymap('gr', require('fzf-lua').lsp_references)
+      set_buf_keymap('gR', vim.lsp.buf.rename)
+      set_buf_keymap('[d', vim.diagnostic.goto_prev)
+      set_buf_keymap('gl', vim.diagnostic.open_float)
+      set_buf_keymap(']d', vim.diagnostic.goto_next)
+      set_buf_keymap('ga', require('fzf-lua').lsp_code_actions)
     end)
 
     -- Set window styles

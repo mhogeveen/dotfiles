@@ -1,3 +1,6 @@
+---@param mode string | string[]
+---@param keymap string
+---@param command string | function
 local map = function(mode, keymap, command)
   vim.keymap.set(mode, keymap, command, {
     noremap = true,
