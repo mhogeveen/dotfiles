@@ -4,6 +4,12 @@ return {
   lazy = true,
   dependencies = {
     {
+      --- https://github.com/folke/neodev.nvim
+      'folke/neodev.nvim',
+      lazy = true,
+      opts = {},
+    },
+    {
       --- https://github.com/williamboman/mason.nvim
       'williamboman/mason.nvim',
       cmd = { 'MasonUpdate' },
