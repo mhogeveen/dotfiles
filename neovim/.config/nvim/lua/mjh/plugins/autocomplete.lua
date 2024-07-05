@@ -3,8 +3,6 @@ return {
   'hrsh7th/nvim-cmp',
   event = { 'InsertEnter', 'CmdlineEnter' },
   dependencies = {
-    --- https://github.com/L3MON4D3/LuaSnip
-    'L3MON4D3/LuaSnip',
     --- https://github.com/VonHeikemen/lsp-zero.nvim
     'VonHeikemen/lsp-zero.nvim',
     --- https://github.com/hrsh7th/cmp-buffer
@@ -15,20 +13,17 @@ return {
     'hrsh7th/cmp-nvim-lsp',
     --- https://github.com/hrsh7th/cmp-nvim-lua
     'hrsh7th/cmp-nvim-lua',
-    --- https://github.com/saadparwaiz1/cmp_luasnip
-    'saadparwaiz1/cmp_luasnip',
     --- https://github.com/tzachar/cmp-tabnine
     'tzachar/cmp-tabnine',
   },
   opts = function()
     local cmp = require 'cmp'
-    local luasnip = require 'luasnip'
     local lsp_zero = require 'lsp-zero'
 
     return {
       snippet = {
         expand = function(args)
-          luasnip.lsp_expand(args.body)
+          vim.snippet.expand(args.body)
         end,
       },
       mapping = cmp.mapping.preset.insert {
@@ -42,7 +37,6 @@ return {
         { name = 'nvim_lua' },
         { name = 'nvim_lsp' },
         { name = 'cmp_tabnine' },
-        { name = 'luasnip' },
         { name = 'path' },
         { name = 'buffer', keyword_length = 5 },
       },
