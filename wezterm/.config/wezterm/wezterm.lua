@@ -1,7 +1,4 @@
-local status, wezterm = pcall(require, 'wezterm')
-if not status then
-  return
-end
+local wezterm = require 'wezterm'
 
 require 'tab_title'
 
@@ -12,9 +9,9 @@ local config = wezterm.config_builder()
 config.automatically_reload_config = true
 
 -- Font
-config.font = wezterm.font_with_fallback { 'IBM Plex Mono', 'nonicons' }
+config.font = wezterm.font_with_fallback { 'Berkeley Mono', 'IBM Plex Mono', 'nonicons' }
 config.font_size = 13.5
-config.line_height = 1.2
+config.line_height = 1.3
 
 -- Colors
 config.color_scheme = 'Catppuccin Mocha'
