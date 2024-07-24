@@ -3,8 +3,10 @@ return {
   'stevearc/conform.nvim',
   enabled = true,
   cmd = { 'ConformInfo' },
-  event = { 'BufReadPre', 'BufNewFile' },
+  event = { 'BufWritePre' },
   opts = function()
+    ---@module "conform"
+    ---@type conform.setupOpts
     return {
       formatters_by_ft = {
         javascript = { 'prettier' },
@@ -12,10 +14,10 @@ return {
         javascriptreact = { 'prettier' },
         typescriptreact = { 'prettier' },
         svelte = { 'prettier' },
-        css = { { 'stylelint', 'prettier' } },
-        scss = { { 'stylelint', 'prettier' } },
-        sass = { { 'stylelint', 'prettier' } },
-        less = { { 'stylelint', 'prettier' } },
+        css = { 'stylelint', 'prettier', stop_after_first = true },
+        scss = { 'stylelint', 'prettier', stop_after_first = true },
+        sass = { 'stylelint', 'prettier', stop_after_first = true },
+        less = { 'stylelint', 'prettier', stop_after_first = true },
         html = { 'prettier' },
         json = { 'prettier' },
         yaml = { 'prettier' },
