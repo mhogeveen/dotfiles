@@ -415,14 +415,14 @@ return {
 
       vim.api.nvim_create_autocmd('BufEnter', {
         group = vim.api.nvim_create_augroup('DrexDrawerWindow', {}),
-        callback = function(args)
+        callback = function()
           if vim.api.nvim_get_current_win() == require('drex.drawer').get_drawer_window() then
-            local is_drex_buffer = function(b)
-              return vim.api.nvim_get_option_value('syntax', { buf = b }) == 'drex'
+            local is_drex_buffer = function(buf)
+              return vim.api.nvim_get_option_value('syntax', { buf = buf }) == 'drex'
             end
             local prev_buf = vim.fn.bufnr '#'
 
-            if is_drex_buffer(prev_buf) and not is_drex_buffer(args.buf) then
+            if is_drex_buffer(prev_buf) and not is_drex_buffer(0) then
               vim.api.nvim_set_current_buf(prev_buf)
               vim.schedule(function()
                 vim.cmd [['"]] -- restore former cursor position
