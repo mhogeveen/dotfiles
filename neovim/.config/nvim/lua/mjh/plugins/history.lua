@@ -1,3 +1,4 @@
+---@type LazySpec
 return {
   --- https://github.com/jiaoshijie/undotree
   'jiaoshijie/undotree',

@@ -1,3 +1,4 @@
+---@type LazySpec
 return {
   --- https://github.com/goolord/alpha-nvim
   'goolord/alpha-nvim',

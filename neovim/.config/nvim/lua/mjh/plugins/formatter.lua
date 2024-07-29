@@ -1,3 +1,4 @@
+---@type LazySpec
 return {
   --- https://github.com/stevearc/conform.nvim
   'stevearc/conform.nvim',

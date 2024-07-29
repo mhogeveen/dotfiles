@@ -1,3 +1,4 @@
+---@type LazySpec
 return {
   --- https://github.com/ibhagwan/fzf-lua
   'ibhagwan/fzf-lua',
