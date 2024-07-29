@@ -3,6 +3,32 @@ return {
   --- https://github.com/lewis6991/gitsigns.nvim
   'lewis6991/gitsigns.nvim',
   event = 'VeryLazy',
+  keys = {
+    {
+      ']c',
+      function()
+        if vim.wo.diff then
+          vim.cmd.normal { '[c', bang = true }
+        else
+          require('gitsigns').nav_hunk 'prev'
+        end
+      end,
+      mode = { 'n' },
+      desc = 'Move to next hunk',
+    },
+    {
+      '[c',
+      function()
+        if vim.wo.diff then
+          vim.cmd.normal { '[c', bang = true }
+        else
+          require('gitsigns').nav_hunk 'prev'
+        end
+      end,
+      mode = { 'n' },
+      desc = 'Move to prev hunk',
+    },
+  },
   opts = function()
     local git_icons = require('mjh.utils.icons').gitsigns
 
