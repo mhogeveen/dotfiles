@@ -1,3 +1,29 @@
+---@param projects_dir string
+local function fzf_projects(projects_dir)
+  local opts = {
+    prompt = 'Projects > ',
+    actions = {
+      ['default'] = function(selected)
+        vim.cmd('cd ' .. selected[1])
+      end,
+      ['ctrl-d'] = {
+        fn = function()
+          vim.cmd 'cd ~/.dotfiles'
+        end,
+        header = 'open dotfiles',
+      },
+    },
+    fn_transform = function(option)
+      return projects_dir .. '/' .. option
+    end,
+  }
+
+  opts = require('fzf-lua').config.normalize_opts(opts, {}) -- Inherit global opts (highlights, etc)
+  opts = require('fzf-lua').core.set_header(opts, { 'actions' }) -- Setup header string from actions tbl
+
+  require('fzf-lua').fzf_exec('ls ' .. projects_dir, opts)
+end
+
 ---@type LazySpec
 return {
   --- https://github.com/ibhagwan/fzf-lua
@@ -51,6 +77,16 @@ return {
       end,
       mode = 'n',
       desc = 'fzf - buffers',
+      noremap = true,
+      silent = true,
+    },
+    {
+      'fp',
+      function()
+        fzf_projects '~/repos'
+      end,
+      mode = 'n',
+      desc = 'fzf - projects',
       noremap = true,
       silent = true,
     },
