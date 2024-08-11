@@ -50,7 +50,7 @@ return {
           background = true,
         },
       },
-      telescope = true,
+      fzf = true,
       treesitter = true,
     },
     highlight_overrides = {
