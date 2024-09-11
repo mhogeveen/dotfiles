@@ -68,7 +68,7 @@ return {
         'lua_ls',
         'marksman',
         'stylelint_lsp',
-        'tsserver',
+        'ts_ls',
         'terraformls',
         'tailwindcss',
       },
