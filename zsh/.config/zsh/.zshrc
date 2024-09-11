@@ -5,6 +5,7 @@
 # Source useful # Normal files to source
 [ -f "$ZDOTDIR/prompt.zsh" ] && source "$ZDOTDIR/prompt.zsh"
 [ -f "$ZDOTDIR/exports.zsh" ] && source "$ZDOTDIR/exports.zsh"
+[ -f "$ZDOTDIR/env.zsh" ] && source "$ZDOTDIR/env.zsh"
 [ -f "$ZDOTDIR/options.zsh" ] && source "$ZDOTDIR/options.zsh"
 [ -f "$ZDOTDIR/aliases.zsh" ] && source "$ZDOTDIR/aliases.zsh"
 [ -f "$ZDOTDIR/keymaps.zsh" ] && source "$ZDOTDIR/keymaps.zsh"

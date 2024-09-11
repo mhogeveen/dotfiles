@@ -1,6 +1,7 @@
 .DS_Store
 *packer_compiled.lua
 /zsh/.config/zsh/plugins
+/zsh/.config/zsh/env.zsh
 /zsh/.config/zsh/.zcompdump
 /zsh/.config/zsh/.zsh_history
 /zsh/.config/zsh/.zsh_sessions
