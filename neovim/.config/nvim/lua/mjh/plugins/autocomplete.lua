@@ -28,7 +28,7 @@ return {
         end,
       },
       mapping = cmp.mapping.preset.insert {
-        ['<C-Space>'] = cmp.mapping.complete(),
+        ['<C-.>'] = cmp.mapping.complete(),
         ['<C-n>'] = cmp.mapping.select_next_item(),
         ['<C-p>'] = cmp.mapping.select_prev_item(),
         ['<C-y>'] = cmp.mapping.confirm { select = true },
@@ -41,7 +41,10 @@ return {
         { name = 'path' },
         { name = 'buffer', keyword_length = 5 },
       },
-      formatting = lsp_zero.cmp_format(),
+      formatting = lsp_zero.cmp_format {
+        max_width = 40,
+        details = true,
+      },
       window = {
         completion = cmp.config.window.bordered {
           border = 'single',
