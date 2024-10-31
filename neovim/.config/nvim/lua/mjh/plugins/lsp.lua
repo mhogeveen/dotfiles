@@ -14,6 +14,7 @@ return {
       --- https://github.com/williamboman/mason.nvim
       'williamboman/mason.nvim',
       cmd = { 'MasonUpdate' },
+      dependencies = { 'Zeioth/mason-extra-cmds', opts = {} },
       lazy = true,
       config = {
         ui = {

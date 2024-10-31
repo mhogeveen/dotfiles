@@ -28,4 +28,4 @@ rust:
 
 nvim:
 	@nvim --headless "+Lazy! sync" +qa && echo "Updated Neovim plugins"
-	@nvim --headless "+MasonUpdate" +qa
+	@nvim --headless "+MasonUpdateAll" +qa && echo "Updated Mason packages"
