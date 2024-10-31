@@ -10,10 +10,10 @@ return {
     ---@type conform.setupOpts
     return {
       formatters_by_ft = {
-        javascript = { 'prettier' },
-        typescript = { 'prettier' },
-        javascriptreact = { 'prettier' },
-        typescriptreact = { 'prettier' },
+        javascript = { 'prettier', 'biome', stop_after_first = true },
+        typescript = { 'prettier', 'biome', stop_after_first = true },
+        javascriptreact = { 'prettier', 'biome', stop_after_first = true },
+        typescriptreact = { 'prettier', 'biome', stop_after_first = true },
         svelte = { 'prettier' },
         css = { 'stylelint', 'prettier', stop_after_first = true },
         scss = { 'stylelint', 'prettier', stop_after_first = true },
