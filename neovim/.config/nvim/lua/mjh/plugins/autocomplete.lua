@@ -27,8 +27,11 @@ return {
           vim.snippet.expand(args.body)
         end,
       },
-      mapping = cmp.mapping.preset.insert {
-        ['<C-.>'] = cmp.mapping.complete(),
+      mapping = {
+        ['<CR>'] = cmp.mapping(function(fallback)
+          fallback()
+        end, { 'i', 's' }),
+        ['<C-m>'] = cmp.mapping.complete(),
         ['<C-n>'] = cmp.mapping.select_next_item(),
         ['<C-p>'] = cmp.mapping.select_prev_item(),
         ['<C-y>'] = cmp.mapping.confirm { select = true },
