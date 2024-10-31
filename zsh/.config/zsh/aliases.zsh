@@ -15,6 +15,7 @@ alias tmux="tmux -f ${HOME}/.tmux.conf"
 alias rm="rm -i"
 alias mv="mv -i"
 alias cp="cp -i"
+alias pp="pnpm"
 
 alias glog-pretty='git log --pretty="%C(Yellow)%h  %C(reset)%ad (%C(Green)%cr%C(reset))%x09 %C(reset)%s %C(Cyan)@%an" --date=short'
 
