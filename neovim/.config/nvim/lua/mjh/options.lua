@@ -23,6 +23,8 @@ local options = {
   shiftwidth = 2, -- number of spaces to use for each step of (auto)indent
 }
 
+vim.opt.formatoptions:remove 'o' -- Don't have `o` add a comment
+
 for k, v in pairs(options) do
   vim.opt[k] = v
 end
