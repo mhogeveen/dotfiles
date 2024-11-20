@@ -13,10 +13,9 @@ return {
     {
       --- https://github.com/williamboman/mason.nvim
       'williamboman/mason.nvim',
-      cmd = { 'MasonUpdate' },
       dependencies = { 'Zeioth/mason-extra-cmds', opts = {} },
       lazy = true,
-      config = {
+      opts = {
         ui = {
           border = 'single',
           height = 0.8,
@@ -28,14 +27,14 @@ return {
       --- https://github.com/williamboman/mason-lspconfig.nvim
       'williamboman/mason-lspconfig.nvim',
       lazy = true,
-      config = false,
+      opts = {},
     },
     {
       --- https://github.com/VonHeikemen/lsp-zero.nvim
       'VonHeikemen/lsp-zero.nvim',
       branch = 'v3.x',
       lazy = true,
-      config = false,
+      opts = nil,
       init = function()
         -- Disable automatic setup, we are doing it manually
         vim.g.lsp_zero_extend_cmp = 0
@@ -60,6 +59,7 @@ return {
       linters = {},
       ls = {
         'bashls',
+        'biome',
         'cssls',
         'eslint',
         'gopls',
