@@ -92,20 +92,29 @@ return {
     },
   },
   cmd = 'FzfLua',
-  opts = {
-    winopts = {
-      border = 'single',
-    },
-    files = {
-      formatter = 'path.filename_first',
-    },
-    buffers = {
-      formatter = 'path.filename_first',
-    },
-    grep = {
-      formatter = 'path.filename_first',
-    },
-  },
+  opts = function()
+    local actions = require 'fzf-lua.actions'
+    return {
+      winopts = {
+        border = 'single',
+      },
+      files = {
+        formatter = 'path.filename_first',
+      },
+      buffers = {
+        formatter = 'path.filename_first',
+      },
+      grep = {
+        formatter = 'path.filename_first',
+        actions = {
+          ['ctrl-q'] = {
+            fn = actions.file_edit_or_qf,
+            prefix = 'select-all+',
+          },
+        },
+      },
+    }
+  end,
   config = function(_, opts)
     local fzf_lua = require 'fzf-lua'
     fzf_lua.setup(opts)
