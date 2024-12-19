@@ -112,6 +112,19 @@ return {
             prefix = 'select-all+',
           },
         },
+        rg_opts = '--sort-files --hidden --column --line-number --no-heading '
+          .. "--color=always --smart-case -g '!{.git,node_modules}/*'",
+      },
+      keymap = {
+        builtin = {
+          false,
+          ['<C-h>'] = 'toggle-help',
+        },
+        fzf = {
+          false,
+          ['ctrl-u'] = 'half-page-up',
+          ['ctrl-d'] = 'half-page-down',
+        },
       },
     }
   end,
