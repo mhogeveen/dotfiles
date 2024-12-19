@@ -40,6 +40,7 @@ brew "fzf"
 brew "gawk"
 brew "go"
 brew "go-task"
+brew "pkgconf"
 brew "gobject-introspection"
 brew "gopls"
 brew "helix"
@@ -51,7 +52,7 @@ brew "lua-language-server"
 brew "luarocks"
 brew "mailhog", restart_service: true
 brew "marksman"
-brew "mysql"
+brew "mysql", restart_service: true
 brew "neovim"
 brew "nginx", restart_service: true
 brew "pass"
