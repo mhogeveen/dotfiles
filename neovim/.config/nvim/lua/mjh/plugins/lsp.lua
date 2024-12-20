@@ -30,23 +30,12 @@ return {
       opts = {},
     },
     {
-      --- https://github.com/VonHeikemen/lsp-zero.nvim
-      'VonHeikemen/lsp-zero.nvim',
-      branch = 'v3.x',
-      lazy = true,
-      opts = nil,
-      init = function()
-        -- Disable automatic setup, we are doing it manually
-        vim.g.lsp_zero_extend_cmp = 0
-        vim.g.lsp_zero_extend_lspconfig = 0
-        vim.g.lsp_zero_ui_float_border = 'single'
-      end,
     },
   },
   cmd = { 'LspInfo', 'Mason' },
   event = { 'BufReadPre', 'BufNewFile' },
   config = function()
-    local lsp_zero = require 'lsp-zero'
+    local lspconfig = require 'lspconfig'
     local mason = require 'mason'
     local mason_lspconfig = require 'mason-lspconfig'
 
@@ -85,69 +74,83 @@ return {
         ensure_installed.ls
       ),
     }
-    lsp_zero.extend_lspconfig()
 
-    lsp_zero.configure('lua_ls', {
-      settings = {
-        Lua = {
-          runtime = {
-            version = 'LuaJIT',
-          },
-          diagnostics = {
-            globals = { 'vim', 'hs' },
-          },
-          workspace = {
-            checkThirdParty = false,
-            library = {
-              '${3rd}/luv/library',
-              unpack(vim.api.nvim_get_runtime_file('', true)),
+    mason_lspconfig.setup_handlers {
+      --- default handler
+      function(server_name)
+        lspconfig[server_name].setup {}
+      end,
+
+      ['lua_ls'] = function(server_name)
+        lspconfig[server_name].setup {
+          settings = {
+            Lua = {
+              runtime = {
+                version = 'LuaJIT',
+              },
+              diagnostics = {
+                globals = { 'vim', 'hs' },
+              },
+              workspace = {
+                checkThirdParty = false,
+                library = {
+                  '${3rd}/luv/library',
+                  unpack(vim.api.nvim_get_runtime_file('', true)),
+                },
+              },
+              telemetry = false,
             },
           },
-          telemetry = false,
-        },
-      },
+        }
+      end,
+
+      ['rust_analyzer'] = function()
+        lspconfig['rust_analyzer'].setup {
+          server = {
+            standalone = true,
+          },
+        }
+      end,
+
+      ['stylelint_lsp'] = function()
+        lspconfig['stylelint_lsp'].setup {
+          filetypes = { 'css', 'less', 'scss', 'sass' },
+        }
+      end,
+    }
+
+    vim.api.nvim_create_autocmd('LspAttach', {
+      desc = 'LSP actions',
+      callback = function(event)
+        ---@param keymap string
+        ---@param func function
+        local function set_buf_keymap(keymap, func)
+          vim.keymap.set('n', keymap, func, { buffer = event.buf, noremap = true, silent = true })
+        end
+
+        set_buf_keymap('gD', vim.lsp.buf.declaration)
+        set_buf_keymap('gh', vim.lsp.buf.hover)
+        set_buf_keymap('gd', vim.lsp.buf.definition)
+        set_buf_keymap('gt', vim.lsp.buf.type_definition)
+        set_buf_keymap('gi', require('fzf-lua').lsp_implementations)
+        set_buf_keymap('gs', vim.lsp.buf.signature_help)
+        set_buf_keymap('gS', require('fzf-lua').lsp_document_symbols)
+        set_buf_keymap('gr', require('fzf-lua').lsp_references)
+        set_buf_keymap('gR', vim.lsp.buf.rename)
+        set_buf_keymap('[d', vim.diagnostic.goto_prev)
+        set_buf_keymap('gl', vim.diagnostic.open_float)
+        set_buf_keymap(']d', vim.diagnostic.goto_next)
+        set_buf_keymap('ga', require('fzf-lua').lsp_code_actions)
+      end,
     })
 
-    --- rust-analyzer is installed via rustup
-    lsp_zero.configure('rust_analyzer', {
-      server = {
-        standalone = true,
-      },
-    })
+    vim.lsp.handlers['textDocument/hover'] = vim.lsp.with(vim.lsp.handlers.hover, { border = 'single' })
 
-    lsp_zero.configure('stylelint_lsp', {
-      filetypes = { 'css', 'less', 'scss', 'sass' },
-    })
+    vim.lsp.handlers['textDocument/signatureHelp'] =
+      vim.lsp.with(vim.lsp.handlers.signature_help, { border = 'single' })
 
-    lsp_zero.setup_servers(ensure_installed.ls)
-
-    lsp_zero.on_attach(function(_, bufnr)
-      ---@param keymap string
-      ---@param func function
-      local function set_buf_keymap(keymap, func)
-        vim.keymap.set('n', keymap, func, { buffer = bufnr, noremap = true, silent = true })
-      end
-
-      set_buf_keymap('gD', vim.lsp.buf.declaration)
-      set_buf_keymap('gh', vim.lsp.buf.hover)
-      set_buf_keymap('gd', vim.lsp.buf.definition)
-      set_buf_keymap('gt', vim.lsp.buf.type_definition)
-      set_buf_keymap('gi', require('fzf-lua').lsp_implementations)
-      set_buf_keymap('gs', vim.lsp.buf.signature_help)
-      set_buf_keymap('gS', require('fzf-lua').lsp_document_symbols)
-      set_buf_keymap('gr', require('fzf-lua').lsp_references)
-      set_buf_keymap('gR', vim.lsp.buf.rename)
-      set_buf_keymap('[d', vim.diagnostic.goto_prev)
-      set_buf_keymap('gl', vim.diagnostic.open_float)
-      set_buf_keymap(']d', vim.diagnostic.goto_next)
-      set_buf_keymap('ga', require('fzf-lua').lsp_code_actions)
-    end)
-
-    -- Set window styles
-    require('lspconfig.ui.windows').default_options.border = 'single'
-
-    -- Configure vim diagnostics
     vim.diagnostic.config {
+      float = { border = 'single' },
       virtual_text = false,
       update_in_insert = true,
     }
