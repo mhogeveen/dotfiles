@@ -415,6 +415,7 @@ return {
           vim.opt_local.modifiable = false
           vim.opt_local.buftype = 'nofile'
           vim.opt_local.bufhidden = 'wipe'
+          vim.opt_local.list = false
         end,
         on_leave = nil,
       }
