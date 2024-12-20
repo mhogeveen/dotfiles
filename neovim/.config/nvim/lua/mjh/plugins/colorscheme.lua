@@ -24,7 +24,7 @@ return {
       numbers = {},
       booleans = {},
       properties = {},
-      types = {},
+      types = { 'italic' },
       operators = {},
     },
     integrations = {
@@ -55,9 +55,9 @@ return {
       treesitter = true,
     },
     highlight_overrides = {
-      mocha = function(colors)
+      mocha = function(mocha)
         return {
-          NormalFloat = { bg = colors.none },
+          NormalFloat = { bg = mocha.none },
         }
       end,
     },
