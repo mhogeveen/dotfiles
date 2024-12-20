@@ -3,6 +3,7 @@ return {
   --- https://github.com/hrsh7th/nvim-cmp
   'hrsh7th/nvim-cmp',
   event = { 'InsertEnter', 'CmdlineEnter' },
+  enabled = false,
   dependencies = {
     --- https://github.com/VonHeikemen/lsp-zero.nvim
     'VonHeikemen/lsp-zero.nvim',

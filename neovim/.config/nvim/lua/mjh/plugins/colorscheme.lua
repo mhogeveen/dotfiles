@@ -29,7 +29,8 @@ return {
     },
     integrations = {
       alpha = true,
-      cmp = true,
+      blink_cmp = true,
+      cmp = false,
       fidget = false,
       gitsigns = true,
       native_lsp = {

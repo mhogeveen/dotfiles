@@ -30,6 +30,8 @@ return {
       opts = {},
     },
     {
+      --- https://github.com/Saghen/blink.cmp
+      'saghen/blink.cmp',
     },
   },
   cmd = { 'LspInfo', 'Mason' },
@@ -154,5 +156,11 @@ return {
       virtual_text = false,
       update_in_insert = true,
     }
+
+    lspconfig.util.default_config.capabilities = vim.tbl_deep_extend(
+      'force',
+      lspconfig.util.default_config.capabilities,
+      require('blink.cmp').get_lsp_capabilities()
+    )
   end,
 }
