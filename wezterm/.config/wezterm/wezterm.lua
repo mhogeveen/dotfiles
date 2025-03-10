@@ -11,8 +11,7 @@ config.automatically_reload_config = true
 -- Font
 config.font = wezterm.font_with_fallback { 'Berkeley Mono', 'IBM Plex Mono', 'nonicons' }
 config.font_size = 14
-config.line_height = 1.4
-config.freetype_load_target = 'Light'
+config.line_height = 1.36
 
 -- Colors
 config.color_scheme = 'Catppuccin Mocha'
