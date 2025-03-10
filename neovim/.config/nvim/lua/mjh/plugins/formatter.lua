@@ -10,20 +10,20 @@ return {
     ---@type conform.setupOpts
     return {
       formatters_by_ft = {
-        javascript = { 'prettier', 'biome', stop_after_first = true },
-        typescript = { 'prettier', 'biome', stop_after_first = true },
-        javascriptreact = { 'prettier', 'biome', stop_after_first = true },
-        typescriptreact = { 'prettier', 'biome', stop_after_first = true },
-        svelte = { 'prettier' },
-        css = { 'stylelint', 'prettier', stop_after_first = true },
-        scss = { 'stylelint', 'prettier', stop_after_first = true },
-        sass = { 'stylelint', 'prettier', stop_after_first = true },
-        less = { 'stylelint', 'prettier', stop_after_first = true },
-        html = { 'prettier' },
-        json = { 'prettier' },
-        yaml = { 'prettier' },
-        markdown = { 'prettier' },
-        graphql = { 'prettier' },
+        javascript = { 'prettierd', 'prettier', 'biome', stop_after_first = true },
+        typescript = { 'prettierd', 'prettier', 'biome', stop_after_first = true },
+        javascriptreact = { 'prettierd', 'prettier', 'biome', stop_after_first = true },
+        typescriptreact = { 'prettierd', 'prettier', 'biome', stop_after_first = true },
+        svelte = { 'prettierd', 'prettier', stop_after_first = true },
+        css = { 'stylelint', 'prettierd', 'prettier', stop_after_first = true },
+        scss = { 'stylelint', 'prettierd', 'prettier', stop_after_first = true },
+        sass = { 'stylelint', 'prettierd', 'prettier', stop_after_first = true },
+        less = { 'stylelint', 'prettierd', 'prettier', stop_after_first = true },
+        html = { 'prettierd', 'prettier', stop_after_first = true },
+        json = { 'prettierd', 'prettier', stop_after_first = true },
+        yaml = { 'prettierd', 'prettier', stop_after_first = true },
+        markdown = { 'prettierd', 'prettier', stop_after_first = true },
+        graphql = { 'prettierd', 'prettier', stop_after_first = true },
         lua = { 'stylua' },
         rust = { 'rustfmt' },
         php = { 'php_cs_fixer' },
@@ -34,12 +34,12 @@ return {
         async = false,
         timeout_ms = 1000,
       },
-      formatters = {
-        stylelint = {
-          args = { '--fix', '--stdin', '--stdin-filename', '$FILENAME' },
-          command = require('conform.util').from_node_modules 'stylelint',
-        },
-      },
+      -- formatters = {
+      --   stylelint = {
+      --     args = { '--fix', '--stdin', '--stdin-filename', '$FILENAME' },
+      --     command = require('conform.util').from_node_modules 'stylelint',
+      --   },
+      -- },
     }
   end,
   keys = {
