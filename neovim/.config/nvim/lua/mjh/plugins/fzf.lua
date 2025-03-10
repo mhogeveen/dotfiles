@@ -100,6 +100,7 @@ return {
       },
       files = {
         formatter = 'path.filename_first',
+        git_icons = true,
       },
       buffers = {
         formatter = 'path.filename_first',
