@@ -26,11 +26,11 @@ brew "broot"
 brew "btop"
 brew "glib"
 brew "cmake"
-brew "php", restart_service: true
+brew "php", restart_service: :changed
 brew "composer"
 brew "coreutils"
 brew "deno"
-brew "dnsmasq", restart_service: true
+brew "dnsmasq", restart_service: :changed
 brew "eslint"
 brew "eza"
 brew "fd"
@@ -50,11 +50,12 @@ brew "pango"
 brew "librsvg"
 brew "lua-language-server"
 brew "luarocks"
-brew "mailhog", restart_service: true
+brew "mailhog", restart_service: :changed
 brew "marksman"
-brew "mysql", restart_service: true
+brew "mysql", restart_service: :changed
+brew "mysql@8.4"
 brew "neovim"
-brew "nginx", restart_service: true
+brew "nginx", restart_service: :changed
 brew "pass"
 brew "php@8.1"
 brew "pre-commit"
@@ -85,12 +86,14 @@ brew "oven-sh/bun/bun"
 brew "teamookla/speedtest/speedtest"
 cask "arc"
 cask "bartender"
+cask "ghostty"
 cask "hammerspoon"
 cask "hoppscotch"
 cask "http-toolkit"
 cask "raycast"
 cask "spotify"
 cask "wezterm"
+cask "zen-browser"
 vscode "aaron-bond.better-comments"
 vscode "anteprimorac.html-end-tag-labels"
 vscode "bmewburn.vscode-intelephense-client"
@@ -101,7 +104,6 @@ vscode "christian-kohler.path-intellisense"
 vscode "eamodio.gitlens"
 vscode "ecmel.vscode-html-css"
 vscode "editorconfig.editorconfig"
-vscode "equinusocio.vsc-material-theme"
 vscode "esbenp.prettier-vscode"
 vscode "formulahendry.auto-close-tag"
 vscode "formulahendry.auto-complete-tag"
