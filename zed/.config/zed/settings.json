@@ -12,11 +12,24 @@
     "copilot": false
   },
   "vim_mode": true,
-  "buffer_font_family": "BlexMono Nerd Font Mono",
+  "buffer_font_family": "Berkeley Mono",
+  "buffer_font_fallbacks": ["IBM Plex Mono", "nonicons"],
   "buffer_font_size": 14,
   "buffer_line_height": {
-    "custom": 1.5
+    "custom": 1.36
   },
+  "scrollbar": {
+    "show": "never"
+  },
+  "tab_bar": {
+    "show": false
+  },
+  "toolbar": {
+    "breadcrumbs": false,
+    "quick_actions": false,
+    "selections_menu": false
+  },
+  "current_line_highlight": "all",
   "extend_comment_on_newline": false,
   "ensure_final_newline_on_save": false,
   "project_panel": {
@@ -28,9 +41,12 @@
     "indent_size": 10
   },
   "inlay_hints": {
-    "enabled": true,
+    "enabled": false,
     "show_type_hints": true,
     "show_parameter_hints": true,
     "show_other_hints": true
-  }
+  },
+  "use_autoclose": false,
+  "seed_search_query_from_cursor": "never",
+  "use_smartcase_search": true
 }
