@@ -5,6 +5,10 @@ return {
   lazy = true,
   dependencies = {
     {
+      --- https://github.com/b0o/SchemaStore.nvim
+      'b0o/schemastore.nvim',
+    },
+    {
       --- https://github.com/folke/neodev.nvim
       'folke/neodev.nvim',
       lazy = true,
@@ -40,6 +44,7 @@ return {
     local lspconfig = require 'lspconfig'
     local mason = require 'mason'
     local mason_lspconfig = require 'mason-lspconfig'
+    local schemastore = require 'schemastore'
 
     local ensure_installed = {
       dap = {},
@@ -60,14 +65,16 @@ return {
         'lua_ls',
         'marksman',
         'stylelint_lsp',
-        'ts_ls',
-        'terraformls',
         'tailwindcss',
+        'terraformls',
+        'ts_ls',
+        'yamlls',
       },
     }
 
     mason.setup()
     mason_lspconfig.setup {
+      automatic_installation = true,
       ensure_installed = vim.tbl_extend(
         'force',
         ensure_installed.dap,
@@ -106,17 +113,42 @@ return {
         }
       end,
 
-      ['rust_analyzer'] = function()
-        lspconfig['rust_analyzer'].setup {
+      ['rust_analyzer'] = function(server_name)
+        lspconfig[server_name].setup {
           server = {
             standalone = true,
           },
         }
       end,
 
-      ['stylelint_lsp'] = function()
-        lspconfig['stylelint_lsp'].setup {
+      ['stylelint_lsp'] = function(server_name)
+        lspconfig[server_name].setup {
           filetypes = { 'css', 'less', 'scss', 'sass' },
+        }
+      end,
+
+      ['jsonls'] = function(server_name)
+        lspconfig[server_name].setup {
+          settings = {
+            json = {
+              schemas = schemastore.json.schemas(),
+              validate = { enable = true },
+            },
+          },
+        }
+      end,
+
+      ['yamlls'] = function(server_name)
+        lspconfig[server_name].setup {
+          settings = {
+            yaml = {
+              schemaStore = {
+                enable = false,
+                url = '',
+              },
+              schemas = schemastore.yaml.schemas(),
+            },
+          },
         }
       end,
     }
@@ -131,11 +163,15 @@ return {
         end
 
         set_buf_keymap('gD', vim.lsp.buf.declaration)
-        set_buf_keymap('gh', vim.lsp.buf.hover)
+        set_buf_keymap('gh', function()
+          vim.lsp.buf.hover { border = 'single' }
+        end)
         set_buf_keymap('gd', vim.lsp.buf.definition)
         set_buf_keymap('gt', vim.lsp.buf.type_definition)
         set_buf_keymap('gi', require('fzf-lua').lsp_implementations)
-        set_buf_keymap('gs', vim.lsp.buf.signature_help)
+        set_buf_keymap('gs', function()
+          vim.lsp.buf.signature_help { border = 'single' }
+        end)
         set_buf_keymap('gS', require('fzf-lua').lsp_document_symbols)
         set_buf_keymap('gr', require('fzf-lua').lsp_references)
         set_buf_keymap('gR', vim.lsp.buf.rename)
@@ -145,11 +181,6 @@ return {
         set_buf_keymap('ga', require('fzf-lua').lsp_code_actions)
       end,
     })
-
-    vim.lsp.handlers['textDocument/hover'] = vim.lsp.with(vim.lsp.handlers.hover, { border = 'single' })
-
-    vim.lsp.handlers['textDocument/signatureHelp'] =
-      vim.lsp.with(vim.lsp.handlers.signature_help, { border = 'single' })
 
     vim.diagnostic.config {
       float = { border = 'single' },
