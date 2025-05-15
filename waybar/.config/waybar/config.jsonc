@@ -1,0 +1,21 @@
+{
+	"position": "top",
+	"margin": "0 8",
+	"height": 30,
+	"spacing": 8,
+	"reload_style_on_change": true,
+	"include": "~/.config/waybar/modules.jsonc",
+	"modules-left": [
+		"hyprland/workspaces"
+	],
+	"modules-center": [
+		"clock"
+	],
+	"modules-right": [
+		"network",
+		"bluetooth",
+		"custom/brightness",
+		"pulseaudio",
+		"custom/shutdown"
+	]
+}

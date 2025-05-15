@@ -1,0 +1,68 @@
+{
+	"hyprland/workspaces": {
+		"active-only": false,
+		"persistent-workspaces": {
+			"*": [
+				1,
+				2,
+				3,
+				4,
+				5
+			]
+		}
+	},
+	"clock": {
+		"interval": 1,
+		"format": "{:%T}",
+		"timezone": "Europe/Amsterdam",
+		"tooltip": false
+	},
+	"network": {
+		"format-wifi": "\ue1d8",
+		"format-disconnected": "\ue1da",
+		"tooltip": false,
+		"on-click": "hyprctl dispatch -- exec wezterm start --class=bluetooth --always-new-process iwctl"
+	},
+	"bluetooth": {
+		"format-on": "\ue1a7",
+		"format-connected": "\ue1a8",
+		"format-disabled": "\ue1a9",
+		"format-off": "\ue1a9",
+		"format-no-controller": "\ue1a9",
+		"tooltip": false,
+		"on-click": "hyprctl dispatch -- exec wezterm start --class=bluetooth --always-new-process bluetuith"
+	},
+	"custom/brightness": {
+		"format": "{icon}",
+		"format-icons": [
+			"\ue1ad",
+			"\ue1ae",
+			"\ue1ac"
+		],
+		"return-type": "json",
+		"exec": "ddcutil getvcp 10 | grep -oP 'current.*?=\\s*\\K[0-9]+' | { read x; echo '{\"percentage\":'${x}'}'; }",
+		"on-scroll-up": "ddcutil setvcp 10 + 10",
+		"on-scroll-down": "ddcutil setvcp 10 - 10",
+		"on-click": "ddcutil setvcp 10 0",
+		"on-click-right": "ddcutil setvcp 10 100",
+		"interval": 1,
+		"tooltip-format": "{percentage}%"
+	},
+	"pulseaudio": {
+		"format": "{icon}",
+		"format-icons": [
+			"\ue04e",
+			"\ue04d",
+			"\ue050"
+		],
+		"format-muted": "\ue04f",
+		"scroll-step": 5,
+		"tooltip-format": "{volume}%",
+		"on-click": "uwsm app -- pavucontrol"
+	},
+	"custom/shutdown": {
+		"format": "\ue8ac",
+		"tolltip": false,
+		"on-click": "wlogout -sn -b 5"
+	}
+}
