@@ -1,0 +1,7 @@
+[manager]
+ratio = [0, 4, 4]
+show_hidden = true
+
+[input]
+cursor_blink = true
+origin = "hovered"
