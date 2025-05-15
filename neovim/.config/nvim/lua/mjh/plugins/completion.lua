@@ -7,10 +7,24 @@ return {
   ---@module 'blink.cmp'
   ---@type blink.cmp.Config
   opts = {
-    keymap = { preset = 'default' },
+    keymap = {
+      preset = 'default',
+      ['<C-.>'] = { 'show', 'show_documentation', 'hide_documentation' },
+    },
+    cmdline = {
+      keymap = {
+        preset = 'cmdline',
+        ['<C-.>'] = { 'show', 'hide' },
+      },
+    },
     completion = {
+      accept = {
+        auto_brackets = {
+          enabled = false,
+        },
+      },
       list = {
-        selection = 'preselect',
+        selection = { preselect = true, auto_insert = false },
       },
       menu = {
         border = 'single',
