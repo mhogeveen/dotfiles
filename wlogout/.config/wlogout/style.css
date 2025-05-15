@@ -1,0 +1,82 @@
+/* --rosewater: rgb(245, 224, 220); */
+/* --flamingo: rgb(242, 205, 205); */
+/* --pink: rgb(245, 194, 231); */
+/* --mauve: rgb(203, 166, 247); */
+/* --red: rgb(243, 139, 168); */
+/* --maroon: rgb(235, 160, 172); */
+/* --peach: rgb(250, 179, 135); */
+/* --yellow: rgb(249, 226, 175); */
+/* --green: rgb(166, 227, 161); */
+/* --teal: rgb(148, 226, 213); */
+/* --sky: rgb(137, 220, 235); */
+/* --sapphire: rgb(116, 199, 236); */
+/* --blue: rgb(137, 180, 250); */
+/* --lavender: rgb(180, 190, 254); */
+/* --text: rgb(205, 214, 244); */
+/* --subtext-1: rgb(186, 194, 222); */
+/* --subtext-0: rgb(166, 173, 200); */
+/* --overlay-2: rgb(147, 153, 178); */
+/* --overlay-1: rgb(127, 132, 156); */
+/* --overlay-0: rgb(108, 112, 134); */
+/* --surface-2: rgb(88, 91, 112); */
+/* --surface-1: rgb(69, 71, 90); */
+/* --surface-0: rgb(49, 50, 68); */
+/* --base: rgb(30, 30, 46); */
+/* --mantle: rgb(24, 24, 37); */
+/* --crust: rgb(17, 17, 27); */
+
+* {
+  background-image: none;
+  box-shadow: none;
+  font-family: "Berkeley Mono", "Material Icons";
+}
+
+window {
+  background-color: rgba(30, 30, 46, 0.95);
+}
+
+button {
+  border: 1px solid transparent;
+  border-radius: 0;
+  color: rgb(205, 214, 244);
+  background-color: transparent;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 30px;
+}
+
+#lock {
+  background-image: image(
+    url("/home/mhogeveen/.config/wlogout/icons/lock.png")
+  );
+}
+
+#logout {
+  background-image: image(
+    url("/home/mhogeveen/.config/wlogout/icons/logout.png")
+  );
+}
+
+#suspend {
+  background-image: image(
+    url("/home/mhogeveen/.config/wlogout/icons/suspend.png")
+  );
+}
+
+#hibernate {
+  background-image: image(
+    url("/home/mhogeveen/.config/wlogout/icons/hibernate.png")
+  );
+}
+
+#shutdown {
+  background-image: image(
+    url("/home/mhogeveen/.config/wlogout/icons/shutdown.png")
+  );
+}
+
+#reboot {
+  background-image: image(
+    url("/home/mhogeveen/.config/wlogout/icons/reboot.png")
+  );
+}
