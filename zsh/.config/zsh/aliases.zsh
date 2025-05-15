@@ -4,17 +4,7 @@ alias c='clear'
 alias lg='lazygit -ucd="$HOME/.config/lazygit"'
 alias n='nvim'
 alias e='exit'
-alias grep='rg'
-alias :q='exit'
 alias ip='ipconfig getifaddr en0'
-alias up='brew upgrade && pnpm up --global --latest' # Upgrade global Packages
-alias localphp="${HOME}/Library/Application\ Support/Local/lightning-services/php-8.0.0+2/bin/darwin/bin/php"
-alias localcomposer="${HOME}/Library/Application\ Support/Local/lightning-services/php-8.0.0+2/bin/darwin/bin/php /Applications/Local.app/Contents/Resources/extraResources/bin/composer/composer.phar"
-alias ycu="ncu --packageManager yarn --format group --interactive"
-alias tmux="tmux -f ${HOME}/.tmux.conf"
-alias rm="rm -i"
-alias mv="mv -i"
-alias cp="cp -i"
 alias pp="pnpm"
 
 alias glog-pretty='git log --pretty="%C(Yellow)%h  %C(reset)%ad (%C(Green)%cr%C(reset))%x09 %C(reset)%s %C(Cyan)@%an" --date=short'
@@ -36,16 +26,11 @@ function replace-all {
   eval "rg $2 --files-with-matches | xargs sed -i '' -e 's/$2/$3/g'"
 }
 
-function br {
-    local cmd cmd_file code
-    cmd_file=$(mktemp)
-    if broot --outcmd "$cmd_file" "$@"; then
-        cmd=$(<"$cmd_file")
-        command rm -f "$cmd_file"
-        eval "$cmd"
-    else
-        code=$?
-        command rm -f "$cmd_file"
-        return "$code"
-    fi
+function y {
+	local tmp="$(mktemp -t "yazi-cwd.XXXXXX")" cwd
+	yazi "$@" --cwd-file="$tmp"
+	if cwd="$(command cat -- "$tmp")" && [ -n "$cwd" ] && [ "$cwd" != "$PWD" ]; then
+		builtin cd -- "$cwd"
+	fi
+	rm -f -- "$tmp"
 }
