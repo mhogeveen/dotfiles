@@ -1,0 +1,15 @@
+configuration {
+  display-drun: "App";
+  display-run: "Run";
+  display-window: "Win";
+  drun-display-format : "{name}";
+  font: "Berkeley Mono 12";
+  modi: "window,run,drun";
+  show-icons: false;
+  kb-mode-next: "Control+bracketright";
+  kb-mode-previous: "Control+bracketleft";
+  kb-cancel: "Escape";
+  kb-accept-entry: "Control+y,Return";
+}
+
+@import "theme"
