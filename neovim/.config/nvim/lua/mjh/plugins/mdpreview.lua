@@ -1,10 +1,10 @@
 ---@type LazySpec
 return {
-  --- https://github.com/iamcco/markdown-preview.nvim
-  'iamcco/markdown-preview.nvim',
-  cmd = { 'MarkdownPreviewToggle', 'MarkdownPreview', 'MarkdownPreviewStop' },
-  ft = { 'markdown' },
-  build = function()
-    vim.fn['mkdp#util#install']()
-  end,
+  --- https://github.com/MeanderingProgrammer/render-markdown.nvim
+  'MeanderingProgrammer/render-markdown.nvim',
+  cmd = { 'RenderMarkdown' },
+  dependencies = { 'nvim-treesitter/nvim-treesitter', 'nvim-tree/nvim-web-devicons' }, -- if you prefer nvim-web-devicons
+  ---@module 'render-markdown'
+  ---@type render.md.UserConfig
+  opts = {},
 }
