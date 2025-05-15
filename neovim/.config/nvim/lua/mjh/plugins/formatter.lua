@@ -27,6 +27,8 @@ return {
         lua = { 'stylua' },
         rust = { 'rustfmt' },
         php = { 'php_cs_fixer' },
+        http = { 'kulala' },
+        rest = { 'kulala' },
         ['*'] = { 'trim_newlines', 'trim_whitespace' },
       },
       format_on_save = {
@@ -34,12 +36,17 @@ return {
         async = false,
         timeout_ms = 1000,
       },
-      -- formatters = {
-      --   stylelint = {
-      --     args = { '--fix', '--stdin', '--stdin-filename', '$FILENAME' },
-      --     command = require('conform.util').from_node_modules 'stylelint',
-      --   },
-      -- },
+      formatters = {
+        --   stylelint = {
+        --     args = { '--fix', '--stdin', '--stdin-filename', '$FILENAME' },
+        --     command = require('conform.util').from_node_modules 'stylelint',
+        --   },
+        kulala = {
+          command = 'kulala-fmt',
+          args = { 'format', '$FILENAME' },
+          stdin = false,
+        },
+      },
     }
   end,
   keys = {

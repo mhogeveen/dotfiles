@@ -36,6 +36,16 @@ return {
     },
     sources = {
       default = { 'lsp', 'path', 'buffer' },
+      providers = {
+        cmdline = {
+          min_keyword_length = 2,
+        },
+        lsp = {
+          enabled = function()
+            return not vim.tbl_contains({ 'http', 'rest' }, vim.bo.filetype)
+          end,
+        },
+      },
     },
     appearance = {
       use_nvim_cmp_as_default = false,
