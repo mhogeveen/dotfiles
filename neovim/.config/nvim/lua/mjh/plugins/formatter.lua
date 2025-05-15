@@ -29,6 +29,7 @@ return {
         php = { 'php_cs_fixer' },
         http = { 'kulala' },
         rest = { 'kulala' },
+        terraform = { 'terraform_fmt' },
         ['*'] = { 'trim_newlines', 'trim_whitespace' },
       },
       format_on_save = {
