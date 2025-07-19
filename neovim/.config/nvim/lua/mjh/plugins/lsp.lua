@@ -72,86 +72,72 @@ return {
       },
     }
 
+    local flat_ensure_installed = vim.tbl_extend(
+      'force',
+      ensure_installed.dap,
+      ensure_installed.formatters,
+      ensure_installed.linters,
+      ensure_installed.ls
+    )
+
     mason.setup()
     mason_lspconfig.setup {
       automatic_installation = true,
-      ensure_installed = vim.tbl_extend(
-        'force',
-        ensure_installed.dap,
-        ensure_installed.formatters,
-        ensure_installed.linters,
-        ensure_installed.ls
-      ),
+      automatic_enable = flat_ensure_installed,
+      ensure_installed = flat_ensure_installed,
     }
 
-    mason_lspconfig.setup_handlers {
-      --- default handler
-      function(server_name)
-        lspconfig[server_name].setup {}
-      end,
-
-      ['lua_ls'] = function(server_name)
-        lspconfig[server_name].setup {
-          settings = {
-            Lua = {
-              runtime = {
-                version = 'LuaJIT',
-              },
-              diagnostics = {
-                globals = { 'vim', 'hs' },
-              },
-              workspace = {
-                checkThirdParty = false,
-                library = {
-                  '${3rd}/luv/library',
-                  unpack(vim.api.nvim_get_runtime_file('', true)),
-                },
-              },
-              telemetry = false,
+    vim.lsp.config('lua_ls', {
+      settings = {
+        Lua = {
+          runtime = {
+            version = 'LuaJIT',
+          },
+          diagnostics = {
+            globals = { 'vim', 'hs' },
+          },
+          workspace = {
+            checkThirdParty = false,
+            library = {
+              '${3rd}/luv/library',
+              unpack(vim.api.nvim_get_runtime_file('', true)),
             },
           },
-        }
-      end,
+          telemetry = false,
+        },
+      },
+    })
 
-      ['rust_analyzer'] = function(server_name)
-        lspconfig[server_name].setup {
-          server = {
-            standalone = true,
+    vim.lsp.config('rust_analyzer', {
+      server = {
+        standalone = true,
+      },
+    })
+
+    vim.lsp.config('stylelint_lsp', {
+      filetypes = { 'css', 'less', 'scss', 'sass' },
+    })
+
+    vim.lsp.config('jsonls', {
+      settings = {
+        json = {
+          schemas = schemastore.json.schemas(),
+          validate = { enable = true },
+        },
+      },
+    })
+
+    vim.lsp.config('yamlls', {
+      settings = {
+        yaml = {
+          schemaStore = {
+            enable = false,
+            url = '',
           },
-        }
-      end,
-
-      ['stylelint_lsp'] = function(server_name)
-        lspconfig[server_name].setup {
-          filetypes = { 'css', 'less', 'scss', 'sass' },
-        }
-      end,
-
-      ['jsonls'] = function(server_name)
-        lspconfig[server_name].setup {
-          settings = {
-            json = {
-              schemas = schemastore.json.schemas(),
-              validate = { enable = true },
-            },
-          },
-        }
-      end,
-
-      ['yamlls'] = function(server_name)
-        lspconfig[server_name].setup {
-          settings = {
-            yaml = {
-              schemaStore = {
-                enable = false,
-                url = '',
-              },
-              schemas = schemastore.yaml.schemas(),
-            },
-          },
-        }
-      end,
-    }
+          schemas = schemastore.yaml.schemas(),
+        },
+      },
+    })
 
     vim.api.nvim_create_autocmd('LspAttach', {
       desc = 'LSP actions',
@@ -175,9 +161,13 @@ return {
         set_buf_keymap('gS', require('fzf-lua').lsp_document_symbols)
         set_buf_keymap('gr', require('fzf-lua').lsp_references)
         set_buf_keymap('gR', vim.lsp.buf.rename)
-        set_buf_keymap('[d', vim.diagnostic.goto_prev)
+        set_buf_keymap('[d', function()
+          vim.diagnostic.jump { count = -1, float = true }
+        end)
         set_buf_keymap('gl', vim.diagnostic.open_float)
-        set_buf_keymap(']d', vim.diagnostic.goto_next)
+        set_buf_keymap(']d', function()
+          vim.diagnostic.jump { count = 1, float = true }
+        end)
         set_buf_keymap('ga', require('fzf-lua').lsp_code_actions)
       end,
     })
