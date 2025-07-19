@@ -21,7 +21,7 @@ plug "Aloxaf/fzf-tab"
 autoload -Uz compinit && compinit
 
 # Add fnm to shell
-eval "$(fnm env --use-on-cd)"
+eval "$(fnm env --use-on-cd --shell=zsh)"
 
 # Add zoxide to shell
 eval "$(zoxide init zsh)"
