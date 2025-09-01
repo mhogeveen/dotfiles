@@ -1,5 +1,7 @@
 ---@param projects_dir string
 local function fzf_projects(projects_dir)
+  local fzf_lua = require 'fzf-lua'
+  ---@type fzf-lua.config.Base|{}
   local opts = {
     prompt = 'Projects > ',
     actions = {
@@ -10,18 +12,15 @@ local function fzf_projects(projects_dir)
         fn = function()
           vim.cmd 'cd ~/.dotfiles'
         end,
-        header = 'open dotfiles',
       },
     },
+    header = 'Open dotfiles: ' .. fzf_lua.utils.ansi_codes.blue '<ctrl-d>',
     fn_transform = function(option)
-      return projects_dir .. '/' .. option
+      return FzfLua.make_entry.file(option, { file_icons = true, color_icons = true })
     end,
   }
 
-  opts = require('fzf-lua').config.normalize_opts(opts, {}) -- Inherit global opts (highlights, etc)
-  opts = require('fzf-lua').core.set_header(opts, { 'actions' }) -- Setup header string from actions tbl
-
-  require('fzf-lua').fzf_exec('ls ' .. projects_dir, opts)
+  fzf_lua.fzf_exec('find ' .. projects_dir .. ' -maxdepth 1 -mindepth 1 -type d', opts)
 end
 
 ---@type LazySpec
@@ -87,6 +86,16 @@ return {
       end,
       mode = 'n',
       desc = 'fzf - projects',
+      noremap = true,
+      silent = true,
+    },
+    {
+      'fwd',
+      function()
+        require('fzf-lua').diagnostics_workspace()
+      end,
+      mode = 'n',
+      desc = 'fzf - workspace diagnostics',
       noremap = true,
       silent = true,
     },
