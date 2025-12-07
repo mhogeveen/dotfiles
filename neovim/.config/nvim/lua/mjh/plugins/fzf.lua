@@ -82,7 +82,7 @@ return {
     {
       'fp',
       function()
-        fzf_projects '~/repos'
+        fzf_projects '~/git'
       end,
       mode = 'n',
       desc = 'fzf - projects',
