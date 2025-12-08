@@ -1,9 +1,9 @@
 # Define aliases.
 alias ls='eza -a'
-alias c='clear'
+alias c=' clear'
 alias lg='lazygit -ucd="$HOME/.config/lazygit"'
 alias n='nvim'
-alias e='exit'
+alias e=' exit'
 alias ip='ipconfig getifaddr en0'
 alias pp="pnpm"
 
