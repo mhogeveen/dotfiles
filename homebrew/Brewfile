@@ -35,6 +35,7 @@ brew "cbonsai"
 brew "cmake"
 brew "php", restart_service: :changed
 brew "composer"
+brew "contentful-cli"
 brew "coreutils"
 brew "deno"
 brew "dnsmasq", restart_service: :changed
@@ -151,3 +152,4 @@ vscode "tamasfe.even-better-toml"
 vscode "vscodevim.vim"
 vscode "wakatime.vscode-wakatime"
 vscode "xabikos.javascriptsnippets"
+cargo "git-delta"
