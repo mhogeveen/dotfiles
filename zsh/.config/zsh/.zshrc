@@ -12,22 +12,24 @@
 [ -f "$ZDOTDIR/cursor.zsh" ] && source "$ZDOTDIR/cursor.zsh"
 
 # Plugins
-plug "zsh-users/zsh-autosuggestions"
-plug "zsh-users/zsh-syntax-highlighting"
-plug "zsh-users/zsh-completions"
-plug "Aloxaf/fzf-tab"
+if command -v plug &> /dev/null; then
+  plug "zsh-users/zsh-autosuggestions"
+  plug "zsh-users/zsh-syntax-highlighting"
+  plug "zsh-users/zsh-completions"
+  plug "Aloxaf/fzf-tab"
+fi
 
 # Autoload functions
 autoload -Uz compinit && compinit
 
 # Add fnm to shell
-eval "$(fnm env --use-on-cd --shell=zsh)"
+[[ -v commands[fnm] ]] && eval "$(fnm env --use-on-cd --shell=zsh)"
 
 # Add zoxide to shell
-eval "$(zoxide init zsh)"
+[[ -v commands[zoxide] ]] && eval "$(zoxide init zsh)"
 
 # Add fzf to shell
-eval "$(fzf --zsh)"
+[[ -v commands[fzf] ]] && eval "$(fzf --zsh)"
 
 # pnpm
 export PNPM_HOME="/Users/$USER/Library/pnpm"

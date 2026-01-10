@@ -1,2 +1,2 @@
 # Set PATH, MANPATH, etc., for Homebrew.
-eval "$(/opt/homebrew/bin/brew shellenv)"
+[[ -v commands[brew] ]] && eval "$(/opt/homebrew/bin/brew shellenv)"

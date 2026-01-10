@@ -1,5 +1,5 @@
 # Define aliases.
-alias ls='eza -a'
+alias ls='command -v eza &> /dev/null && eza -a || ls -a'
 alias c=' clear'
 alias lg='lazygit -ucd="$HOME/.config/lazygit"'
 alias n='nvim'
