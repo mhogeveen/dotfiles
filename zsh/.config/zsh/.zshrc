@@ -22,14 +22,18 @@ fi
 # Autoload functions
 autoload -Uz compinit && compinit
 
+# Set PATH, MANPATH, etc., for Homebrew.
+# Needs to be 'eval'ed before any package eval's installed by Homebrew
+[[ "type brew &> /dev/null" ]] && eval "$(/opt/homebrew/bin/brew shellenv)"
+
 # Add fnm to shell
-[[ -v commands[fnm] ]] && eval "$(fnm env --use-on-cd --shell=zsh)"
+[[ "type fnm &> /dev/null" ]] && eval "$(fnm env --use-on-cd --shell=zsh)"
 
 # Add zoxide to shell
-[[ -v commands[zoxide] ]] && eval "$(zoxide init zsh)"
+[[ "type zoxide &> /dev/null" ]] && eval "$(zoxide init zsh)"
 
 # Add fzf to shell
-[[ -v commands[fzf] ]] && eval "$(fzf --zsh)"
+[[ "type fzf &> /dev/null" ]] && eval "$(fzf --zsh)"
 
 # pnpm
 export PNPM_HOME="/Users/$USER/Library/pnpm"
