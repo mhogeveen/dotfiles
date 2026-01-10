@@ -23,7 +23,7 @@ setopt PROMPT_SUBST
 #   under section named 'Simple Prompt Escapes'
 
 # Left Prompt
-PROMPT=''
+PROMPT='%F{green}$USER@$HOST%f '
 
 # If the current path has at least 4 elements relative to the root directory
 #   print `~/.../<last two path elements>`
