@@ -23,7 +23,7 @@ setopt PROMPT_SUBST
 #   under section named 'Simple Prompt Escapes'
 
 # Left Prompt
-PROMPT='%F{green}$USER@$HOST%f '
+PROMPT=''
 
 # If the current path has at least 4 elements relative to the root directory
 #   print `~/.../<last two path elements>`
@@ -37,4 +37,6 @@ PROMPT+=$'${vcs_info_msg_0_}\n'
 PROMPT+='%(?.%F{green}>.%F{red}>)%f '
 
 # Right Prompt
-# RPROMPT=''
+if [[ -n $SHELL_CONNECTION ]] then;
+  RPROMPT="%F{green}%n@%m%f"
+fi
