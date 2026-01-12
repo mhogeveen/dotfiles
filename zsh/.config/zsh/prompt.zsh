@@ -37,6 +37,6 @@ PROMPT+=$'${vcs_info_msg_0_}\n'
 PROMPT+='%(?.%F{green}>.%F{red}>)%f '
 
 # Right Prompt
-if [[ -n $SHELL_CONNECTION ]] then;
+if [[ -n $SHELL_CONNECTION ]]; then
   RPROMPT="%F{green}%n@%m%f"
 fi
