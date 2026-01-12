@@ -24,7 +24,7 @@ autoload -Uz compinit && compinit
 
 # Set PATH, MANPATH, etc., for Homebrew.
 # Needs to be 'eval'ed before any package eval's installed by Homebrew
-type brew &> /dev/null && eval "$(/opt/homebrew/bin/brew shellenv)"
+[[ -f "/opt/homebrew/bin/brew" ]] && eval "$(/opt/homebrew/bin/brew shellenv)"
 
 # Add fnm to shell
 type fnm &> /dev/null && eval "$(fnm env --use-on-cd --shell=zsh)"

@@ -25,6 +25,11 @@ setopt PROMPT_SUBST
 # Left Prompt
 PROMPT=''
 
+# If in an active ssh session print <username>@<hostname>
+# as the first element of the prompt
+if [[ -n $SHELL_CONNECTION || -n $SHELL_CLIENT ]]; then
+  PROMPT+='%F{green}%n@%m%f'
+fi
 # If the current path has at least 4 elements relative to the root directory
 #   print `~/.../<last two path elements>`
 # else
@@ -37,6 +42,4 @@ PROMPT+=$'${vcs_info_msg_0_}\n'
 PROMPT+='%(?.%F{green}>.%F{red}>)%f '
 
 # Right Prompt
-if [[ -n $SHELL_CONNECTION ]]; then
-  RPROMPT="%F{green}%n@%m%f"
-fi
+RPROMPT=''
