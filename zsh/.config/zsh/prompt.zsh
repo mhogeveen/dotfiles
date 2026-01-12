@@ -27,8 +27,8 @@ PROMPT=''
 
 # If in an active ssh session print <username>@<hostname>
 # as the first element of the prompt
-if [[ -n $SHELL_CONNECTION || -n $SHELL_CLIENT ]]; then
-  PROMPT+='%F{green}%n@%m%f'
+if [[ -n $SSH_CONNECTION || -n $SSH_CLIENT ]]; then
+  PROMPT+='%F{green}%n@%m%f '
 fi
 # If the current path has at least 4 elements relative to the root directory
 #   print `~/.../<last two path elements>`
@@ -42,4 +42,4 @@ PROMPT+=$'${vcs_info_msg_0_}\n'
 PROMPT+='%(?.%F{green}>.%F{red}>)%f '
 
 # Right Prompt
-RPROMPT=''
+# RPROMPT=''
