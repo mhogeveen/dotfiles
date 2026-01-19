@@ -10,6 +10,9 @@ delete:
 init:
 	@stow --verbose --adopt */
 
+stow-host:
+	@./scripts/stow-host.sh $(args)
+
 up: brew zap pnpm rust nvim
 
 brew:
