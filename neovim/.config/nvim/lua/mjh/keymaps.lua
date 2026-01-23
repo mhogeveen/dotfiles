@@ -20,6 +20,12 @@ map('n', '<C-j>', '<C-w>j')
 map('n', '<C-k>', '<C-w>k')
 map('n', '<C-l>', '<C-w>l')
 
+-- Move buffers around
+map('n', '<leader>mh', '<C-w>H')
+map('n', '<leader>mj', '<C-w>J')
+map('n', '<leader>mk', '<C-w>K')
+map('n', '<leader>ml', '<C-w>L')
+
 -- Vertical movement
 map('n', '<C-d>', '<C-d>zz')
 map('n', '<C-u>', '<C-u>zz')
