@@ -3,15 +3,12 @@ return {
   -- https://github.com/catppuccin/nvim
   'catppuccin/nvim',
   name = 'catppuccin',
-  lazy = true,
   priority = 1000,
   init = function()
-    -- Set Catppuccin flavour (can be set with the :Catppuccin <flavour> cmd on the fly)
-    vim.g.catppuccin_flavour = 'mocha' -- latte, frappe, macchiato, mocha
-    -- Set colorscheme with Vim cmd
-    vim.cmd 'colorscheme catppuccin'
+    vim.cmd 'colorscheme catppuccin-nvim'
   end,
   opts = {
+    flavour = 'mocha', -- latte, frappe, macchiato, mocha
     transparent_background = false,
     styles = {
       comments = { 'italic' },
