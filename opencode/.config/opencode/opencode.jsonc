@@ -1,0 +1,14 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "model": "{env:OPENCODE_MODEL}",
+  "mcp": {
+    "ado": {
+      "enabled": true,
+      "type": "local",
+      "command": ["npx", "@azure-devops/mcp", "{env:ADO_MCP_ORG}", "--authentication", "envvar"],
+      "environment": {
+	"ADO_MCP_AUTH_TOKEN": "{env:ADO_MCP_AUTH_TOKEN}"
+      }
+    }
+  }
+}
