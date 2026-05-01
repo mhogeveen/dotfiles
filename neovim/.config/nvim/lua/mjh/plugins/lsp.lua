@@ -17,6 +17,7 @@ return {
     {
       --- https://github.com/williamboman/mason.nvim
       'williamboman/mason.nvim',
+      cmd = { 'MasonUpdateAll' },
       dependencies = { 'Zeioth/mason-extra-cmds', opts = {} },
       lazy = true,
       opts = {
@@ -46,46 +47,48 @@ return {
     local mason_lspconfig = require 'mason-lspconfig'
     local schemastore = require 'schemastore'
 
-    local is_bare_host = vim.tbl_contains({'nas', 'proxmox'}, vim.uv.os_gethostname())
+    local is_bare_host = vim.tbl_contains({ 'nas', 'proxmox' }, vim.uv.os_gethostname())
 
-    local ensure_installed = is_bare_host and {
-      dap = {},
-      formatters = {
-        'stylua',
-      },
-      linters = {},
-      ls = {
-        'bashls',
-        'jsonls',
-        'lua_ls',
-        'marksman',
-        'yamlls',
-      },
-    } or {
-      dap = {},
-      formatters = {
-        'prettierd',
-        'stylua',
-      },
-      linters = {},
-      ls = {
-        'bashls',
-        'biome',
-        'cssls',
-        'eslint',
-        'gopls',
-        'html',
-        'intelephense',
-        'jsonls',
-        'lua_ls',
-        'marksman',
-        'stylelint_lsp',
-        'tailwindcss',
-        'terraformls',
-        'ts_ls',
-        'yamlls',
-      },
-    }
+    local ensure_installed = is_bare_host
+        and {
+          dap = {},
+          formatters = {
+            'stylua',
+          },
+          linters = {},
+          ls = {
+            'bashls',
+            'jsonls',
+            'lua_ls',
+            'marksman',
+            'yamlls',
+          },
+        }
+      or {
+        dap = {},
+        formatters = {
+          'prettierd',
+          'stylua',
+        },
+        linters = {},
+        ls = {
+          'bashls',
+          'biome',
+          'cssls',
+          'eslint',
+          'gopls',
+          'html',
+          'intelephense',
+          'jsonls',
+          'lua_ls',
+          'marksman',
+          'stylelint_lsp',
+          'tailwindcss',
+          'terraformls',
+          'ts_ls',
+          'yamlls',
+        },
+      }
 
     local flat_ensure_installed = vim.tbl_extend(
       'force',
@@ -95,74 +98,87 @@ return {
       ensure_installed.ls
     )
 
+    if vim.tbl_contains(flat_ensure_installed, 'lua_ls') then
+      vim.lsp.config('lua_ls', {
+        settings = {
+          Lua = {
+            runtime = {
+              version = 'LuaJIT',
+            },
+            diagnostics = {
+              globals = { 'vim', 'hs' },
+            },
+            workspace = {
+              checkThirdParty = false,
+              library = {
+                '${3rd}/luv/library',
+                unpack(vim.api.nvim_get_runtime_file('', true)),
+              },
+            },
+            telemetry = false,
+          },
+        },
+      })
+    end
+
+    if vim.tbl_contains(flat_ensure_installed, 'rust_analyzer') then
+      vim.lsp.config('rust_analyzer', {
+        server = {
+          standalone = true,
+        },
+      })
+    end
+
+    if vim.tbl_contains(flat_ensure_installed, 'stylelint_lsp') then
+      vim.lsp.config('stylelint_lsp', {
+        filetypes = { 'css', 'less', 'scss', 'sass' },
+      })
+    end
+
+    if vim.tbl_contains(flat_ensure_installed, 'jsonls') then
+      vim.lsp.config('jsonls', {
+        settings = {
+          json = {
+            schemas = schemastore.json.schemas(),
+            validate = { enable = true },
+          },
+        },
+      })
+    end
+
+    if vim.tbl_contains(flat_ensure_installed, 'yamlls') then
+      vim.lsp.config('yamlls', {
+        settings = {
+          yaml = {
+            schemaStore = {
+              enable = false,
+              url = '',
+            },
+            schemas = schemastore.yaml.schemas(),
+          },
+        },
+      })
+    end
+
+    if vim.tbl_contains(flat_ensure_installed, 'biome') then
+      vim.lsp.config(
+        'biome',
+        ---@type vim.lsp.Config
+        {
+          cmd = function(dispatchers)
+            local cmd = vim.fn.stdpath 'data' .. '/mason/bin/biome'
+            return vim.lsp.rpc.start({ cmd, 'lsp-proxy' }, dispatchers)
+          end,
+        }
+      )
+    end
+
     mason.setup()
     mason_lspconfig.setup {
       automatic_installation = true,
       automatic_enable = flat_ensure_installed,
       ensure_installed = flat_ensure_installed,
     }
-
-    if vim.tbl_contains(flat_ensure_installed, 'lua_ls') then
-      vim.lsp.config('lua_ls', {
-	settings = {
-	  Lua = {
-	    runtime = {
-	      version = 'LuaJIT',
-	    },
-	    diagnostics = {
-	      globals = { 'vim', 'hs' },
-	    },
-	    workspace = {
-	      checkThirdParty = false,
-	      library = {
-		'${3rd}/luv/library',
-		unpack(vim.api.nvim_get_runtime_file('', true)),
-	      },
-	    },
-	    telemetry = false,
-	  },
-	},
-      })
-    end
-
-    if vim.tbl_contains(flat_ensure_installed, 'rust_analyzer') then
-      vim.lsp.config('rust_analyzer', {
-	server = {
-	  standalone = true,
-	},
-      })
-    end
-
-    if vim.tbl_contains(flat_ensure_installed, 'stylelint_lsp') then
-      vim.lsp.config('stylelint_lsp', {
-	filetypes = { 'css', 'less', 'scss', 'sass' },
-      })
-    end
-
-    if vim.tbl_contains(flat_ensure_installed, 'jsonls') then
-      vim.lsp.config('jsonls', {
-	settings = {
-	  json = {
-	    schemas = schemastore.json.schemas(),
-	    validate = { enable = true },
-	  },
-	},
-      })
-    end
-
-    if vim.tbl_contains(flat_ensure_installed, 'yamlls') then
-      vim.lsp.config('yamlls', {
-	settings = {
-	  yaml = {
-	    schemaStore = {
-	      enable = false,
-	      url = '',
-	    },
-	    schemas = schemastore.yaml.schemas(),
-	  },
-	},
-      })
-    end
 
     vim.api.nvim_create_autocmd('LspAttach', {
       desc = 'LSP actions',
