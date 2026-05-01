@@ -44,6 +44,7 @@ return {
         'svelte',
         'swift',
         'terraform',
+        'toml',
         'tsx',
         'typescript',
         'vim',
