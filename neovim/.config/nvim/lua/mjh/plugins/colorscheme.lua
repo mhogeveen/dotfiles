@@ -48,6 +48,7 @@ return {
           background = true,
         },
       },
+      neotree = true,
       fzf = true,
       treesitter = true,
     },
