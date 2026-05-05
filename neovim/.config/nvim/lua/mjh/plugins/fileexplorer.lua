@@ -625,7 +625,7 @@ return {
           },
           mappings = {
             ['h'] = 'close_node',
-            ['l'] = 'open',
+            ['l'] = 'open_with_window_picker',
             ['et'] = 'close_window',
             ['<C-s>'] = 'split_with_window_picker',
             ['<C-v>'] = 'vsplit_with_window_picker',
