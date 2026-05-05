@@ -160,19 +160,6 @@ return {
       })
     end
 
-    if vim.tbl_contains(flat_ensure_installed, 'biome') then
-      vim.lsp.config(
-        'biome',
-        ---@type vim.lsp.Config
-        {
-          cmd = function(dispatchers)
-            local cmd = vim.fn.stdpath 'data' .. '/mason/bin/biome'
-            return vim.lsp.rpc.start({ cmd, 'lsp-proxy' }, dispatchers)
-          end,
-        }
-      )
-    end
-
     mason.setup()
     mason_lspconfig.setup {
       automatic_installation = true,
