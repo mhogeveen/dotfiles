@@ -199,7 +199,7 @@ return {
       {
         'et',
         function()
-          vim.cmd 'Neotree toggle right'
+          vim.cmd 'Neotree focus right reveal'
         end,
         mode = 'n',
         desc = 'Open Neo-tree',
@@ -417,7 +417,7 @@ return {
             indent_size = 2,
             padding = 1,
             -- indent guides
-            with_markers = true,
+            with_markers = false,
             indent_marker = '│',
             last_indent_marker = '└',
             highlight = 'NeoTreeIndentMarker',
@@ -676,7 +676,7 @@ return {
             ['A'] = 'add_directory', -- also accepts the config.show_path and config.insert_as options.
             ['d'] = 'delete',
             ['r'] = 'rename',
-            ['y'] = 'copy_to_clipboard',
+            -- ['y'] = 'copy_to_clipboard',
             ['x'] = 'cut_to_clipboard',
             ['p'] = 'paste_from_clipboard',
             ['<C-r>'] = 'clear_clipboard',
@@ -690,6 +690,54 @@ return {
             -- The type of a and b are neotree.Help.Mapping
             ['<'] = 'prev_source',
             ['>'] = 'next_source',
+            ['y'] = function(state)
+              local node = state.tree:get_node()
+
+              if node == nil then
+                vim.notify 'No node selected'
+                return
+              end
+
+              local filepath = node:get_id()
+              local filename = node.name
+              local modify = vim.fn.fnamemodify
+
+              local results = {
+                filepath,
+                '/' .. modify(filepath, ':.'),
+                modify(filepath, ':~'),
+                filename,
+                modify(filename, ':r'),
+                modify(filename, ':e'),
+              }
+
+              local defer_notify = function(text)
+                vim.defer_fn(function()
+                  vim.notify(text)
+                end, 50)
+              end
+
+              vim.ui.select({
+                'Absolute path: ' .. results[1],
+                'Path relative to CWD: ' .. results[2],
+                'Path relative to HOME: ' .. results[3],
+                'Filename: ' .. results[4],
+                'Filename without extension: ' .. results[5],
+                'Extension of the filename: ' .. results[6],
+              }, { prompt = 'Choose to copy to clipboard:' }, function(choice, index)
+                if choice and index then
+                  local result = results[index]
+                  if result then
+                    vim.fn.setreg('+', result)
+                    defer_notify('Copied: ' .. result)
+                  else
+                    defer_notify 'Invalid selection'
+                  end
+                else
+                  defer_notify 'Selection cancelled'
+                end
+              end)
+            end,
           },
         },
         filesystem = {
@@ -830,9 +878,9 @@ return {
           group_empty_dirs = false, -- when true, empty folders will be grouped together
           search_limit = 50, -- max number of search results when using filters
           follow_current_file = {
-            enabled = true, -- This will find and focus the file in the active buffer every time
+            enabled = false, -- This will find and focus the file in the active buffer every time
             --               -- the current file is changed while the tree is open.
-            leave_dirs_open = false, -- `false` closes auto expanded dirs, such as with `:Neotree reveal`
+            leave_dirs_open = true, -- `false` closes auto expanded dirs, such as with `:Neotree reveal`
           },
           hijack_netrw_behavior = 'open_default', -- netrw disabled, opening a directory opens neo-tree
           -- in whatever position is specified in window.position
