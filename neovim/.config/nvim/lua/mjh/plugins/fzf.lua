@@ -28,6 +28,7 @@ return {
   --- https://github.com/ibhagwan/fzf-lua
   'ibhagwan/fzf-lua',
   dependencies = { 'nvim-tree/nvim-web-devicons' },
+  event = { 'VeryLazy' },
   keys = {
     {
       'ef',
@@ -138,7 +139,8 @@ return {
       },
     }
   end,
-  init = function()
+  config = function(_, opts)
+    require('fzf-lua').setup(opts)
     require('fzf-lua').register_ui_select()
   end,
 }

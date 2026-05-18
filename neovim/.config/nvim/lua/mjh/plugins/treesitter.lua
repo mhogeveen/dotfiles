@@ -3,6 +3,7 @@ return {
   {
     'romus204/tree-sitter-manager.nvim',
     dependencies = {}, -- tree-sitter CLI must be installed system-wide
+    cmd = { 'TSManager' },
     init = function()
       vim.api.nvim_create_autocmd('FileType', {
         callback = function()

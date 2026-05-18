@@ -186,7 +186,6 @@ return {
         },
       },
     },
-    lazy = false, -- neo-tree will lazily load itself
     keys = {
       {
         'et',

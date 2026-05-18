@@ -17,7 +17,7 @@ return {
   {
     --- https://github.com/folke/todo-comments.nvim
     'folke/todo-comments.nvim',
-    event = 'BufEnter',
+    event = { 'BufReadPost', 'BufNewFile' },
     dependencies = {
       'nvim-lua/plenary.nvim',
     },

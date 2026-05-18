@@ -2,6 +2,7 @@
 return {
   --- https://github.com/nvim-lualine/lualine.nvim
   'nvim-lualine/lualine.nvim',
+  event = 'VeryLazy',
   opts = function()
     local icons = require 'mjh.utils.icons'
     return {

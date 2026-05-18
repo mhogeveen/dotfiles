@@ -5,9 +5,18 @@ return {
   name = 'catppuccin',
   priority = 1000,
   init = function()
+    -- Automatically recompile after config change
+    vim.api.nvim_create_autocmd('BufWritePost', {
+      pattern = '**/plugins/colorscheme.lua',
+      callback = function()
+        vim.cmd 'CatppuccinCompile'
+      end,
+    })
+    -- Set the colorscheme
     vim.cmd 'colorscheme catppuccin-nvim'
   end,
   opts = {
+    compile_path = vim.fn.stdpath 'cache' .. '/catppuccin',
     flavour = 'mocha', -- latte, frappe, macchiato, mocha
     transparent_background = false,
     styles = {

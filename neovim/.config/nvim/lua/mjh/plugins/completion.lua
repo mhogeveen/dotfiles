@@ -2,7 +2,8 @@
 return {
   --- https://github.com/Saghen/blink.cmp
   'saghen/blink.cmp',
-  version = 'v0.*',
+  version = 'v1.*',
+  event = { 'InsertEnter', 'CmdlineEnter' },
 
   ---@module 'blink.cmp'
   ---@type blink.cmp.Config
