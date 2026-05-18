@@ -27,8 +27,8 @@ map('n', '<leader>mk', '<C-w>K')
 map('n', '<leader>ml', '<C-w>L')
 
 -- Vertical movement
-map('n', '<C-d>', '<C-d>zz')
-map('n', '<C-u>', '<C-u>zz')
+-- map('n', '<C-d>', '<C-d>zz') -- doesn't work well with snacks.nvim scroll
+-- map('n', '<C-u>', '<C-u>zz') -- doesn't work well with snacks.nvim scroll
 
 -- Resize with arrows
 map('n', '<A-Up>', ':resize +2<CR>')
