@@ -38,7 +38,12 @@ return {
     {
       'lg',
       function()
-        Snacks.terminal 'lazygit -ucf ~/.config/lazygit/config.yml'
+        Snacks.terminal('lazygit -ucf ~/.config/lazygit/config.yml', {
+          win = {
+            border = 'single',
+            title = ' Lazygit ',
+          },
+        })
       end,
       mode = 'n',
       desc = 'Floating terminal with Lazygit',
