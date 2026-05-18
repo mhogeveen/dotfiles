@@ -6,15 +6,7 @@ return {
     enabled = true,
     keys = {
       {
-        'ee',
-        ':Oil<CR>',
-        mode = 'n',
-        desc = 'Open Oil',
-        noremap = true,
-        silent = true,
-      },
-      {
-        'ef',
+        'eo',
         ":lua require('oil').toggle_float()<CR>",
         mode = 'n',
         desc = 'Toggle Oil float',

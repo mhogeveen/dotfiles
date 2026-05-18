@@ -9,10 +9,10 @@ return {
     theme.section.header.val = ascii.relief
 
     theme.section.buttons.val = {
-      theme.button('ff', 'Find file', ':FzfLua files<CR>'),
-      theme.button('fg', 'Git files', ':FzfLua git_files<CR>'),
-      theme.button('fr', 'Live grep', ':FzfLua live_grep<CR>'),
-      theme.button('d', 'Dotfiles', ':cd ~/.dotfiles | :DrexDrawerOpen<CR>'),
+      theme.button('ef', 'Find file', ':FzfLua files<CR>'),
+      theme.button('eg', 'Git files', ':FzfLua git_files<CR>'),
+      theme.button('er', 'Live grep', ':FzfLua live_grep<CR>'),
+      theme.button('d', 'Dotfiles', ':cd ~/.dotfiles | :Neotree focus right reveal<CR>'),
       theme.button('q', 'Quit', ':qa!<CR>'),
     }
     theme.section.buttons.opts.spacing = 0

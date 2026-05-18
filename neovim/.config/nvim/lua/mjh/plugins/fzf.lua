@@ -30,7 +30,7 @@ return {
   dependencies = { 'nvim-tree/nvim-web-devicons' },
   keys = {
     {
-      'ff',
+      'ef',
       function()
         require('fzf-lua').files()
       end,
@@ -40,7 +40,7 @@ return {
       silent = true,
     },
     {
-      'fg',
+      'eg',
       function()
         require('fzf-lua').git_files()
       end,
@@ -50,7 +50,7 @@ return {
       silent = true,
     },
     {
-      'fr',
+      'er',
       function()
         require('fzf-lua').live_grep()
       end,
@@ -60,7 +60,7 @@ return {
       silent = true,
     },
     {
-      'fc',
+      'ec',
       function()
         require('fzf-lua').grep_cword()
       end,
@@ -70,7 +70,7 @@ return {
       silent = true,
     },
     {
-      'fb',
+      'eb',
       function()
         require('fzf-lua').buffers()
       end,
@@ -80,7 +80,7 @@ return {
       silent = true,
     },
     {
-      'fp',
+      'ep',
       function()
         fzf_projects '~/git'
       end,
@@ -90,7 +90,7 @@ return {
       silent = true,
     },
     {
-      'fwd',
+      'ed',
       function()
         require('fzf-lua').diagnostics_workspace()
       end,
@@ -138,9 +138,7 @@ return {
       },
     }
   end,
-  config = function(_, opts)
-    local fzf_lua = require 'fzf-lua'
-    fzf_lua.setup(opts)
-    fzf_lua.register_ui_select()
+  init = function()
+    require('fzf-lua').register_ui_select()
   end,
 }
