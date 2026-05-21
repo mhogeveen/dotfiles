@@ -36,7 +36,7 @@ return {
       silent = true,
     },
     {
-      'lg',
+      '<leader>lg',
       function()
         Snacks.terminal('lazygit -ucf ~/.config/lazygit/config.yml', {
           win = {
