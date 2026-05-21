@@ -57,6 +57,7 @@ return {
           background = true,
         },
       },
+      neotest = true,
       neotree = true,
       fzf = true,
       treesitter = true,
