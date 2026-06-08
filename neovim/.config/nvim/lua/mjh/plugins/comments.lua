@@ -1,22 +1,31 @@
 ---@type LazySpec
 return {
   {
-    --- https://github.com/numToStr/Comment.nvim
-    'numToStr/Comment.nvim',
+    --- https://github.com/nvim-mini/mini.comment
+    'nvim-mini/mini.comment',
+    version = '*', -- Stable
     dependencies = {
       --- https://github.com/JoosepAlviste/nvim-ts-context-commentstring
       'JoosepAlviste/nvim-ts-context-commentstring',
+      opts = {
+        enable_autocmd = false,
+      },
     },
-    event = 'VeryLazy',
+    event = { 'BufReadPost', 'BufNewFile' },
     config = function()
-      require('Comment').setup {
-        pre_hook = require('ts_context_commentstring.integrations.comment_nvim').create_pre_hook(),
+      require('mini.comment').setup {
+        options = {
+          custom_commentstring = function()
+            return require('ts_context_commentstring').calculate_commentstring() or vim.bo.commentstring
+          end,
+        },
       }
     end,
   },
   {
     --- https://github.com/folke/todo-comments.nvim
     'folke/todo-comments.nvim',
+    enabled = false,
     event = { 'BufReadPost', 'BufNewFile' },
     dependencies = {
       'nvim-lua/plenary.nvim',
