@@ -86,6 +86,7 @@ return {
           'tailwindcss',
           'terraformls',
           'ts_ls',
+          'typos_lsp',
           'yamlls',
         },
       }
