@@ -6,7 +6,7 @@ return {
   lazy = false,
   keys = {
     {
-      'dc',
+      '<leader>c',
       function()
         Snacks.bufdelete.delete()
       end,
@@ -16,7 +16,7 @@ return {
       silent = true,
     },
     {
-      'da',
+      '<leader>a',
       function()
         Snacks.bufdelete.all()
       end,
@@ -26,7 +26,7 @@ return {
       silent = true,
     },
     {
-      'do',
+      '<loader>o',
       function()
         Snacks.bufdelete.other()
       end,
