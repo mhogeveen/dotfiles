@@ -3,6 +3,7 @@ gui:
   theme:
     selectedLineBgColor:
       - black
+  showBottomLine: false
 git:
   pagers:
     - colorArg: always
