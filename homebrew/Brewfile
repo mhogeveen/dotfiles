@@ -1,104 +1,193 @@
-tap "gromgit/brewtils"
-tap "hashicorp/tap"
+tap "gromgit/brewtils", trusted: true
+tap "hashicorp/tap", trusted: true
 tap "homebrew/bundle"
 tap "homebrew/cask-fonts"
 tap "homebrew/command-not-found"
 tap "homebrew/services"
-tap "jesseduffield/lazygit"
-tap "jwt-rs/jwt-ui"
-tap "labd/mach-composer"
-tap "mach-composer/mach-composer"
-tap "nikitabobko/tap"
-tap "oven-sh/bun"
-tap "sst/tap"
-tap "teamookla/speedtest"
-tap "wez/wezterm"
+tap "jesseduffield/lazygit", trusted: true
+tap "jwt-rs/jwt-ui", trusted: true
+tap "labd/mach-composer", trusted: true
+tap "mach-composer/mach-composer", trusted: true
+tap "nikitabobko/tap", trusted: true
+tap "oven-sh/bun", trusted: true
+tap "sst/tap", trusted: true
+tap "teamookla/speedtest", trusted: true
+tap "wez/wezterm", trusted: true
+# Run your GitHub Actions locally
 brew "act"
+# Automate deployment, configuration, and upgrading
 brew "ansible"
+# Securely store and access AWS credentials in development environments
 brew "aws-vault"
+# Official Amazon AWS command-line interface
 brew "awscli"
+# Microsoft Azure CLI 2.0
 brew "azure-cli"
+# Bourne-Again SHell, a UNIX command interpreter
 brew "bash"
+# Programmable completion for Bash 3.2
 brew "bash-completion"
+# Open-source, cross-platform JavaScript runtime environment
 brew "node"
+# Language Server for Bash
 brew "bash-language-server"
+# Clone of cat(1) with syntax highlighting and Git integration
 brew "bat"
+# Resource monitor. C++ version and continuation of bashtop and bpytop
 brew "btop"
+# Core application library for C
 brew "glib"
+# Console Bonsai is a bonsai tree generator, written in C using ncurses
 brew "cbonsai"
+# Cross-platform make
 brew "cmake"
+# Contentful command-line tools
 brew "contentful-cli"
+# GNU File, Shell, and Text utilities
 brew "coreutils"
+# Get a file from an HTTP, HTTPS or FTP server
 brew "curl"
+# Lightweight DNS forwarder and DHCP server
 brew "dnsmasq", restart_service: :changed
+# Isolated development environments using Docker
 brew "docker-compose"
+# Global DNS propagation checker that gives pretty output
 brew "dug"
+# Library for encoding and decoding .avif files
 brew "libavif"
+# Make creating custom firmwares for ESP32/ESP8266 super easy
 brew "esphome"
+# Modern, maintained replacement for ls
 brew "eza"
+# Fast and simple Node.js version manager
 brew "fnm"
+# Command-line fuzzy finder written in Go
 brew "fzf"
+# GNU awk utility
 brew "gawk"
+# New file format for still image compression
 brew "jpeg-xl"
+# Toolkit for image loading and pixel buffer manipulation
 brew "gdk-pixbuf"
+# Open source programming language to build simple/reliable/efficient software
 brew "go"
+# Task is a task runner/build tool that aims to be simpler and easier to use
 brew "go-task"
+# Package compiler and linker metadata toolkit
 brew "pkgconf"
+# Generate introspection data for GObject libraries
 brew "gobject-introspection"
+# Language server for the Go language
 brew "gopls"
+# C/C++ and Java libraries for Unicode and globalization
 brew "icu4c@76"
+# Lightweight and flexible command-line JSON processor
 brew "jq"
+# Handy way to save and run project-specific commands
 brew "just"
+# Simple terminal UI for git commands
 brew "lazygit"
+# Framework for layout and rendering of i18n text
 brew "pango"
+# Library to render SVG files using Cairo
 brew "librsvg"
+# Package manager for the Lua programming language
 brew "luarocks"
+# Open source relational database management system
 brew "mysql", restart_service: :changed
+# Open source relational database management system
 brew "mysql@8.4"
+# Fast, highly customisable system info script
 brew "neofetch"
+# Ambitious Vim-fork focused on extensibility and agility
 brew "neovim"
+# HTTP(S) server and reverse proxy, and IMAP/POP3 proxy server
 brew "nginx", restart_service: :changed
+# OCaml package manager
 brew "opam"
+# Password manager
 brew "pass"
+# General-purpose scripting language
 brew "php", restart_service: :changed
+# General-purpose scripting language
 brew "php@8.1"
+# Object-relational database system
 brew "postgresql@18", restart_service: :changed, link: true
+# Framework for managing multi-language pre-commit hooks
 brew "pre-commit"
+# Interpreted, interactive, object-oriented programming language
 brew "python@3.12"
+# Interpreted, interactive, object-oriented programming language
 brew "python@3.9"
+# Install various Ruby versions and implementations
 brew "ruby-build"
+# Ruby version manager
 brew "rbenv"
+# Search tool like grep and The Silver Searcher
 brew "ripgrep"
+# CLI for managing and maintaining data graphs with Apollo Studio
 brew "rover"
+# Experimental Rust compiler front-end for IDEs
 brew "rust-analyzer"
+# Editor of encrypted files
 brew "sops"
+# Organize software neatly under a single directory tree (e.g. /usr/local)
 brew "stow"
+# Easiest, most secure way to use WireGuard and 2FA
 brew "tailscale"
+# Program that allows you to count code, quickly
 brew "tokei"
+# Parser generator tool
 brew "tree-sitter-cli"
+# Extremely fast Python package installer and resolver, written in Rust
 brew "uv"
+# Command-line interface for Vercel
 brew "vercel-cli"
+# Internet file retriever
 brew "wget"
+# Blazing fast terminal file manager written in Rust, based on async I/O
 brew "yazi"
+# Process YAML, JSON, XML, CSV and properties documents from the CLI
 brew "yq"
+# Shell extension to navigate your filesystem faster
 brew "zoxide"
+# Interactive TUI for Homebrew
 brew "gromgit/brewtils/taproom"
+# A Terminal UI for decoding/encoding JSON Web Tokens
 brew "jwt-rs/jwt-ui/jwt-ui"
+# MACH composer is a framework that you use to orchestrate and extend
+# modern digital commerce & experience platforms, based on MACH
+# technologies and cloud native services..
 brew "mach-composer/mach-composer/mach-composer"
+# Incredibly fast JavaScript runtime, bundler, transpiler and package manager - all in one.
 brew "oven-sh/bun/bun"
+# The AI coding agent built for the terminal.
 brew "sst/tap/opencode"
+# Ookla Speedtest
 brew "teamookla/speedtest/speedtest"
+# Command-line interface for 1Password
 cask "1password-cli"
+# AeroSpace is an i3-like tiling window manager for macOS
 cask "nikitabobko/tap/aerospace"
+# Chromium based browser
 cask "arc"
+# Tool to flash OS images to SD cards & USB drives
 cask "balenaetcher"
+# HTTP(S) debugging proxy, analyzer, and client
 cask "http-toolkit"
+# Keyboard customiser
 cask "karabiner-elements"
+# Knowledge base that works on top of a local folder of plain text Markdown files
 cask "obsidian"
+# Control your tools with a few keystrokes
 cask "raycast"
+# Music streaming service
 cask "spotify"
+# Multimedia player
 cask "vlc"
+# GPU-accelerated cross-platform terminal emulator and multiplexer
 cask "wezterm"
+# Gecko based web browser
 cask "zen"
 cargo "abscissa"
 cargo "fd-find"
