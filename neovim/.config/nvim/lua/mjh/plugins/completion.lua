@@ -62,6 +62,10 @@ return {
           end,
         },
       },
+      per_filetype = {
+        -- As per Obsidian.nvim requirement
+        markdown = { 'lsp' },
+      },
     },
     appearance = {
       use_nvim_cmp_as_default = false,

@@ -39,14 +39,33 @@ return {
       '<leader>lg',
       function()
         Snacks.terminal('lazygit -ucf ~/.config/lazygit/config.yml', {
+          auto_close = true,
           win = {
             border = 'single',
-            title = ' Lazygit ',
+            title = ' Lazygit - CWD ',
           },
         })
       end,
       mode = 'n',
       desc = 'Floating terminal with Lazygit',
+      noremap = true,
+      silent = true,
+    },
+    {
+      '<leader>og',
+      function()
+        local Obsidian = require 'mjh.utils.obsidian'
+        Snacks.terminal('lazygit -ucf ~/.config/lazygit/config.yml', {
+          auto_close = true,
+          cwd = Obsidian.resolve_obsidian_vault(Obsidian.VaultType.Main).absolute_path,
+          win = {
+            border = 'single',
+            title = ' Lazygit - Obsidian ',
+          },
+        })
+      end,
+      mode = 'n',
+      desc = 'Floating terminal with Lazygit for Obsidian vault',
       noremap = true,
       silent = true,
     },
