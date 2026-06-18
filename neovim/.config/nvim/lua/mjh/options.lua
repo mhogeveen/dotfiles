@@ -21,7 +21,7 @@ local options = {
   timeoutlen = 500, -- time in ms to wait for a mapped sequence to complete
   undofile = true, -- save undo history to a file
   updatetime = 250, -- cursorhold time in ms
-  wrap = false, -- do not wrap lines by defualt
+  wrap = false, -- do not wrap lines by default
   wrapscan = true, -- searches wrap around the end of the file
 }
 
