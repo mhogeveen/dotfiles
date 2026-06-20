@@ -1,3 +1,5 @@
+tap "felixkratz/formulae", trusted: true
+tap "fsouza/prettierd", trusted: true
 tap "gromgit/brewtils", trusted: true
 tap "hashicorp/tap", trusted: true
 tap "homebrew/bundle"
@@ -6,10 +8,12 @@ tap "homebrew/command-not-found"
 tap "homebrew/services"
 tap "jesseduffield/lazygit", trusted: true
 tap "jwt-rs/jwt-ui", trusted: true
+tap "koekeishiya/formulae", trusted: true
 tap "labd/mach-composer", trusted: true
 tap "mach-composer/mach-composer", trusted: true
 tap "nikitabobko/tap", trusted: true
 tap "oven-sh/bun", trusted: true
+tap "spicetify/tap", trusted: true
 tap "sst/tap", trusted: true
 tap "teamookla/speedtest", trusted: true
 tap "wez/wezterm", trusted: true
@@ -53,6 +57,8 @@ brew "dnsmasq", restart_service: :changed
 brew "docker-compose"
 # Global DNS propagation checker that gives pretty output
 brew "dug"
+# AST-based pattern checker for JavaScript
+brew "eslint"
 # Library for encoding and decoding .avif files
 brew "libavif"
 # Make creating custom firmwares for ESP32/ESP8266 super easy
@@ -81,6 +87,8 @@ brew "gobject-introspection"
 brew "gopls"
 # C/C++ and Java libraries for Unicode and globalization
 brew "icu4c@76"
+# Tools and libraries to manipulate images in select formats
+brew "imagemagick"
 # Lightweight and flexible command-line JSON processor
 brew "jq"
 # Handy way to save and run project-specific commands
@@ -91,8 +99,12 @@ brew "lazygit"
 brew "pango"
 # Library to render SVG files using Cairo
 brew "librsvg"
+# Language Server for the Lua language
+brew "lua-language-server"
 # Package manager for the Lua programming language
 brew "luarocks"
+# Language Server Protocol for Markdown
+brew "marksman"
 # Open source relational database management system
 brew "mysql", restart_service: :changed
 # Open source relational database management system
@@ -133,16 +145,24 @@ brew "rust-analyzer"
 brew "sops"
 # Organize software neatly under a single directory tree (e.g. /usr/local)
 brew "stow"
+# Modern CSS linter
+brew "stylelint"
+# Opinionated Lua code formatter
+brew "stylua"
 # Easiest, most secure way to use WireGuard and 2FA
 brew "tailscale"
 # Program that allows you to count code, quickly
 brew "tokei"
 # Parser generator tool
 brew "tree-sitter-cli"
+# Language Server Protocol implementation for TypeScript wrapping tsserver
+brew "typescript-language-server"
 # Extremely fast Python package installer and resolver, written in Rust
 brew "uv"
 # Command-line interface for Vercel
 brew "vercel-cli"
+# Language servers for HTML, CSS, JavaScript, and JSON extracted from vscode
+brew "vscode-langservers-extracted"
 # Internet file retriever
 brew "wget"
 # Blazing fast terminal file manager written in Rust, based on async I/O
@@ -151,6 +171,8 @@ brew "yazi"
 brew "yq"
 # Shell extension to navigate your filesystem faster
 brew "zoxide"
+# prettier, on SPEED!
+brew "fsouza/prettierd/prettierd"
 # Interactive TUI for Homebrew
 brew "gromgit/brewtils/taproom"
 # A Terminal UI for decoding/encoding JSON Web Tokens
@@ -190,9 +212,12 @@ cask "wezterm"
 # Gecko based web browser
 cask "zen"
 cargo "abscissa"
+cargo "caligula"
 cargo "fd-find"
+cargo "fnm"
 cargo "git-delta"
 cargo "ripgrep"
 cargo "rtk"
 cargo "stylua"
+cargo "zellij"
 npm "corepack"
