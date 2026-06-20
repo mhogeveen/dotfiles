@@ -16,7 +16,7 @@ stow-host:
 up: brew zap pnpm rust nvim
 
 brew:
-	@brew upgrade
+	@brew upgrade -y
 	@brew bundle
 	@cd ~/.dotfiles/homebrew/ && brew bundle dump --force --no-vscode
 
