@@ -61,6 +61,9 @@ return {
       picker = {
         name = 'fzf-lua',
       },
+      daily_notes = {
+        folder = 'Work/Daily',
+      },
       checkbox = {
         enabled = true,
         create_new = true,
