@@ -1,10 +1,9 @@
-# Extend PATH.
-PATH=~/opt/bin:$PATH
-
 # Export environment variables.
 export GPG_TTY="$TTY"
+export PATH="~/opt/bin:$PATH"
 export PATH="$HOME/.composer/vendor/bin:$PATH"
 export PATH="$HOME/bin:$PATH"
+export PATH="$PATH:$HOME/go/bin"
 export EDITOR="nvim"
 export TERMINAL="wezterm"
 export BROWSER="arc"

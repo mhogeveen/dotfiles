@@ -29,6 +29,7 @@ return {
       http = { 'kulala' },
       rest = { 'kulala' },
       terraform = { 'terraform_fmt' },
+      go = { 'gofmt' },
       ['*'] = { 'trim_newlines', 'trim_whitespace' },
     },
     format_on_save = {
