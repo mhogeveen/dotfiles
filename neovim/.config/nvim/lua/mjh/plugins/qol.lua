@@ -69,6 +69,25 @@ return {
       noremap = true,
       silent = true,
     },
+    {
+      '<leader>ot',
+      function()
+        Snacks.terminal('tuxedo', {
+          env = {
+            TODO_DIR = vim.fn.expand '~/git/todo',
+          },
+          auto_close = true,
+          win = {
+            border = 'single',
+            title = ' Tuxedo ',
+          },
+        })
+      end,
+      mode = 'n',
+      desc = 'Floating terminal with Tuxedo',
+      noremap = true,
+      silent = true,
+    },
   },
   ---@type snacks.Config
   opts = {
