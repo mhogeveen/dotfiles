@@ -8,7 +8,6 @@ git:
   pagers:
     - colorArg: always
       pager: "delta --dark --paging=never"
-      useExternalDiffGitConfig: true
 services:
   "rensa-family.ghe.com": "github:rensa-family.ghe.com"
 notARepository: quit
