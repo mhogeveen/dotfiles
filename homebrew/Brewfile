@@ -1,3 +1,5 @@
+tap "anomalyco/tap", "https://github.com/anomalyco/homebrew-tap.git", trusted: true
+tap "asmvik/formulae", "https://github.com/asmvik/homebrew-formulae.git", trusted: true
 tap "felixkratz/formulae", trusted: true
 tap "fsouza/prettierd", trusted: true
 tap "gromgit/brewtils", trusted: true
@@ -8,15 +10,16 @@ tap "homebrew/command-not-found"
 tap "homebrew/services"
 tap "jesseduffield/lazygit", trusted: true
 tap "jwt-rs/jwt-ui", trusted: true
-tap "koekeishiya/formulae", trusted: true
+tap "koekeishiya/formulae", "https://github.com/asmvik/homebrew-formulae.git", trusted: true
 tap "labd/mach-composer", trusted: true
 tap "mach-composer/mach-composer", trusted: true
 tap "nikitabobko/tap", trusted: true
 tap "oven-sh/bun", trusted: true
 tap "spicetify/tap", trusted: true
-tap "sst/tap", trusted: true
+tap "sst/tap", "https://github.com/anomalyco/homebrew-tap.git", trusted: true
 tap "teamookla/speedtest", trusted: true
-tap "wez/wezterm", trusted: true
+tap "wez/wezterm", "https://github.com/wezterm/homebrew-wezterm.git", trusted: true
+tap "wezterm/wezterm", "https://github.com/wezterm/homebrew-wezterm.git", trusted: true
 # Run your GitHub Actions locally
 brew "act"
 # Automate deployment, configuration, and upgrading
@@ -172,7 +175,7 @@ brew "yq"
 # Shell extension to navigate your filesystem faster
 brew "zoxide"
 # prettier, on SPEED!
-brew "fsouza/prettierd/prettierd"
+brew "fsouza/prettierd/prettierd", trusted: true
 # Interactive TUI for Homebrew
 brew "gromgit/brewtils/taproom"
 # A Terminal UI for decoding/encoding JSON Web Tokens
@@ -195,6 +198,8 @@ cask "nikitabobko/tap/aerospace"
 cask "arc"
 # Tool to flash OS images to SD cards & USB drives
 cask "balenaetcher"
+# Terminal-based AI coding assistant
+cask "claude-code"
 # HTTP(S) debugging proxy, analyzer, and client
 cask "http-toolkit"
 # Keyboard customiser
@@ -211,6 +216,7 @@ cask "vlc"
 cask "wezterm"
 # Gecko based web browser
 cask "zen"
+go "github.com/air-verse/air"
 cargo "abscissa"
 cargo "caligula"
 cargo "fd-find"
@@ -219,5 +225,5 @@ cargo "git-delta"
 cargo "ripgrep"
 cargo "rtk"
 cargo "stylua"
-cargo "zellij"
+cargo "tuxedo"
 npm "corepack"
