@@ -61,10 +61,16 @@ return {
             return not vim.tbl_contains({ 'http', 'rest' }, vim.bo.filetype)
           end,
         },
+        orgmode = {
+          name = 'Orgmode',
+          module = 'orgmode.org.autocompletion.blink',
+          fallbacks = { 'buffer' },
+        },
       },
       per_filetype = {
         -- As per Obsidian.nvim requirement
         markdown = { 'lsp' },
+        org = { 'orgmode' },
       },
     },
     appearance = {
