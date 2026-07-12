@@ -1,0 +1,25 @@
+{
+  "trustedtaps": [
+    "anomalyco/tap",
+    "asmvik/formulae",
+    "felixkratz/formulae",
+    "fsouza/prettierd",
+    "gromgit/brewtils",
+    "hashicorp/tap",
+    "https://github.com/anomalyco/homebrew-tap.git",
+    "https://github.com/asmvik/homebrew-formulae.git",
+    "https://github.com/wezterm/homebrew-wezterm.git",
+    "jesseduffield/lazygit",
+    "jwt-rs/jwt-ui",
+    "labd/mach-composer",
+    "mach-composer/mach-composer",
+    "nikitabobko/tap",
+    "oven-sh/bun",
+    "spicetify/tap",
+    "teamookla/speedtest",
+    "wezterm/wezterm"
+  ],
+  "trustedformulae": [
+    "fsouza/prettierd/prettierd"
+  ]
+}
