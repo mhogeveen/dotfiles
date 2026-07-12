@@ -16,9 +16,9 @@ stow-host:
 up: brew zap pnpm rust nvim
 
 brew:
-	@brew upgrade -y
-	@brew bundle
-	@cd ~/.dotfiles/homebrew/ && brew bundle dump --force --no-vscode
+	@brew upgrade -yg
+	@brew bundle -g
+	@cd ~/.dotfiles/homebrew/ && brew bundle dump -g --force --no-vscode
 
 zap:
 	@source $(ZAP_DIR)/zap.zsh && zap update self && zap update all
