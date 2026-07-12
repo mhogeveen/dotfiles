@@ -126,7 +126,7 @@ return {
           ['@org.agenda.day'] = { fg = mocha.blue }, -- Highlight for all days in Agenda view - linked to Statement
           ['@org.agenda.today'] = { fg = mocha.blue, style = { 'underline' } }, -- Highlight for today in Agenda view - linked to @org.bold
           ['@org.agenda.weekend'] = { fg = mocha.blue, style = { 'italic' } }, -- Highlight for weekend days in Agenda view - linked to @org.bold
-          -- ['@org.agenda.weekend.today'] = {}, -- Highlight for today when it is a weekend day in Agenda view - linked to @org.bold
+          ['@org.agenda.weekend.today'] = { fg = mocha.blue, style = { 'underline', 'italic' } }, -- Highlight for today when it is a weekend day in Agenda view - linked to @org.bold
           -- ['@org.footnote'] = {}, -- Highlight for footnote definition - linked to @markup.link.url
           -- ['@org.footnote.reference'] = {}, -- Highlight for footnote reference - linked to @markup.link.url
         }
