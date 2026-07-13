@@ -18,7 +18,7 @@ return {
         -- Setup orgmode
         require('orgmode').setup {
           org_agenda_files = '~/git/orgfiles/**/*',
-          org_default_notes_file = '~/git/orgfiles/refile.org',
+          org_default_notes_file = '~/git/orgfiles/inbox.org',
           win_split_mode = 'float',
           org_startup_folded = 'showeverything',
           org_todo_keywords = { 'TODO', 'INPROGRESS', 'WAITING', '|', 'DONE' },
