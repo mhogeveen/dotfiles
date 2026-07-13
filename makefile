@@ -13,15 +13,15 @@ init:
 stow-host:
 	@./scripts/stow-host.sh $(args)
 
-up: brew zap pnpm rust nvim
+up: brew shell pnpm rust nvim
 
 brew:
-	@brew upgrade -yg
-	@brew bundle -g
-	@cd ~/.dotfiles/homebrew/ && brew bundle dump -g --force --no-vscode
+	@brew upgrade -y
+	@brew bundle
+	@cd ~/.dotfiles/homebrew/.config/homebrew/ && brew bundle dump --force --no-vscode
 
-zap:
-	@source $(ZAP_DIR)/zap.zsh && zap update self && zap update all
+shell:
+	@source ~/.dotfiles/zsh/.config/zsh/plugins.zsh && zplugin-update
 
 pnpm:
 	@pnpm up --global --latest

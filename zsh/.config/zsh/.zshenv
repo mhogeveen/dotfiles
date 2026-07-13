@@ -25,3 +25,5 @@ export HISTSIZE=5000
 export SAVEHIST=$HISTSIZE
 export HISTDUP="erase"
 export KEYTIMEOUT=25
+
+export HOMEBREW_BUNDLE_FILE="$XDG_CONFIG_HOME/homebrew/Brewfile"
