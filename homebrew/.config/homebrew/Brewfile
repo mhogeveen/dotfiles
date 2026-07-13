@@ -60,6 +60,10 @@ brew "dnsmasq", restart_service: :changed
 brew "docker-compose"
 # Global DNS propagation checker that gives pretty output
 brew "dug"
+# Incremental parsing library
+brew "tree-sitter@0.25"
+# GNU Emacs text editor
+brew "emacs"
 # AST-based pattern checker for JavaScript
 brew "eslint"
 # Library for encoding and decoding .avif files
@@ -120,6 +124,8 @@ brew "neovim"
 brew "nginx", restart_service: :changed
 # OCaml package manager
 brew "opam"
+# Swiss-army knife of markup format conversion
+brew "pandoc"
 # Password manager
 brew "pass"
 # General-purpose scripting language
@@ -152,8 +158,12 @@ brew "stow"
 brew "stylelint"
 # Opinionated Lua code formatter
 brew "stylua"
+# Open source continuous file synchronization application
+brew "syncthing", restart_service: :changed
 # Easiest, most secure way to use WireGuard and 2FA
 brew "tailscale"
+# Official documentation format of the GNU project
+brew "texinfo"
 # Program that allows you to count code, quickly
 brew "tokei"
 # Parser generator tool
