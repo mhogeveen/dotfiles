@@ -1,3 +1,50 @@
 font-family = Berkeley Mono
 font-size = 15
-theme = catppuccin-mocha
+font-feature = +calt, +liga, +dlig
+font-shaping-break = cursor
+theme = Catppuccin Mocha
+selection-clear-on-copy = true
+mouse-hide-while-typing = true
+scrollbar = never
+macos-titlebar-style = tabs
+macos-window-buttons = hidden
+auto-update = check
+
+# Split Horizontal
+keybind = ctrl+a>backslash=new_split:right
+keybind = chain=goto_split:right
+
+# Split Vertical
+keybind = ctrl+a>-=new_split:down
+keybind = chain=goto_split:down
+
+# Resize Splits
+keybind = ctrl+a>r=activate_key_table:resize
+keybind = resize/escape=deactivate_key_table
+keybind = resize/q=deactivate_key_table
+keybind = resize/h=resize_split:left,10
+keybind = resize/j=resize_split:down,10
+keybind = resize/k=resize_split:up,10
+keybind = resize/l=resize_split:right,10
+keybind = resize/e=equalize_splits
+
+# Navigate Splits
+keybind = ctrl+a>h=goto_split:left
+keybind = ctrl+a>j=goto_split:down
+keybind = ctrl+a>k=goto_split:up
+keybind = ctrl+a>l=goto_split:right
+
+# Navigate Tabs
+keybind = ctrl+a>n=next_tab
+keybind = ctrl+a>p=previous_tab
+keybind = ctrl+a>1=goto_tab:1
+keybind = ctrl+a>2=goto_tab:2
+keybind = ctrl+a>3=goto_tab:3
+keybind = ctrl+a>4=goto_tab:4
+keybind = ctrl+a>5=goto_tab:5
+keybind = ctrl+a>6=goto_tab:6
+keybind = ctrl+a>7=goto_tab:7
+keybind = ctrl+a>8=goto_tab:8
+keybind = ctrl+a>9=goto_tab:9
+keybind = ctrl+a>]=move_tab:1
+keybind = ctrl+a>[=move_tab:-1
