@@ -13,7 +13,6 @@ export PATH="~/opt/bin:$PATH"
 export PATH="$HOME/.composer/vendor/bin:$PATH"
 export PATH="$HOME/bin:$PATH"
 export PATH="$PATH:$HOME/go/bin"
-export PATH="$XDG_CONFIG_HOME/emacs/bin:$PATH"
 
 export GPG_TTY="$TTY"
 export EDITOR="nvim"
