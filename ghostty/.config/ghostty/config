@@ -9,6 +9,7 @@ scrollbar = never
 macos-titlebar-style = tabs
 macos-window-buttons = hidden
 auto-update = check
+adjust-cell-height = 30%
 
 # Split Horizontal
 keybind = ctrl+a>backslash=new_split:right
