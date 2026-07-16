@@ -22,6 +22,7 @@ return {
       'dtd',
       'ecma',
       'editorconfig',
+      'ghostty',
       'git_config',
       'git_rebase',
       'gitattributes',
