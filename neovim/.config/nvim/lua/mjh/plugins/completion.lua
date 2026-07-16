@@ -8,6 +8,9 @@ return {
   ---@module 'blink.cmp'
   ---@type blink.cmp.Config
   opts = {
+    enabled = function()
+      return not vim.tbl_contains({ 'org-roam-select' }, vim.bo.filetype)
+    end,
     keymap = {
       preset = 'default',
       ['<C-.>'] = { 'show', 'show_documentation', 'hide_documentation' },
