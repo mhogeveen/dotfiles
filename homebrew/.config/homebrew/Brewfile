@@ -46,6 +46,8 @@ brew "btop"
 brew "glib"
 # Console Bonsai is a bonsai tree generator, written in C using ncurses
 brew "cbonsai"
+# Automated changelog tool for preparing releases
+brew "changie"
 # Cross-platform make
 brew "cmake"
 # Contentful command-line tools
@@ -210,6 +212,8 @@ cask "arc"
 cask "balenaetcher"
 # Terminal-based AI coding assistant
 cask "claude-code"
+# Terminal emulator that uses platform-native UI and GPU acceleration
+cask "ghostty"
 # HTTP(S) debugging proxy, analyzer, and client
 cask "http-toolkit"
 # Keyboard customiser
