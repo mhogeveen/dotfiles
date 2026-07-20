@@ -36,7 +36,7 @@ return {
             WAITING = ':foreground #FAB387',
           },
           org_hide_emphasis_markers = true,
-          org_ellipsis = '[ ... ]',
+          org_ellipsis = ' [...]',
           org_log_into_drawer = 'LOGBOOK',
           org_startup_indented = true,
           org_adapt_indentation = true,
