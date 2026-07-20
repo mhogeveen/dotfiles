@@ -5,6 +5,14 @@ require 'tab_title'
 local act = wezterm.action
 local config = wezterm.config_builder()
 
+local is_linux = function()
+  return wezterm.target_triple:find 'linux' ~= nil
+end
+
+local is_darwin = function()
+  return wezterm.target_triple:find 'darwin' ~= nil
+end
+
 -- General
 config.automatically_reload_config = true
 
@@ -18,7 +26,7 @@ config.color_scheme = 'Catppuccin Mocha'
 
 -- Window
 config.window_padding = { left = 0, right = 0, top = 0, bottom = 0 }
-config.window_decorations = 'RESIZE'
+config.window_decorations = is_linux() and 'NONE' or 'RESIZE'
 
 -- Tab
 config.enable_tab_bar = true
