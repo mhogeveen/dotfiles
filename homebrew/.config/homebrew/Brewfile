@@ -175,7 +175,7 @@ brew "typescript-language-server"
 # Extremely fast Python package installer and resolver, written in Rust
 brew "uv"
 # Command-line interface for Vercel
-brew "vercel-cli"
+brew "vercel"
 # Language servers for HTML, CSS, JavaScript, and JSON extracted from vscode
 brew "vscode-langservers-extracted"
 # Internet file retriever
