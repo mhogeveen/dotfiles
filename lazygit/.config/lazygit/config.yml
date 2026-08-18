@@ -5,9 +5,9 @@ gui:
       - black
   showBottomLine: false
 git:
-  pagers:
+  diffRenderers:
     - colorArg: always
-      pager: "delta --dark --paging=never"
+      command: "delta --dark --paging=never"
 services:
   "rensa-family.ghe.com": "github:rensa-family.ghe.com"
 notARepository: quit
