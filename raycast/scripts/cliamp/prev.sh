@@ -14,4 +14,7 @@
 # @raycast.authorURL https://raycast.com/mhogeveen
 
 cliamp prev
-echo 'Playing previous'
+status=$(cliamp status --json)
+track_title=$(echo $status | jq .track.title)
+track_artist=$(echo $status | jq .track.artist)
+echo Playing: $track_title by $track_artist

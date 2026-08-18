@@ -14,4 +14,5 @@
 # @raycast.authorURL https://raycast.com/mhogeveen
 
 cliamp toggle
-echo 'Toggled player'
+state=$(cliamp status --json | jq .state)
+echo Now $state
