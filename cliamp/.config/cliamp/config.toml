@@ -1,0 +1,17 @@
+theme = ""
+visualizer = "ClassicPeak"
+provider = "spotify"
+
+sample_rate = 96000
+buffer_ms = 100
+resample_quality = 4
+bit_depth = 32
+
+[spotify]
+client_id = "$CLIAMP_SPOTIFY_CLIENT_ID"
+bitrate   = 320
+
+[jellyfin]
+url      = "$CLIAMP_JELLYFIN_URL"
+token    = "$CLIAMP_JELLYFIN_TOKEN"
+user_id  = "$CLIAMP_JELLYFIN_USER_ID"
