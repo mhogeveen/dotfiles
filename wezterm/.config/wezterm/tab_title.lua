@@ -2,7 +2,8 @@ local wezterm = require 'wezterm'
 
 -- Color scheme reference:
 -- https://github.com/catppuccin/wezterm/blob/main/plugin/init.lua
-local scheme = wezterm.get_builtin_color_schemes()['Catppuccin Mocha']
+-- local scheme = wezterm.get_builtin_color_schemes()['Catppuccin Mocha']
+local scheme = wezterm.color.load_scheme '/Users/maartenhogeveen/.config/wezterm/colors/cendre.toml'
 local black = scheme.tab_bar.background
 local white = scheme.foreground
 local blue = scheme.ansi[5]

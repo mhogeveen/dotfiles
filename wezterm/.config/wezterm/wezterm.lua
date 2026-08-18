@@ -22,7 +22,8 @@ config.font_size = 14
 config.line_height = 1.36
 
 -- Colors
-config.color_scheme = 'Catppuccin Mocha'
+-- config.color_scheme = 'Catppuccin Mocha'
+config.color_scheme = 'cendre'
 
 -- Window
 config.window_padding = { left = 0, right = 0, top = 0, bottom = 0 }
