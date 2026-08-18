@@ -21,6 +21,7 @@
     "wezterm/wezterm"
   ],
   "trustedformulae": [
+    "bjarneo/cliamp/cliamp",
     "fsouza/prettierd/prettierd"
   ]
 }

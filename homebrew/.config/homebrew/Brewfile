@@ -1,5 +1,6 @@
 tap "anomalyco/tap", "https://github.com/anomalyco/homebrew-tap.git", trusted: true
 tap "asmvik/formulae", "https://github.com/asmvik/homebrew-formulae.git", trusted: true
+tap "bjarneo/cliamp"
 tap "felixkratz/formulae", trusted: true
 tap "fsouza/prettierd", trusted: true
 tap "gromgit/brewtils", trusted: true
@@ -84,6 +85,8 @@ brew "gawk"
 brew "jpeg-xl"
 # Toolkit for image loading and pixel buffer manipulation
 brew "gdk-pixbuf"
+# GitHub command-line tool
+brew "gh"
 # Open source programming language to build simple/reliable/efficient software
 brew "go"
 # Task is a task runner/build tool that aims to be simpler and easier to use
@@ -180,12 +183,16 @@ brew "vercel"
 brew "vscode-langservers-extracted"
 # Internet file retriever
 brew "wget"
+# Why is this running?
+brew "witr"
 # Blazing fast terminal file manager written in Rust, based on async I/O
 brew "yazi"
 # Process YAML, JSON, XML, CSV and properties documents from the CLI
 brew "yq"
 # Shell extension to navigate your filesystem faster
 brew "zoxide"
+# A retro terminal music player inspired by Winamp 2.x
+brew "bjarneo/cliamp/cliamp", trusted: true
 # prettier, on SPEED!
 brew "fsouza/prettierd/prettierd", trusted: true
 # Interactive TUI for Homebrew
@@ -239,5 +246,4 @@ cargo "git-delta"
 cargo "ripgrep"
 cargo "rtk"
 cargo "stylua"
-cargo "tuxedo"
 npm "corepack"
