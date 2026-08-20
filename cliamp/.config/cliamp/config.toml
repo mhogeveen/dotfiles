@@ -2,9 +2,9 @@ theme = ""
 visualizer = "ClassicPeak"
 provider = "spotify"
 
-sample_rate = 96000
-buffer_ms = 100
-resample_quality = 4
+sample_rate = 48000
+buffer_ms = 500
+resample_quality = 3
 bit_depth = 32
 
 [spotify]
