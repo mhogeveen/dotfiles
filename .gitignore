@@ -5,3 +5,4 @@
 /zsh/.config/zsh/.zsh_history
 /zsh/.config/zsh/.zsh_sessions
 /lazygit/.config/lazygit/state.yml
+/lazygit/.config/lazygit/github_pull_requests.json
