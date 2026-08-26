@@ -10,5 +10,30 @@
 	"ADO_MCP_AUTH_TOKEN": "{env:ADO_MCP_AUTH_TOKEN}"
       }
     }
-  }
+  },
+  "provider": {
+    "greenpt": {
+      "npm": "@ai-sdk/openai-compatible",
+      "name": "GreenPT",
+      "options": {
+        "baseURL": "https://api.greenpt.ai/v1",
+        "apiKey": "{env:GREENPT_API_KEY}"
+      },
+      "models": {
+        "glm-5.2": {
+          "name": "GLM-5.2",
+          "limit": {
+            "context": 1000000,
+            "output": 131072
+          }
+        },
+        "minimax-m2.5": {
+          "name": "MiniMax M2.5"
+        },
+        "kimi-k3": {
+          "name": "Kimi K3"
+        }
+      }
+    }
+  },
 }
