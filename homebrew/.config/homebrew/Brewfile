@@ -2,11 +2,9 @@ tap "anomalyco/tap", "https://github.com/anomalyco/homebrew-tap.git", trusted: t
 tap "asmvik/formulae", "https://github.com/asmvik/homebrew-formulae.git", trusted: true
 tap "bjarneo/cliamp"
 tap "felixkratz/formulae", trusted: true
-tap "fsouza/prettierd", trusted: true
 tap "gromgit/brewtils", trusted: true
 tap "hashicorp/tap", trusted: true
 tap "homebrew/bundle"
-tap "homebrew/cask-fonts"
 tap "homebrew/command-not-found"
 tap "homebrew/services"
 tap "jesseduffield/lazygit", trusted: true
@@ -63,8 +61,6 @@ brew "dnsmasq", restart_service: :changed
 brew "docker-compose"
 # Global DNS propagation checker that gives pretty output
 brew "dug"
-# Incremental parsing library
-brew "tree-sitter@0.25"
 # GNU Emacs text editor
 brew "emacs"
 # AST-based pattern checker for JavaScript
@@ -85,6 +81,8 @@ brew "gawk"
 brew "jpeg-xl"
 # Toolkit for image loading and pixel buffer manipulation
 brew "gdk-pixbuf"
+# Disk usage analyzer with console interface written in Go
+brew "gdu"
 # GitHub command-line tool
 brew "gh"
 # Open source programming language to build simple/reliable/efficient software
@@ -157,6 +155,8 @@ brew "rover"
 brew "rust-analyzer"
 # Editor of encrypted files
 brew "sops"
+# Command driven spotify player
+brew "spotify_player"
 # Organize software neatly under a single directory tree (e.g. /usr/local)
 brew "stow"
 # Modern CSS linter
@@ -173,6 +173,8 @@ brew "texinfo"
 brew "tokei"
 # Parser generator tool
 brew "tree-sitter-cli"
+# Incremental parsing library
+brew "tree-sitter@0.25"
 # Language Server Protocol implementation for TypeScript wrapping tsserver
 brew "typescript-language-server"
 # Extremely fast Python package installer and resolver, written in Rust
@@ -193,8 +195,6 @@ brew "yq"
 brew "zoxide"
 # A retro terminal music player inspired by Winamp 2.x
 brew "bjarneo/cliamp/cliamp", trusted: true
-# prettier, on SPEED!
-brew "fsouza/prettierd/prettierd", trusted: true
 # Interactive TUI for Homebrew
 brew "gromgit/brewtils/taproom"
 # A Terminal UI for decoding/encoding JSON Web Tokens
@@ -221,6 +221,8 @@ cask "balenaetcher"
 cask "claude-code"
 # Terminal emulator that uses platform-native UI and GPU acceleration
 cask "ghostty"
+# Chromium-based web browser
+cask "helium-browser"
 # HTTP(S) debugging proxy, analyzer, and client
 cask "http-toolkit"
 # Keyboard customiser
@@ -237,13 +239,3 @@ cask "vlc"
 cask "wezterm"
 # Gecko based web browser
 cask "zen"
-go "github.com/air-verse/air"
-cargo "abscissa"
-cargo "caligula"
-cargo "fd-find"
-cargo "fnm"
-cargo "git-delta"
-cargo "ripgrep"
-cargo "rtk"
-cargo "stylua"
-npm "corepack"

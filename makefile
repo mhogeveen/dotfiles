@@ -18,7 +18,7 @@ up: brew shell pnpm rust nvim
 brew:
 	@brew upgrade -y
 	@brew bundle
-	@cd ~/.dotfiles/homebrew/.config/homebrew/ && brew bundle dump --force --no-vscode
+	@cd ~/.dotfiles/homebrew/.config/homebrew/ && brew bundle dump --force --no-vscode --no-go --no-cargo --no-npm
 
 shell:
 	@source ~/.dotfiles/zsh/.config/zsh/plugins.zsh && zplugin-update
