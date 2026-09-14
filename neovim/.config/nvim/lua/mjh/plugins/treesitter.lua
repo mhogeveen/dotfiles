@@ -5,9 +5,23 @@ return {
   dependencies = {}, -- tree-sitter CLI must be installed system-wide
   cmd = { 'TSManager' },
   init = function()
+    vim.opt.foldcolumn = '0' -- disable foldcolumn
+    vim.opt.foldtext = '' -- display a fold as a normal line with highlighting and no line wrapping
+    vim.opt.foldlevelstart = 99 -- start editing a new buffer with all folds open
+
+    -- Safely (the pcall) try to start treesitter
+    -- for the current filetype when opening a buffer
     vim.api.nvim_create_autocmd('FileType', {
       callback = function()
-        pcall(vim.treesitter.start)
+        local success, _ = pcall(vim.treesitter.start)
+
+        -- If treesitter is successfully started for the current filetype
+        -- set the fold function to treesitter and the method by which to
+        -- handle folding to that function
+        if success then
+          vim.wo[0][0].foldexpr = 'v:lua.vim.treesitter.foldexpr()'
+          vim.wo[0][0].foldmethod = 'expr'
+        end
       end,
     })
   end,

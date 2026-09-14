@@ -54,3 +54,30 @@ map('v', '>', '>gv')
 
 -- Sort selection
 map('v', '<C-s>', ":'<,'>sort<CR>")
+
+-- Folds
+-- Defaults:
+-- zf#j creates a fold from the cursor down # lines.
+-- zf/string creates a fold from the cursor to string .
+-- zj moves the cursor to the next fold.
+-- zk moves the cursor to the previous fold.
+-- zo opens a fold at the cursor.
+-- zO opens all folds at the cursor.
+-- zm increases the foldlevel by one.
+-- zc closes a fold at the cursor.
+-- zM closes all open folds.
+-- zr decreases the foldlevel by one.
+-- zR decreases the foldlevel to zero -- all folds will be open.
+-- zd deletes the fold at the cursor.
+-- zE deletes all folds.
+-- [z move to start of open fold.
+-- ]z move to end of open fold.
+map('n', ']f', 'zj')
+map('n', '[f', 'zk')
+map('n', 'fo', 'zo')
+map('n', 'fO', 'zO')
+map('n', 'fa', 'zO')
+map('n', 'fc', 'zc')
+map('n', 'fC', 'zM')
+map('n', 'fs', '[z')
+map('n', 'fe', ']z')
