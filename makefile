@@ -32,6 +32,7 @@ rust:
 nvim:
 	@nvim --headless "+Lazy! sync" +qa && echo "\nUpdated Neovim plugins"
 	@nvim --headless "+MasonUpdateAll" +qa && echo "\nUpdated Mason packages"
+	@nvim --headless "+TSUpdateSync!" +qa && echo "\nUpdated Treesitter parsers"
 
 paru:
 	@./scripts/paru.zsh

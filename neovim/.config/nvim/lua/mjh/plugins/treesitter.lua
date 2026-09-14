@@ -3,7 +3,7 @@ return {
   --- https://github.com/romus204/tree-sitter-manager.nvim
   'romus204/tree-sitter-manager.nvim',
   dependencies = {}, -- tree-sitter CLI must be installed system-wide
-  cmd = { 'TSManager' },
+  cmd = { 'TSManager', 'TSInstall', 'TSInstallSync', 'TSUninstall', 'TSUpdate', 'TSUpdateSync' },
   init = function()
     vim.opt.foldcolumn = '0' -- disable foldcolumn
     vim.opt.foldtext = '' -- display a fold as a normal line with highlighting and no line wrapping
