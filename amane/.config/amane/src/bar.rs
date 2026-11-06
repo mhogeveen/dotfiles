@@ -1,5 +1,6 @@
 use amane::{
     Align::{Center, End},
+    Bluetooth,
     Cursor::Pointer,
     Full, Layer, LayerWindow, Monitor, Network, Notifications, Padding, Rectangle, Row, Service,
     Size::Parent,
@@ -7,9 +8,13 @@ use amane::{
 };
 
 use crate::{
+    bluetooth::{
+        self as bt,
+        agent::{Agent, Request},
+    },
     clock, network as net,
     notifications::Seen,
-    panels::{NETWORK, NOTIFICATIONS, Panels, SESSION},
+    panels::{BLUETOOTH, NETWORK, NOTIFICATIONS, Panels, SESSION},
     theme::{Theme, theme},
 };
 
@@ -86,11 +91,21 @@ fn status(t: &Theme) -> Rectangle {
         .width(Parent)
         .height(Parent)
         .align_child(End, Center)
-        .child(
-            Row::new(children![network(t), notifications(t), session(t)])
-                .gap(8.0)
-                .align(Center),
-        )
+        .child(Row::new(status_icons(t)).gap(8.0).align(Center))
+}
+
+// left to right; bluetooth only on machines that have it
+fn status_icons(t: &Theme) -> Vec<Box<dyn Widget>> {
+    let mut icons: Vec<Box<dyn Widget>> = vec![Box::new(network(t))];
+
+    if let Some(bluetooth) = bluetooth(t) {
+        icons.push(Box::new(bluetooth));
+    }
+
+    icons.push(Box::new(notifications(t)));
+    icons.push(Box::new(session(t)));
+
+    icons
 }
 
 /*
@@ -181,4 +196,39 @@ fn network(t: &Theme) -> Rectangle {
             let _ = Panels::toggle(NETWORK);
         })
         .child(Text::new(status.icon()).size(14.0).color(color))
+}
+
+// off, on, or a device connected; brass while a pairing code waits for an answer
+fn bluetooth(t: &Theme) -> Option<Rectangle> {
+    let bluetooth = Bluetooth::read();
+
+    if !bluetooth.available() {
+        return None;
+    }
+
+    let waiting = Agent::read().request().is_some_and(Request::answerable);
+
+    let connected = bluetooth.devices().iter().any(|device| device.connected());
+
+    let (icon, color) = if waiting {
+        (bt::ICON_ON, t.brass)
+    } else if !bluetooth.powered() {
+        (bt::ICON_OFF, t.comment)
+    } else if connected {
+        (bt::ICON_CONNECTED, t.fg_dim)
+    } else {
+        (bt::ICON_ON, t.fg_dim)
+    };
+
+    Some(
+        Rectangle::new()
+            .width(ICON_WIDTH)
+            .height(Parent)
+            .align_child(Center, Center)
+            .cursor(Pointer)
+            .on_click(|_| {
+                let _ = Panels::toggle(BLUETOOTH);
+            })
+            .child(Text::new(icon).size(14.0).color(color)),
+    )
 }

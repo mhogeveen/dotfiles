@@ -19,6 +19,7 @@ use amane::{
     Text, TextInput, Vertical, Weight, Widget, children,
 };
 
+use super::ui::{self, BUTTON, button};
 use super::{NETWORK, panel_window};
 use crate::network::{self, ICON_LOCK, ICON_RESCAN, NetworkPanel, Outcome, Status};
 use crate::theme::{Theme, theme};
@@ -28,7 +29,6 @@ const HEIGHT: f32 = 560.0;
 const PADDING: f32 = 12.0;
 const GAP: f32 = 8.0;
 const LINE: f32 = 20.0;
-const BUTTON: f32 = 28.0;
 const ROW: f32 = 40.0;
 
 const PASSWORD_INPUT: &str = "network-password";
@@ -105,16 +105,7 @@ fn clear_password() {
 
 // "Network", rescan, and the wi-fi switch
 fn header(t: &Theme, network: &Network) -> Row {
-    let title = Rectangle::new()
-        .width(Parent)
-        .height(BUTTON)
-        .align_child(Start, Center)
-        .child(
-            Text::new("Network")
-                .size(15.0)
-                .weight(Weight::Bold)
-                .color(t.fg),
-        );
+    let title = ui::title(t, "Network");
 
     let rescan = Rectangle::new()
         .width(BUTTON)
@@ -127,20 +118,7 @@ fn header(t: &Theme, network: &Network) -> Row {
 
     let enabled = network.wifi_enabled();
 
-    let (label, fill, color) = if enabled {
-        ("Wi-Fi on", t.frost, t.fg)
-    } else {
-        ("Wi-Fi off", t.bg2, t.fg_dim)
-    };
-
-    let switch = Rectangle::new()
-        .width(84.0)
-        .height(BUTTON)
-        .fill(fill)
-        .align_child(Center, Center)
-        .cursor(Pointer)
-        .on_click(move |_| Network::set_wifi(!enabled))
-        .child(Text::new(label).size(13.0).color(color));
+    let switch = ui::switch(t, "Wi-Fi", enabled, move |_| Network::set_wifi(!enabled));
 
     Row::new(children![title, rescan, switch])
         .gap(GAP)
@@ -454,20 +432,4 @@ fn join(ssid: &str, password: &str) {
     clear_password();
 
     NetworkPanel::connect(ssid, Some(password));
-}
-
-fn button(
-    t: &Theme,
-    label: &str,
-    width: f32,
-    on_click: impl Fn(amane::Button) + 'static,
-) -> Rectangle {
-    Rectangle::new()
-        .width(width)
-        .height(BUTTON)
-        .fill(t.bg2)
-        .align_child(Center, Center)
-        .cursor(Pointer)
-        .on_click(on_click)
-        .child(Text::new(label).size(13.0).color(t.fg))
 }

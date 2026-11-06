@@ -13,6 +13,7 @@ use std::time::Duration;
 use amane::{Key, Keyboard, Layer, LayerWindow, Monitor, Service, Workspaces};
 
 pub mod backdrop;
+pub mod bluetooth;
 pub mod clipboard;
 pub mod launcher;
 mod list;
@@ -20,6 +21,7 @@ pub mod network;
 pub mod notifications;
 pub mod screenshot;
 pub mod session;
+mod ui;
 
 pub const LAUNCHER: &str = "launcher";
 pub const CLIPBOARD: &str = "clipboard";
@@ -27,6 +29,7 @@ pub const NOTIFICATIONS: &str = "notifications";
 pub const SCREENSHOT: &str = "screenshot";
 pub const SESSION: &str = "session";
 pub const NETWORK: &str = "network";
+pub const BLUETOOTH: &str = "bluetooth";
 
 pub struct PanelDef {
     pub name: &'static str,
@@ -76,6 +79,11 @@ static REGISTRY: &[PanelDef] = &[
         name: NETWORK,
         groups: &["right"],
         on_close: network::reset,
+    },
+    PanelDef {
+        name: BLUETOOTH,
+        groups: &["right"],
+        on_close: bluetooth::reset,
     },
 ];
 
