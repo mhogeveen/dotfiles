@@ -1,10 +1,15 @@
 use amane::{
-    Align::Center, Cursor::Pointer, Full, Layer, LayerWindow, Monitor, Padding, Rectangle, Row,
-    Service, Size::Parent, Vertical, Widget, Workspaces, Zone, children,
+    Align::{Center, End},
+    Cursor::Pointer,
+    Full, Layer, LayerWindow, Monitor, Notifications, Padding, Rectangle, Row, Service,
+    Size::Parent,
+    Text, Vertical, Widget, Workspaces, Zone, children,
 };
 
 use crate::{
     clock,
+    notifications::Seen,
+    panels::{NOTIFICATIONS, Panels},
     theme::{Theme, theme},
 };
 
@@ -31,13 +36,9 @@ pub fn view(_monitor: &Monitor) -> LayerWindow {
                 .child(
                     // the two Parent-sized sides split the leftover space evenly,
                     // which keeps the fixed-width clock exactly centered
-                    Row::new(children![
-                        workspaces(&t),
-                        clock(&t),
-                        Rectangle::new().width(Parent).height(Parent),
-                    ])
-                    .height(Parent)
-                    .align(Center),
+                    Row::new(children![workspaces(&t), clock(&t), status(&t)])
+                        .height(Parent)
+                        .align(Center),
                 ),
         )
 }
@@ -77,4 +78,53 @@ fn workspaces(t: &Theme) -> Rectangle {
 
 fn clock(t: &Theme) -> Rectangle {
     clock::view(t)
+}
+
+// the right side; Parent-wide like the workspaces, so the clock stays centered
+fn status(t: &Theme) -> Rectangle {
+    Rectangle::new()
+        .width(Parent)
+        .height(Parent)
+        .align_child(End, Center)
+        .child(Row::new(children![notifications(t)]).gap(8.0).align(Center))
+}
+
+/*
+ * a bell with the number of notifications since the center was last closed;
+ * reading Notifications here, in a window open from the start, is also what
+ * makes the shell the notification daemon
+ */
+fn notifications(t: &Theme) -> Rectangle {
+    let notifications = Notifications::read();
+    let open = Panels::read().is_open(NOTIFICATIONS);
+
+    let unread = if open {
+        0
+    } else {
+        Seen::read().unread(&notifications)
+    };
+
+    let (icon, color) = if unread > 0 {
+        ("\u{f009a}", t.brass)
+    } else {
+        ("\u{f009c}", t.fg_dim)
+    };
+
+    let mut parts: Vec<Box<dyn Widget>> = vec![Box::new(Text::new(icon).size(14.0).color(color))];
+
+    if unread > 0 {
+        parts.push(Box::new(
+            Text::new(unread.to_string()).size(12.0).color(t.fg),
+        ));
+    }
+
+    Rectangle::new()
+        .width(48.0)
+        .height(Parent)
+        .align_child(End, Center)
+        .cursor(Pointer)
+        .on_click(|_| {
+            let _ = Panels::toggle(NOTIFICATIONS);
+        })
+        .child(Row::new(parts).gap(4.0).align(Center))
 }

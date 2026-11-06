@@ -2,7 +2,8 @@ use amane::{Align::Center, Rectangle, Row, Service, Size::Parent, Text, Weight, 
 
 use crate::theme::Theme;
 
-struct Clock {
+// read it in a view to redraw once a minute, like the notification center's "5m ago"
+pub struct Clock {
     time: String,
     date: String,
 }
