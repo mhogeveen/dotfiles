@@ -23,7 +23,7 @@ use amane::{
 };
 
 use super::card::{self, Options};
-use crate::panels::{self, NOTIFICATIONS, Panels};
+use crate::panels::{self, NETWORK, NOTIFICATIONS, Panels};
 use crate::theme::theme;
 
 const TIMEOUT: Duration = Duration::from_secs(5);
@@ -169,8 +169,17 @@ pub fn view(monitor: &Monitor) -> LayerWindow {
     let notifications = Notifications::read();
     let apps = Apps::read();
 
-    // the center already lists them, and only the focused monitor gets popups
-    let hidden = Panels::read().is_open(NOTIFICATIONS) || !panels::is_focused(monitor);
+    /*
+     * none while a panel holds the same corner (the center lists them anyway),
+     * and only the focused monitor gets popups
+     */
+    let right_panel = {
+        let panels = Panels::read();
+
+        panels.is_open(NOTIFICATIONS) || panels.is_open(NETWORK)
+    };
+
+    let hidden = right_panel || !panels::is_focused(monitor);
 
     let mut cards: Vec<Box<dyn Widget>> = Vec::new();
     let mut areas = Vec::new();

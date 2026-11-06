@@ -1,15 +1,15 @@
 use amane::{
     Align::{Center, End},
     Cursor::Pointer,
-    Full, Layer, LayerWindow, Monitor, Notifications, Padding, Rectangle, Row, Service,
+    Full, Layer, LayerWindow, Monitor, Network, Notifications, Padding, Rectangle, Row, Service,
     Size::Parent,
     Text, Vertical, Widget, Workspaces, Zone, children,
 };
 
 use crate::{
-    clock,
+    clock, network as net,
     notifications::Seen,
-    panels::{NOTIFICATIONS, Panels, SESSION},
+    panels::{NETWORK, NOTIFICATIONS, Panels, SESSION},
     theme::{Theme, theme},
 };
 
@@ -87,7 +87,7 @@ fn status(t: &Theme) -> Rectangle {
         .height(Parent)
         .align_child(End, Center)
         .child(
-            Row::new(children![notifications(t), session(t)])
+            Row::new(children![network(t), notifications(t), session(t)])
                 .gap(8.0)
                 .align(Center),
         )
@@ -116,27 +116,41 @@ fn notifications(t: &Theme) -> Rectangle {
 
     let mut parts: Vec<Box<dyn Widget>> = vec![Box::new(Text::new(icon).size(14.0).color(color))];
 
+    // as wide as the other icons, plus room for the count when there is one
+    let mut width = ICON_WIDTH;
+
     if unread > 0 {
-        parts.push(Box::new(
-            Text::new(unread.to_string()).size(12.0).color(t.fg),
-        ));
+        let count = unread.to_string();
+
+        width += COUNT_GAP + count.len() as f32 * COUNT_DIGIT;
+
+        parts.push(Box::new(Text::new(count).size(COUNT_SIZE).color(t.fg)));
     }
 
     Rectangle::new()
-        .width(48.0)
+        .width(width)
         .height(Parent)
-        .align_child(End, Center)
+        .align_child(Center, Center)
         .cursor(Pointer)
         .on_click(|_| {
             let _ = Panels::toggle(NOTIFICATIONS);
         })
-        .child(Row::new(parts).gap(4.0).align(Center))
+        .child(Row::new(parts).gap(COUNT_GAP).align(Center))
 }
+
+// the box every status icon sits in
+const ICON_WIDTH: f32 = 24.0;
+
+const COUNT_GAP: f32 = 4.0;
+const COUNT_SIZE: f32 = 12.0;
+
+// BlexMono is monospaced, every digit advances 0.6 of the text size
+const COUNT_DIGIT: f32 = COUNT_SIZE * 0.6;
 
 // opens the session menu: lock, suspend, logout, reboot, shutdown
 fn session(t: &Theme) -> Rectangle {
     Rectangle::new()
-        .width(24.0)
+        .width(ICON_WIDTH)
         .height(Parent)
         .align_child(Center, Center)
         .cursor(Pointer)
@@ -144,4 +158,27 @@ fn session(t: &Theme) -> Rectangle {
             let _ = Panels::toggle(SESSION);
         })
         .child(Text::new("\u{f0425}").size(14.0).color(t.fg_dim))
+}
+
+// wi-fi strength, ethernet, no internet, wi-fi off or offline; opens the network panel
+fn network(t: &Theme) -> Rectangle {
+    let network = Network::read();
+
+    let status = net::status(&network);
+
+    let color = match status {
+        net::Status::NoInternet => t.brass,
+        net::Status::Offline | net::Status::WifiOff | net::Status::Connecting => t.comment,
+        _ => t.fg_dim,
+    };
+
+    Rectangle::new()
+        .width(ICON_WIDTH)
+        .height(Parent)
+        .align_child(Center, Center)
+        .cursor(Pointer)
+        .on_click(|_| {
+            let _ = Panels::toggle(NETWORK);
+        })
+        .child(Text::new(status.icon()).size(14.0).color(color))
 }

@@ -62,8 +62,8 @@ pub fn view(t: &Theme) -> Rectangle {
         .align_child(Center, Center)
         .child(
             Row::new(children![
-                Text::new(&clock.time).color(t.fg).size(14.0),
-                Text::new(&clock.date).color(t.fg).size(12.0)
+                Text::new(&clock.time).color(t.fg_dim).size(14.0),
+                Text::new(&clock.date).color(t.fg_dim).size(12.0)
             ])
             .align(Center)
             .gap(8.0),

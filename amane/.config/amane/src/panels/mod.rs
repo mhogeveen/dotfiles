@@ -16,6 +16,7 @@ pub mod backdrop;
 pub mod clipboard;
 pub mod launcher;
 mod list;
+pub mod network;
 pub mod notifications;
 pub mod screenshot;
 pub mod session;
@@ -25,6 +26,7 @@ pub const CLIPBOARD: &str = "clipboard";
 pub const NOTIFICATIONS: &str = "notifications";
 pub const SCREENSHOT: &str = "screenshot";
 pub const SESSION: &str = "session";
+pub const NETWORK: &str = "network";
 
 pub struct PanelDef {
     pub name: &'static str,
@@ -61,11 +63,19 @@ static REGISTRY: &[PanelDef] = &[
         groups: &["center"],
         on_close: session::reset,
     },
-    // its own corner, so it can stay open next to the launcher or clipboard
+    /*
+     * the top-right corner, apart from the center ones so either can stay open
+     * next to the launcher or clipboard, but sharing the corner with each other
+     */
     PanelDef {
         name: NOTIFICATIONS,
-        groups: &[],
+        groups: &["right"],
         on_close: notifications::reset,
+    },
+    PanelDef {
+        name: NETWORK,
+        groups: &["right"],
+        on_close: network::reset,
     },
 ];
 

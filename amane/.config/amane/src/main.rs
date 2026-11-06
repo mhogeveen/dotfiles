@@ -3,6 +3,7 @@ use amane::App;
 mod bar;
 mod clock;
 mod lock;
+mod network;
 mod notifications;
 mod panels;
 mod screenshot;
@@ -25,6 +26,7 @@ fn main() {
         .window_per_monitor(panels::screenshot::view)
         .window_per_monitor(panels::session::view)
         .window_per_monitor(panels::notifications::view)
+        .window_per_monitor(panels::network::view)
         .lock(lock::view)
         .run();
 }
