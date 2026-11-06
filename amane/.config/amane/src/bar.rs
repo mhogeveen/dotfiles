@@ -9,7 +9,7 @@ use amane::{
 use crate::{
     clock,
     notifications::Seen,
-    panels::{NOTIFICATIONS, Panels},
+    panels::{NOTIFICATIONS, Panels, SESSION},
     theme::{Theme, theme},
 };
 
@@ -86,7 +86,11 @@ fn status(t: &Theme) -> Rectangle {
         .width(Parent)
         .height(Parent)
         .align_child(End, Center)
-        .child(Row::new(children![notifications(t)]).gap(8.0).align(Center))
+        .child(
+            Row::new(children![notifications(t), session(t)])
+                .gap(8.0)
+                .align(Center),
+        )
 }
 
 /*
@@ -127,4 +131,17 @@ fn notifications(t: &Theme) -> Rectangle {
             let _ = Panels::toggle(NOTIFICATIONS);
         })
         .child(Row::new(parts).gap(4.0).align(Center))
+}
+
+// opens the session menu: lock, suspend, logout, reboot, shutdown
+fn session(t: &Theme) -> Rectangle {
+    Rectangle::new()
+        .width(24.0)
+        .height(Parent)
+        .align_child(Center, Center)
+        .cursor(Pointer)
+        .on_click(|_| {
+            let _ = Panels::toggle(SESSION);
+        })
+        .child(Text::new("\u{f0425}").size(14.0).color(t.fg_dim))
 }

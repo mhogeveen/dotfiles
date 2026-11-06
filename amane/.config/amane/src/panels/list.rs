@@ -1,6 +1,6 @@
 /*
- * the parts the launcher and clipboard panels share: a search box over a list
- * that's moved through with the arrow keys
+ * the parts the list panels share: an optional search box over a list that's
+ * moved through with the arrow keys, or picked from with number keys
  *
  * the list shows a window of ROWS rows instead of using a ScrollArea, because a
  * ScrollArea can't be scrolled from code, so it couldn't follow the selection
@@ -10,7 +10,7 @@ use std::ops::Range;
 
 use amane::{
     Align::{Center, Start},
-    Column, Padding, Rectangle, Scroll,
+    Color, Column, Key, Padding, Rectangle, Row, Scroll,
     Size::Parent,
     Text, TextInput, Widget, children,
 };
@@ -25,6 +25,7 @@ const GAP: f32 = 8.0;
 const SEARCH_HEIGHT: f32 = 44.0;
 const ROW_HEIGHT: f32 = 40.0;
 const TEXT_SIZE: f32 = 15.0;
+const NUMBER_WIDTH: f32 = 24.0;
 
 // room on the left and right only, so rows and the search box center vertically
 const SIDES: Padding = Padding {
@@ -38,13 +39,22 @@ pub fn width() -> f32 {
     WIDTH
 }
 
-pub fn height() -> f32 {
-    height_with(ROWS)
+// rows is how many fit, ROWS for long lists; search adds the search box above them
+pub fn height(rows: usize, search: bool) -> f32 {
+    let search = if search { SEARCH_HEIGHT + GAP } else { 0.0 };
+
+    PADDING * 2.0 + search + rows as f32 * ROW_HEIGHT
 }
 
-// for a short, fixed list that never needs all ROWS rows
-pub fn height_with(rows: usize) -> f32 {
-    PADDING * 2.0 + SEARCH_HEIGHT + GAP + rows as f32 * ROW_HEIGHT
+/*
+ * number keys 1 to 9 pick the row at that position on screen; only for lists
+ * without a search box, since a focused search box takes every typed digit
+ */
+pub fn hotkey(key: Key) -> Option<usize> {
+    match key {
+        Key::Character(digit @ '1'..='9') => Some(digit as usize - '1' as usize),
+        _ => None,
+    }
 }
 
 // which row is picked, and which row is at the top of the visible window
@@ -93,6 +103,24 @@ impl Cursor {
         self.selected = selected.clamp(self.offset, self.offset + ROWS - 1);
     }
 
+    // jumps straight to a row, like one picked with the mouse or a number key
+    pub fn select(&mut self, index: usize, count: usize) {
+        if count == 0 {
+            return;
+        }
+
+        self.selected = index.min(count - 1);
+
+        self.follow();
+    }
+
+    // the list index of the row at this position on screen, counted from 0
+    pub fn at_position(&self, position: usize, count: usize) -> Option<usize> {
+        let index = self.visible(count).start + position;
+
+        self.visible(count).contains(&index).then_some(index)
+    }
+
     fn follow(&mut self) {
         if self.selected < self.offset {
             self.offset = self.selected;
@@ -113,15 +141,23 @@ pub fn scroll_delta(scroll: Scroll) -> isize {
     }
 }
 
-// the whole panel: search box on top, rows under it
-pub fn frame(t: &Theme, input: TextInput, rows: Rectangle) -> Rectangle {
-    let search = Rectangle::new()
-        .width(Parent)
-        .height(SEARCH_HEIGHT)
-        .fill(t.bg1)
-        .padding(SIDES)
-        .align_child(Start, Center)
-        .child(input.size(16.0).color(t.fg));
+// the whole panel: the search box on top when there is one, rows under it
+pub fn frame(t: &Theme, search: Option<TextInput>, rows: Rectangle) -> Rectangle {
+    let mut parts: Vec<Box<dyn Widget>> = Vec::new();
+
+    if let Some(input) = search {
+        parts.push(Box::new(
+            Rectangle::new()
+                .width(Parent)
+                .height(SEARCH_HEIGHT)
+                .fill(t.bg1)
+                .padding(SIDES)
+                .align_child(Start, Center)
+                .child(input.size(16.0).color(t.fg)),
+        ));
+    }
+
+    parts.push(Box::new(rows));
 
     Rectangle::new()
         .width(Parent)
@@ -129,7 +165,7 @@ pub fn frame(t: &Theme, input: TextInput, rows: Rectangle) -> Rectangle {
         .fill(t.bg0)
         .border(1.0, t.bg3)
         .padding(PADDING)
-        .child(Column::new(children![search, rows]).gap(GAP))
+        .child(Column::new(parts).gap(GAP))
 }
 
 // the area the rows go in, whatever room the window leaves; add on_scroll to it to move the window
@@ -142,19 +178,65 @@ pub fn rows(rows: Vec<Box<dyn Widget>>) -> Rectangle {
 }
 
 pub fn row(t: &Theme, label: &str, selected: bool) -> Rectangle {
+    row_with(t, None, label, selected, None)
+}
+
+// a row with the number key that picks it in front, see hotkey()
+pub fn numbered_row(t: &Theme, number: usize, label: &str, selected: bool) -> Rectangle {
+    row_with(t, Some(number), label, selected, None)
+}
+
+// a selected numbered row in the warning color, for an action waiting to be confirmed
+pub fn armed_row(t: &Theme, number: usize, label: &str) -> Rectangle {
+    row_with(t, Some(number), label, true, Some(t.brass))
+}
+
+fn row_with(
+    t: &Theme,
+    number: Option<usize>,
+    label: &str,
+    selected: bool,
+    label_color: Option<Color>,
+) -> Rectangle {
     let (fill, color) = if selected {
         (t.bg3, t.fg)
     } else {
         (t.bg0, t.fg_dim)
     };
 
-    Rectangle::new()
+    let color = label_color.unwrap_or(color);
+
+    let label = Text::new(label).size(TEXT_SIZE).color(color).elide();
+
+    let row = Rectangle::new()
         .width(Parent)
         .height(ROW_HEIGHT)
         .fill(fill)
         .padding(SIDES)
+        .align_child(Start, Center);
+
+    let Some(number) = number else {
+        return row.child(label);
+    };
+
+    // a fixed-width number column, so the labels line up
+    let number = Rectangle::new()
+        .width(NUMBER_WIDTH)
+        .height(ROW_HEIGHT)
         .align_child(Start, Center)
-        .child(Text::new(label).size(TEXT_SIZE).color(color).elide())
+        .child(
+            Text::new(number.to_string())
+                .size(TEXT_SIZE)
+                .color(t.comment),
+        );
+
+    let label = Rectangle::new()
+        .width(Parent)
+        .height(ROW_HEIGHT)
+        .align_child(Start, Center)
+        .child(label);
+
+    row.child(Row::new(children![number, label]).width(Parent))
 }
 
 /*
@@ -214,7 +296,27 @@ pub fn message(t: &Theme, text: &str) -> Box<dyn Widget> {
 
 #[cfg(test)]
 mod tests {
-    use super::fuzzy;
+    use super::{Cursor, Key, fuzzy, hotkey};
+
+    #[test]
+    fn digits_one_to_nine_are_hotkeys() {
+        assert_eq!(hotkey(Key::Character('1')), Some(0));
+        assert_eq!(hotkey(Key::Character('9')), Some(8));
+        assert_eq!(hotkey(Key::Character('0')), None);
+        assert_eq!(hotkey(Key::Character('a')), None);
+    }
+
+    #[test]
+    fn positions_count_from_the_top_visible_row() {
+        let mut cursor = Cursor::default();
+
+        assert_eq!(cursor.at_position(3, 4), Some(3));
+        assert_eq!(cursor.at_position(4, 4), None);
+
+        cursor.scroll(2, 20);
+
+        assert_eq!(cursor.at_position(0, 20), Some(2));
+    }
 
     #[test]
     fn letters_must_appear_in_order() {

@@ -1,6 +1,7 @@
 /*
  * screenshot menu, the same choices as the old fuzzel menu in screenshot.sh:
- * type to filter, up/down or tab to pick, enter or click to take it
+ * press a choice's number to take it right away, or pick one with up/down or tab
+ * and press enter, or click it
  *
  * the capture itself happens in src/screenshot.rs
  */
@@ -8,14 +9,12 @@
 use std::thread;
 use std::time::Duration;
 
-use amane::{Cursor::Pointer, Key, LayerWindow, Monitor, Service, TextInput, Vertical, Widget};
+use amane::{Cursor::Pointer, Key, LayerWindow, Monitor, Service, Vertical, Widget};
 
-use super::list::{self, Cursor, fuzzy};
+use super::list::{self, Cursor};
 use super::{Panels, SCREENSHOT, panel_window};
 use crate::screenshot::{self, Area, Target};
 use crate::theme::theme;
-
-const INPUT: &str = "screenshot-search";
 
 /*
  * the menu hides before the capture starts, so it isn't in the screenshot;
@@ -52,15 +51,14 @@ static CHOICES: &[Choice] = &[
     },
 ];
 
+// only the highlight; there's nothing to type
 struct Screenshot {
-    query: String,
     cursor: Cursor,
 }
 
 impl Service for Screenshot {
     fn new() -> Self {
         Self {
-            query: String::new(),
             cursor: Cursor::default(),
         }
     }
@@ -73,83 +71,60 @@ impl Service for Screenshot {
 
 pub fn view(monitor: &Monitor) -> LayerWindow {
     let t = theme();
-    let screenshot = Screenshot::read();
+    let cursor = Screenshot::read().cursor;
 
-    let found = matches(&screenshot.query);
-    let selected = screenshot.cursor.selected(found.len());
+    let count = CHOICES.len();
+    let selected = cursor.selected(count);
+    let visible = cursor.visible(count);
+    let first = visible.start;
 
     let mut rows: Vec<Box<dyn Widget>> = Vec::new();
 
-    for (index, choice) in found.into_iter().enumerate() {
+    for index in visible {
+        let choice = &CHOICES[index];
+
         rows.push(Box::new(
-            list::row(&t, choice.label, index == selected)
+            list::numbered_row(&t, index - first + 1, choice.label, index == selected)
                 .cursor(Pointer)
                 .on_click(move |_| take(choice)),
         ));
     }
 
-    if rows.is_empty() {
-        rows.push(list::message(&t, "No matches"));
-    }
-
-    let input = TextInput::new(INPUT)
-        .placeholder("Screenshot")
-        .focused()
-        .on_change(|text| {
-            let mut screenshot = Screenshot::write();
-
-            screenshot.query = text;
-            screenshot.cursor = Cursor::default();
-        })
-        .on_submit(|_| submit());
-
-    // every choice fits, so the list never scrolls
+    // no search box, so number keys reach key_pressed instead of being typed
     let base = LayerWindow::new()
         .width(list::width())
-        .height(list::height_with(CHOICES.len()))
+        .height(list::height(count.min(list::ROWS), false))
         .anchor_vertical(Vertical::Middle)
         .namespace("amane-screenshot")
-        .child(list::frame(&t, input, list::rows(rows)));
+        .child(list::frame(&t, None, list::rows(rows)));
 
     panel_window(monitor, SCREENSHOT, base, key_pressed)
 }
 
-// escape is handled by the panel manager; the search box keeps letters and enter
+// escape is handled by the panel manager
 fn key_pressed(key: Key) {
-    let delta = match key {
-        Key::Down | Key::Tab => 1,
-        Key::Up => -1,
-        Key::Enter => return submit(),
-        _ => return,
-    };
+    let count = CHOICES.len();
+    let cursor = Screenshot::read().cursor;
 
-    let count = matches(&Screenshot::read().query).len();
+    if let Some(position) = list::hotkey(key) {
+        if let Some(index) = cursor.at_position(position, count) {
+            take(&CHOICES[index]);
+        }
 
-    Screenshot::write().cursor.step(delta, count);
-}
-
-// clears the filter for the next time the menu opens
-pub fn reset() {
-    TextInput::set_text(INPUT, "");
-
-    let mut screenshot = Screenshot::write();
-
-    screenshot.query.clear();
-    screenshot.cursor = Cursor::default();
-}
-
-fn submit() {
-    let choice = {
-        let screenshot = Screenshot::read();
-
-        let found = matches(&screenshot.query);
-
-        found.get(screenshot.cursor.selected(found.len())).copied()
-    };
-
-    if let Some(choice) = choice {
-        take(choice);
+        return;
     }
+
+    match key {
+        Key::Down | Key::Tab => Screenshot::write().cursor.step(1, count),
+        Key::Up => Screenshot::write().cursor.step(-1, count),
+        Key::Enter => take(&CHOICES[cursor.selected(count)]),
+        _ => {}
+    }
+}
+
+// the highlight starts at the top again the next time the menu opens
+pub fn reset() {
+    Screenshot::write().cursor = Cursor::default();
 }
 
 fn take(choice: &'static Choice) {
@@ -163,22 +138,4 @@ fn take(choice: &'static Choice) {
 
         screenshot::take(area, target);
     });
-}
-
-// best match first; an empty query keeps the menu's own order
-fn matches(query: &str) -> Vec<&'static Choice> {
-    let query = query.trim();
-
-    if query.is_empty() {
-        return CHOICES.iter().collect();
-    }
-
-    let mut scored: Vec<(i32, &'static Choice)> = CHOICES
-        .iter()
-        .filter_map(|choice| fuzzy(query, choice.label).map(|score| (score, choice)))
-        .collect();
-
-    scored.sort_by(|a, b| b.0.cmp(&a.0));
-
-    scored.into_iter().map(|(_, choice)| choice).collect()
 }

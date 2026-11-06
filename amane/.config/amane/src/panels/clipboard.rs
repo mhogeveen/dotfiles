@@ -172,10 +172,10 @@ pub fn view(monitor: &Monitor) -> LayerWindow {
 
     let base = LayerWindow::new()
         .width(list::width())
-        .height(list::height())
+        .height(list::height(list::ROWS, true))
         .anchor_vertical(Vertical::Middle)
         .namespace("amane-clipboard")
-        .child(list::frame(&t, input, rows));
+        .child(list::frame(&t, Some(input), rows));
 
     panel_window(monitor, CLIPBOARD, base, key_pressed)
 }

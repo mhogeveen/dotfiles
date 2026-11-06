@@ -21,6 +21,18 @@ fn now() -> Clock {
     }
 }
 
+impl Clock {
+    // like 17:05
+    pub fn time(&self) -> &str {
+        &self.time
+    }
+
+    // like Fri 06 Nov
+    pub fn date(&self) -> &str {
+        &self.date
+    }
+}
+
 impl Service for Clock {
     fn new() -> Self {
         now()

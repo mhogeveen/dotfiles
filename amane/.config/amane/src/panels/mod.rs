@@ -18,11 +18,13 @@ pub mod launcher;
 mod list;
 pub mod notifications;
 pub mod screenshot;
+pub mod session;
 
 pub const LAUNCHER: &str = "launcher";
 pub const CLIPBOARD: &str = "clipboard";
 pub const NOTIFICATIONS: &str = "notifications";
 pub const SCREENSHOT: &str = "screenshot";
+pub const SESSION: &str = "session";
 
 pub struct PanelDef {
     pub name: &'static str,
@@ -53,6 +55,11 @@ static REGISTRY: &[PanelDef] = &[
         name: SCREENSHOT,
         groups: &["center"],
         on_close: screenshot::reset,
+    },
+    PanelDef {
+        name: SESSION,
+        groups: &["center"],
+        on_close: session::reset,
     },
     // its own corner, so it can stay open next to the launcher or clipboard
     PanelDef {
