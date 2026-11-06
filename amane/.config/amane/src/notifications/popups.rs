@@ -23,7 +23,7 @@ use amane::{
 };
 
 use super::card::{self, Options};
-use crate::panels::{self, BLUETOOTH, NETWORK, NOTIFICATIONS, Panels};
+use crate::panels::{self, AUDIO, BLUETOOTH, NETWORK, NOTIFICATIONS, Panels};
 use crate::theme::theme;
 
 const TIMEOUT: Duration = Duration::from_secs(5);
@@ -176,7 +176,7 @@ pub fn view(monitor: &Monitor) -> LayerWindow {
     let right_panel = {
         let panels = Panels::read();
 
-        [NOTIFICATIONS, NETWORK, BLUETOOTH]
+        [NOTIFICATIONS, NETWORK, BLUETOOTH, AUDIO]
             .iter()
             .any(|name| panels.is_open(name))
     };

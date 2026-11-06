@@ -1,6 +1,6 @@
 use amane::{
     Align::{Center, End},
-    Bluetooth,
+    Audio, Bluetooth,
     Cursor::Pointer,
     Full, Layer, LayerWindow, Monitor, Network, Notifications, Padding, Rectangle, Row, Service,
     Size::Parent,
@@ -14,7 +14,7 @@ use crate::{
     },
     clock, network as net,
     notifications::Seen,
-    panels::{BLUETOOTH, NETWORK, NOTIFICATIONS, Panels, SESSION},
+    panels::{AUDIO, BLUETOOTH, NETWORK, NOTIFICATIONS, Panels, SESSION, audio::volume_icon},
     theme::{Theme, theme},
 };
 
@@ -94,9 +94,9 @@ fn status(t: &Theme) -> Rectangle {
         .child(Row::new(status_icons(t)).gap(8.0).align(Center))
 }
 
-// left to right; bluetooth only on machines that have it
+// left to right: audio, network, bluetooth (only on machines that have it), notifications, session
 fn status_icons(t: &Theme) -> Vec<Box<dyn Widget>> {
-    let mut icons: Vec<Box<dyn Widget>> = vec![Box::new(network(t))];
+    let mut icons: Vec<Box<dyn Widget>> = vec![Box::new(audio(t)), Box::new(network(t))];
 
     if let Some(bluetooth) = bluetooth(t) {
         icons.push(Box::new(bluetooth));
@@ -231,4 +231,25 @@ fn bluetooth(t: &Theme) -> Option<Rectangle> {
             })
             .child(Text::new(icon).size(14.0).color(color)),
     )
+}
+
+// the speaker by volume, dimmed while muted; opens the audio panel
+fn audio(t: &Theme) -> Rectangle {
+    let audio = Audio::read();
+
+    let muted = audio.muted() || audio.volume() == 0;
+
+    Rectangle::new()
+        .width(ICON_WIDTH)
+        .height(Parent)
+        .align_child(Center, Center)
+        .cursor(Pointer)
+        .on_click(|_| {
+            let _ = Panels::toggle(AUDIO);
+        })
+        .child(
+            Text::new(volume_icon(audio.volume(), audio.muted()))
+                .size(14.0)
+                .color(if muted { t.comment } else { t.fg_dim }),
+        )
 }

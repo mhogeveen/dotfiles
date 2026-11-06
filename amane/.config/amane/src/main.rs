@@ -1,5 +1,6 @@
 use amane::App;
 
+mod audio;
 mod bar;
 mod bluetooth;
 mod clock;
@@ -32,6 +33,7 @@ fn main() {
         .window_per_monitor(panels::notifications::view)
         .window_per_monitor(panels::network::view)
         .window_per_monitor(panels::bluetooth::view)
+        .window_per_monitor(panels::audio::view)
         .lock(lock::view)
         .run();
 }

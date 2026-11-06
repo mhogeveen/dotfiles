@@ -1,5 +1,5 @@
 /*
- * small pieces the corner panels (network, bluetooth) share
+ * small pieces the corner panels (network, bluetooth, audio) share
  */
 
 use amane::{
@@ -59,5 +59,44 @@ pub fn switch(t: &Theme, label: &str, on: bool, on_click: impl Fn(Button) + 'sta
             Text::new(format!("{label} {state}"))
                 .size(13.0)
                 .color(color),
+        )
+}
+
+const SLIDER_HEIGHT: f32 = 8.0;
+
+/*
+ * a 0 to 100 bar; pressing or dragging on it sets the value from where the
+ * pointer is. the fill shows value, what the sound server says, so it follows
+ * a drag as fast as the server answers
+ */
+pub fn slider(t: &Theme, width: f32, value: u8, dimmed: bool, on_change: fn(u8)) -> Rectangle {
+    let filled = width * f32::from(value.min(100)) / 100.0;
+
+    let fill = Rectangle::new()
+        .width(filled)
+        .height(SLIDER_HEIGHT)
+        .fill(if dimmed { t.bg5 } else { t.frost });
+
+    // a taller invisible area around the thin bar, so it's easy to grab
+    Rectangle::new()
+        .width(width)
+        .height(BUTTON)
+        .align_child(Start, Center)
+        .cursor(Pointer)
+        .on_drag(move |point| {
+            let picked = (point.x / width * 100.0).round().clamp(0.0, 100.0) as u8;
+
+            // a drag moves in steps smaller than 1%, only real changes go out
+            if picked != value {
+                on_change(picked);
+            }
+        })
+        .child(
+            Rectangle::new()
+                .width(width)
+                .height(SLIDER_HEIGHT)
+                .fill(t.bg2)
+                .clip()
+                .child(fill),
         )
 }
