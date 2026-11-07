@@ -77,14 +77,14 @@ fn key_pressed(key: Key) {
     }
 }
 
-// both sit in the right corner's group, so the center simply takes this panel's place
+// the notification center takes this panel's place
 fn open_notifications() {
     let _ = Panels::open(NOTIFICATIONS);
 }
 
-// the session menu takes over; switch waits for this panel to hide first
+// the session menu takes this panel's place, like any other panel would
 fn open_session() {
-    let _ = Panels::switch(SYSTEM, SESSION);
+    let _ = Panels::open(SESSION);
 }
 
 // user@host, and the ways into the notification center and the session menu

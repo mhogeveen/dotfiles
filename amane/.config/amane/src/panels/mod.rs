@@ -55,60 +55,63 @@ pub struct PanelDef {
     pub on_close: Option<fn()>,
 }
 
+/*
+ * the one group every panel is in, so only one is ever open: when a panel that has
+ * the keyboard closes, mango gives the keyboard to a window, never to another
+ * panel, so escape could no longer reach a panel left open underneath
+ */
+const PANELS: &str = "panels";
+
 // every panel and its relationships, the single place to configure them
 static REGISTRY: &[PanelDef] = &[
     PanelDef {
         name: LAUNCHER,
-        groups: &["center"],
+        groups: &[PANELS],
         on_close: Some(launcher::reset),
     },
     PanelDef {
         name: CLIPBOARD,
-        groups: &["center"],
+        groups: &[PANELS],
         on_close: Some(clipboard::reset),
     },
     PanelDef {
         name: SCREENSHOT,
-        groups: &["center"],
+        groups: &[PANELS],
         on_close: Some(screenshot::reset),
     },
     PanelDef {
         name: SESSION,
-        groups: &["center"],
+        groups: &[PANELS],
         on_close: Some(session::reset),
     },
     PanelDef {
         name: LAYOUT,
-        groups: &["center"],
+        groups: &[PANELS],
         on_close: Some(layout::reset),
     },
-    /*
-     * the top-right corner, apart from the center ones so either can stay open
-     * next to the launcher or clipboard, but sharing the corner with each other
-     */
     PanelDef {
         name: NOTIFICATIONS,
-        groups: &["right"],
+        groups: &[PANELS],
         on_close: Some(notifications::reset),
     },
     PanelDef {
         name: NETWORK,
-        groups: &["right"],
+        groups: &[PANELS],
         on_close: Some(network::reset),
     },
     PanelDef {
         name: BLUETOOTH,
-        groups: &["right"],
+        groups: &[PANELS],
         on_close: None,
     },
     PanelDef {
         name: AUDIO,
-        groups: &["right"],
+        groups: &[PANELS],
         on_close: None,
     },
     PanelDef {
         name: SYSTEM,
-        groups: &["right"],
+        groups: &[PANELS],
         on_close: None,
     },
 ];
@@ -189,28 +192,12 @@ impl Panels {
  */
 impl Panels {
     pub fn open(name: &str) -> Result<(), String> {
-        Panels::open_closing(name, &[])
-    }
-
-    /*
-     * closes one panel and opens another in its place, even across groups,
-     * like the system panel's way into the session menu; the new one waits
-     * for the old one to hide, the same as when a group replaces a panel
-     */
-    pub fn switch(from: &str, to: &str) -> Result<(), String> {
-        find(from).ok_or_else(|| unknown(from))?;
-
-        Panels::open_closing(to, &[from])
-    }
-
-    // opens name, closing its group's other panels and these as well
-    fn open_closing(name: &str, also: &[&str]) -> Result<(), String> {
         let def = find(name).ok_or_else(|| unknown(name))?;
         let output = focused_output();
 
         let mut panels = Panels::write();
 
-        let replaced = panels.remove(|other| conflicts(def, other) || also.contains(&other.name));
+        let replaced = panels.remove(|other| conflicts(def, other));
 
         panels.generation += 1;
 
