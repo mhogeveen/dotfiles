@@ -2,7 +2,7 @@ use amane::{
     Align::{Center, End},
     Audio, Bluetooth,
     Cursor::Pointer,
-    Full, Layer, LayerWindow, Monitor, Network, Notifications, Padding, Rectangle, Row, Service,
+    Full, Layer, LayerWindow, Monitor, Network, Padding, Rectangle, Row, Service,
     Size::Parent,
     Text, Vertical, Widget, Workspaces, Zone, children,
 };
@@ -14,11 +14,8 @@ use crate::{
     },
     clock,
     layout::MangoLayout,
-    network as net,
-    notifications::Seen,
-    panels::{
-        AUDIO, BLUETOOTH, NETWORK, NOTIFICATIONS, Panels, SESSION, audio::volume_icon, layout,
-    },
+    network as net, notifications,
+    panels::{AUDIO, BLUETOOTH, NETWORK, Panels, SYSTEM, audio::volume_icon, layout},
     theme::{Theme, theme},
 };
 
@@ -126,7 +123,7 @@ fn status(t: &Theme) -> Rectangle {
         .child(Row::new(status_icons(t)).gap(8.0).align(Center))
 }
 
-// left to right: audio, network, bluetooth (only on machines that have it), notifications, session
+// left to right: audio, network, bluetooth (only on machines that have it), system
 fn status_icons(t: &Theme) -> Vec<Box<dyn Widget>> {
     let mut icons: Vec<Box<dyn Widget>> = vec![Box::new(audio(t)), Box::new(network(t))];
 
@@ -134,77 +131,34 @@ fn status_icons(t: &Theme) -> Vec<Box<dyn Widget>> {
         icons.push(Box::new(bluetooth));
     }
 
-    icons.push(Box::new(notifications(t)));
-    icons.push(Box::new(session(t)));
+    icons.push(Box::new(system(t)));
 
     icons
-}
-
-/*
- * a bell with the number of notifications since the center was last closed;
- * reading Notifications here, in a window open from the start, is also what
- * makes the shell the notification daemon
- */
-fn notifications(t: &Theme) -> Rectangle {
-    let notifications = Notifications::read();
-    let open = Panels::read().is_open(NOTIFICATIONS);
-
-    let unread = if open {
-        0
-    } else {
-        Seen::read().unread(&notifications)
-    };
-
-    let (icon, color) = if unread > 0 {
-        ("\u{f009a}", t.brass)
-    } else {
-        ("\u{f009c}", t.fg_dim)
-    };
-
-    let mut parts: Vec<Box<dyn Widget>> = vec![Box::new(Text::new(icon).size(14.0).color(color))];
-
-    // as wide as the other icons, plus room for the count when there is one
-    let mut width = ICON_WIDTH;
-
-    if unread > 0 {
-        let count = unread.to_string();
-
-        width += COUNT_GAP + count.len() as f32 * COUNT_DIGIT;
-
-        parts.push(Box::new(Text::new(count).size(COUNT_SIZE).color(t.fg)));
-    }
-
-    Rectangle::new()
-        .width(width)
-        .height(Parent)
-        .align_child(Center, Center)
-        .cursor(Pointer)
-        .on_click(|_| {
-            let _ = Panels::toggle(NOTIFICATIONS);
-        })
-        .child(Row::new(parts).gap(COUNT_GAP).align(Center))
 }
 
 // the box every status icon sits in
 const ICON_WIDTH: f32 = 24.0;
 
-const COUNT_GAP: f32 = 4.0;
-const COUNT_SIZE: f32 = 12.0;
+/*
+ * the nixos snowflake, frost while notifications wait unread; opens the system
+ * panel, which has the way into the notification center and the session menu
+ */
+fn system(t: &Theme) -> Rectangle {
+    let color = if notifications::has_unread() {
+        t.frost
+    } else {
+        t.fg_dim
+    };
 
-// BlexMono is monospaced, every digit advances 0.6 of the text size
-const COUNT_DIGIT: f32 = COUNT_SIZE * 0.6;
-
-// opens the session menu: lock, suspend, logout, reboot, shutdown
-fn session(t: &Theme) -> Rectangle {
     Rectangle::new()
         .width(ICON_WIDTH)
         .height(Parent)
         .align_child(Center, Center)
         .cursor(Pointer)
         .on_click(|_| {
-            let _ = Panels::toggle(SESSION);
+            let _ = Panels::toggle(SYSTEM);
         })
-        .child(Text::new("\u{f0425}").size(14.0).color(t.fg_dim))
+        .child(Text::new("\u{f313}").size(14.0).color(color))
 }
 
 // wi-fi strength, ethernet, no internet, wi-fi off or offline; opens the network panel

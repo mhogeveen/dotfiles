@@ -11,6 +11,7 @@ mod notifications;
 mod panels;
 mod screenshot;
 mod session;
+mod system;
 mod theme;
 
 fn main() {
@@ -36,6 +37,7 @@ fn main() {
         .window_per_monitor(panels::network::view)
         .window_per_monitor(panels::bluetooth::view)
         .window_per_monitor(panels::audio::view)
+        .window_per_monitor(panels::system::view)
         .lock(lock::view)
         .run();
 }

@@ -23,6 +23,7 @@ pub mod network;
 pub mod notifications;
 pub mod screenshot;
 pub mod session;
+pub mod system;
 mod ui;
 
 pub const LAUNCHER: &str = "launcher";
@@ -34,6 +35,7 @@ pub const NETWORK: &str = "network";
 pub const BLUETOOTH: &str = "bluetooth";
 pub const AUDIO: &str = "audio";
 pub const LAYOUT: &str = "layout";
+pub const SYSTEM: &str = "system";
 
 pub struct PanelDef {
     pub name: &'static str,
@@ -98,6 +100,11 @@ static REGISTRY: &[PanelDef] = &[
         name: AUDIO,
         groups: &["right"],
         on_close: audio::reset,
+    },
+    PanelDef {
+        name: SYSTEM,
+        groups: &["right"],
+        on_close: system::reset,
     },
 ];
 
@@ -177,12 +184,28 @@ impl Panels {
  */
 impl Panels {
     pub fn open(name: &str) -> Result<(), String> {
+        Panels::open_closing(name, &[])
+    }
+
+    /*
+     * closes one panel and opens another in its place, even across groups,
+     * like the system panel's way into the session menu; the new one waits
+     * for the old one to hide, the same as when a group replaces a panel
+     */
+    pub fn switch(from: &str, to: &str) -> Result<(), String> {
+        find(from).ok_or_else(|| unknown(from))?;
+
+        Panels::open_closing(to, &[from])
+    }
+
+    // opens name, closing its group's other panels and these as well
+    fn open_closing(name: &str, also: &[&str]) -> Result<(), String> {
         let def = find(name).ok_or_else(|| unknown(name))?;
         let output = focused_output();
 
         let mut panels = Panels::write();
 
-        let replaced = panels.remove(|other| conflicts(def, other));
+        let replaced = panels.remove(|other| conflicts(def, other) || also.contains(&other.name));
 
         panels.generation += 1;
 

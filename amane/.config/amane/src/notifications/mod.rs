@@ -10,6 +10,8 @@ use std::time::{Duration, SystemTime};
 
 use amane::{Apps, Argument, Bus, Notification, Notifications, Service, Urgency};
 
+use crate::panels::{NOTIFICATIONS, Panels};
+
 pub mod card;
 pub mod popups;
 
@@ -44,6 +46,25 @@ impl Seen {
         Seen::write().until = SystemTime::now();
     }
 }
+
+/*
+ * whether anything arrived since the notification center was last closed;
+ * nothing counts while it's open. reads Notifications, so a view that asks
+ * redraws when one arrives or goes away
+ */
+pub fn has_unread() -> bool {
+    let notifications = Notifications::read();
+
+    if Panels::read().is_open(NOTIFICATIONS) {
+        return false;
+    }
+
+    Seen::read().unread(&notifications) > 0
+}
+
+// nerd font material design glyphs
+pub const ICON_BELL: &str = "\u{f009a}";
+pub const ICON_BELL_OUTLINE: &str = "\u{f009c}";
 
 /*
  * sends a notification the way any program would, over d-bus, so it reaches the

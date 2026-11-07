@@ -1,10 +1,10 @@
 /*
- * small pieces the corner panels (network, bluetooth, audio) share
+ * small pieces the corner panels (network, bluetooth, audio, system) share
  */
 
 use amane::{
     Align::{Center, Start},
-    Button,
+    Button, Color,
     Cursor::Pointer,
     Rectangle,
     Size::Parent,
@@ -29,6 +29,28 @@ pub fn button(
         .cursor(Pointer)
         .on_click(on_click)
         .child(Text::new(label).size(13.0).color(t.fg))
+}
+
+// a square button with a glyph, like rescan or the way into the session menu
+pub fn icon_button(t: &Theme, glyph: &str, on_click: impl Fn(Button) + 'static) -> Rectangle {
+    icon_button_colored(t, glyph, t.fg, on_click)
+}
+
+// the same, with the glyph in its own color, like a bell that lights up
+pub fn icon_button_colored(
+    t: &Theme,
+    glyph: &str,
+    color: Color,
+    on_click: impl Fn(Button) + 'static,
+) -> Rectangle {
+    Rectangle::new()
+        .width(BUTTON)
+        .height(BUTTON)
+        .fill(t.bg2)
+        .align_child(Center, Center)
+        .cursor(Pointer)
+        .on_click(on_click)
+        .child(Text::new(glyph).size(14.0).color(color))
 }
 
 // the bold panel name on the left of a header row, taking the room the buttons leave
@@ -91,6 +113,38 @@ pub fn slider(t: &Theme, width: f32, value: u8, dimmed: bool, on_change: fn(u8))
                 on_change(picked);
             }
         })
+        .child(
+            Rectangle::new()
+                .width(width)
+                .height(SLIDER_HEIGHT)
+                .fill(t.bg2)
+                .clip()
+                .child(fill),
+        )
+}
+
+/*
+ * a 0 to 100 bar that only shows a level, like cpu or disk use; it turns
+ * brass when getting full and red when nearly full
+ */
+pub fn meter(t: &Theme, width: f32, percent: u8) -> Rectangle {
+    let percent = percent.min(100);
+
+    let color = match percent {
+        95.. => t.cinder,
+        80.. => t.brass,
+        _ => t.frost,
+    };
+
+    let fill = Rectangle::new()
+        .width(width * f32::from(percent) / 100.0)
+        .height(SLIDER_HEIGHT)
+        .fill(color);
+
+    Rectangle::new()
+        .width(width)
+        .height(BUTTON)
+        .align_child(Start, Center)
         .child(
             Rectangle::new()
                 .width(width)

@@ -107,14 +107,7 @@ fn clear_password() {
 fn header(t: &Theme, network: &Network) -> Row {
     let title = ui::title(t, "Network");
 
-    let rescan = Rectangle::new()
-        .width(BUTTON)
-        .height(BUTTON)
-        .fill(t.bg2)
-        .align_child(Center, Center)
-        .cursor(Pointer)
-        .on_click(|_| Network::scan())
-        .child(Text::new(ICON_RESCAN).size(14.0).color(t.fg));
+    let rescan = ui::icon_button(t, ICON_RESCAN, |_| Network::scan());
 
     let enabled = network.wifi_enabled();
 

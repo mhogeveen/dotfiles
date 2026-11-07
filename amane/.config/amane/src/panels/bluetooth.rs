@@ -91,16 +91,9 @@ fn header(t: &Theme, bluetooth: &Bluetooth) -> Row {
             parts.push(Box::new(Text::new("scanning").size(12.0).color(t.comment)));
         }
 
-        parts.push(Box::new(
-            Rectangle::new()
-                .width(BUTTON)
-                .height(BUTTON)
-                .fill(t.bg2)
-                .align_child(Center, Center)
-                .cursor(Pointer)
-                .on_click(|_| Bluetooth::start_scan())
-                .child(Text::new(ICON_RESCAN).size(14.0).color(t.fg)),
-        ));
+        parts.push(Box::new(ui::icon_button(t, ICON_RESCAN, |_| {
+            Bluetooth::start_scan()
+        })));
     }
 
     if bluetooth.available() {
