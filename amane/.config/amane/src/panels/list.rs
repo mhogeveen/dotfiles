@@ -15,26 +15,18 @@ use amane::{
     Text, TextInput, Widget, children,
 };
 
+use super::ui::{PADDING, SIDES};
 use crate::theme::Theme;
 
 pub const ROWS: usize = 8;
 
 const WIDTH: f32 = 600.0;
-const PADDING: f32 = 12.0;
 const GAP: f32 = 8.0;
 const SEARCH_HEIGHT: f32 = 44.0;
 const ROW_HEIGHT: f32 = 40.0;
 const TEXT_SIZE: f32 = 15.0;
 const NUMBER_WIDTH: f32 = 24.0;
 const STRIPE_WIDTH: f32 = 2.0;
-
-// room on the left and right only, so rows and the search box center vertically
-const SIDES: Padding = Padding {
-    top: 0.0,
-    right: PADDING,
-    bottom: 0.0,
-    left: PADDING,
-};
 
 pub fn width() -> f32 {
     WIDTH

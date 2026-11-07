@@ -8,8 +8,8 @@
 
 use amane::{Argument, Bus, Value};
 
-const NAME: &str = "org.freedesktop.NetworkManager";
-const PATH: &str = "/org/freedesktop/NetworkManager";
+use super::{NAME, PATH};
+
 const ACTIVE: &str = "org.freedesktop.NetworkManager.Connection.Active";
 const IP4: &str = "org.freedesktop.NetworkManager.IP4Config";
 const DEVICE: &str = "org.freedesktop.NetworkManager.Device";

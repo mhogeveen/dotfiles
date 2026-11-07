@@ -6,101 +6,53 @@
  * layout, or with `amane ipc call panel toggle layout`
  */
 
-use std::time::Duration;
+use amane::{LayerWindow, Monitor, Rectangle, Service};
 
-use amane::{Cursor::Pointer, Key, LayerWindow, Monitor, Service, TextInput, Vertical, Widget};
-
-use super::list::{self, Cursor, fuzzy};
-use super::{LAYOUT, Panels, panel_window};
+use super::list::{self, fuzzy};
+use super::picker::{self, Picker};
+use super::{LAYOUT, Panels};
 use crate::layout::{self, LAYOUTS, Layout, MangoLayout};
-use crate::theme::theme;
-
-const INPUT: &str = "layout-search";
+use crate::theme::Theme;
 
 // a symbol typed as is, like "vs", puts its layout first
 const SYMBOL_BONUS: i32 = 100;
 
-struct Picker {
-    query: String,
-    cursor: Cursor,
-}
+pub struct Layouts;
 
-impl Service for Picker {
-    fn new() -> Self {
-        Self {
-            query: String::new(),
-            cursor: Cursor::default(),
-        }
+impl Picker for Layouts {
+    const PANEL: &'static str = LAYOUT;
+    const INPUT: &'static str = "layout-search";
+    const PLACEHOLDER: &'static str = "Search layouts";
+    const NAMESPACE: &'static str = "amane-layout";
+
+    type Item = &'static Layout;
+
+    fn items(query: &str) -> Vec<&'static Layout> {
+        matches(query)
     }
 
-    // only changes through input
-    fn interval() -> Duration {
-        Duration::from_secs(3600)
+    // the layout in use on the panel's monitor gets the accent stripe
+    fn row(t: &Theme, monitor: &Monitor, choice: &&'static Layout, selected: bool) -> Rectangle {
+        let in_use = MangoLayout::read().symbol(&monitor.name) == Some(choice.symbol);
+
+        list::detail_row(t, &choice.label(), choice.symbol, selected, in_use)
+    }
+
+    fn pick(choice: &'static Layout) {
+        layout::set_layout(choice.name);
+    }
+
+    fn empty(_: &str) -> &'static str {
+        "No matches"
     }
 }
 
 pub fn view(monitor: &Monitor) -> LayerWindow {
-    let t = theme();
-    let picker = Picker::read();
+    picker::view::<Layouts>(monitor)
+}
 
-    // the panel shows on the monitor it was opened on, the one whose layout changes
-    let current = MangoLayout::read().symbol(&monitor.name).map(String::from);
-
-    let found = matches(&picker.query);
-    let selected = picker.cursor.selected(found.len());
-
-    let mut rows: Vec<Box<dyn Widget>> = Vec::new();
-
-    for index in picker.cursor.visible(found.len()) {
-        let choice = found[index];
-
-        // the layout in use gets the accent stripe
-        let in_use = current.as_deref() == Some(choice.symbol);
-
-        rows.push(Box::new(
-            list::detail_row(
-                &t,
-                &choice.label(),
-                choice.symbol,
-                index == selected,
-                in_use,
-            )
-            .cursor(Pointer)
-            .on_click(move |_| pick(choice)),
-        ));
-    }
-
-    if rows.is_empty() {
-        rows.push(list::message(&t, "No matches"));
-    }
-
-    let input = TextInput::new(INPUT)
-        .placeholder("Search layouts")
-        .focused()
-        .on_change(|text| {
-            let mut picker = Picker::write();
-
-            picker.query = text;
-            picker.cursor = Cursor::default();
-        })
-        .on_submit(|_| submit());
-
-    let rows = list::rows(rows).on_scroll(|scroll| {
-        let count = matches(&Picker::read().query).len();
-
-        Picker::write()
-            .cursor
-            .scroll(list::scroll_delta(scroll), count);
-    });
-
-    let base = LayerWindow::new()
-        .width(list::width())
-        .height(list::height(list::ROWS, true))
-        .anchor_vertical(Vertical::Middle)
-        .namespace("amane-layout")
-        .child(list::frame(&t, Some(input), rows));
-
-    panel_window(monitor, LAYOUT, base, key_pressed)
+pub fn reset() {
+    picker::reset::<Layouts>();
 }
 
 /*
@@ -111,54 +63,10 @@ pub fn toggle_from(symbol: Option<&str>) {
     let index = symbol.and_then(|symbol| LAYOUTS.iter().position(|layout| layout.symbol == symbol));
 
     if let Some(index) = index {
-        Picker::write().cursor.select(index, LAYOUTS.len());
+        picker::select::<Layouts>(index);
     }
 
     let _ = Panels::toggle(LAYOUT);
-}
-
-// escape is handled by the panel manager; the search box keeps letters and enter
-fn key_pressed(key: Key) {
-    let delta = match key {
-        Key::Down | Key::Tab => 1,
-        Key::Up => -1,
-        Key::Enter => return submit(),
-        _ => return,
-    };
-
-    let count = matches(&Picker::read().query).len();
-
-    Picker::write().cursor.step(delta, count);
-}
-
-// clears the search for the next time the picker opens
-pub fn reset() {
-    TextInput::set_text(INPUT, "");
-
-    let mut picker = Picker::write();
-
-    picker.query.clear();
-    picker.cursor = Cursor::default();
-}
-
-fn submit() {
-    let choice = {
-        let picker = Picker::read();
-
-        let found = matches(&picker.query);
-
-        found.get(picker.cursor.selected(found.len())).copied()
-    };
-
-    if let Some(choice) = choice {
-        pick(choice);
-    }
-}
-
-fn pick(choice: &'static Layout) {
-    layout::set_layout(choice.name);
-
-    let _ = Panels::close(LAYOUT);
 }
 
 // best match first; an empty query keeps mango's order, the one switch_layout cycles

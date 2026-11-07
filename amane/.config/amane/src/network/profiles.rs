@@ -7,7 +7,8 @@
 
 use amane::{Bus, Value};
 
-const NAME: &str = "org.freedesktop.NetworkManager";
+use super::NAME;
+
 const SETTINGS_PATH: &str = "/org/freedesktop/NetworkManager/Settings";
 const SETTINGS: &str = "org.freedesktop.NetworkManager.Settings";
 const CONNECTION: &str = "org.freedesktop.NetworkManager.Settings.Connection";

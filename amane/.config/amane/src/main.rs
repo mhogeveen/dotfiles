@@ -18,8 +18,13 @@ fn main() {
     // locks on suspend and `loginctl lock-session`
     session::watch_logind();
 
-    // answers BlueZ when a device asks to confirm a pairing code
+    // answers BlueZ when a device asks to confirm a pairing code, and registers again
+    // when bluetoothd restarts
     bluetooth::agent::start();
+    bluetooth::start();
+
+    // records the clipboard from the start, the panel only reads it when open
+    panels::clipboard::start();
 
     App::new()
         .font("BlexMono Nerd Font")

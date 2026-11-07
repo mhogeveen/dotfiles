@@ -13,20 +13,17 @@ use amane::{
     Align::{Center, Start},
     Column,
     Cursor::Pointer,
-    Horizontal, Key, LayerWindow, Margin, Monitor, Network, Padding, Rectangle, Row, ScrollArea,
-    Service,
+    Key, LayerWindow, Monitor, Network, Padding, Rectangle, Row, ScrollArea, Service,
     Size::Parent,
-    Text, TextInput, Vertical, Weight, Widget, children,
+    Text, TextInput, Weight, Widget, children,
 };
 
-use super::ui::{self, BUTTON, button};
-use super::{NETWORK, panel_window};
+use super::ui::{self, BUTTON, PADDING, SIDES, button};
+use super::{NETWORK, panel};
 use crate::network::{self, ICON_LOCK, ICON_RESCAN, NetworkPanel, Outcome, Status};
-use crate::theme::{Theme, theme};
+use crate::theme::Theme;
 
-const WIDTH: f32 = 400.0;
 const HEIGHT: f32 = 560.0;
-const PADDING: f32 = 12.0;
 const GAP: f32 = 8.0;
 const LINE: f32 = 20.0;
 const ROW: f32 = 40.0;
@@ -39,52 +36,28 @@ const PASSWORD_INPUT: &str = "network-password";
  */
 static PASSWORD: Mutex<String> = Mutex::new(String::new());
 
-const SIDES: Padding = Padding {
-    top: 0.0,
-    right: PADDING,
-    bottom: 0.0,
-    left: PADDING,
-};
-
 pub fn view(monitor: &Monitor) -> LayerWindow {
-    let t = theme();
+    let base = ui::corner(HEIGHT, "amane-network");
+
+    panel(monitor, NETWORK, base, |_: Key| {}, content)
+}
+
+fn content(t: &Theme) -> Rectangle {
     let network = Network::read();
     let panel = NetworkPanel::read();
 
     let mut parts: Vec<Box<dyn Widget>> = vec![
-        Box::new(header(&t, &network)),
-        Box::new(connection(&t, &network, &panel)),
+        Box::new(header(t, &network)),
+        Box::new(connection(t, &network, &panel)),
     ];
 
     if let Some(result) = panel.result() {
-        parts.push(Box::new(result_line(&t, result)));
+        parts.push(Box::new(result_line(t, result)));
     }
 
-    parts.push(Box::new(networks(&t, &network, &panel)));
+    parts.push(Box::new(networks(t, &network, &panel)));
 
-    let base = LayerWindow::new()
-        .width(WIDTH)
-        .height(HEIGHT)
-        .anchor_vertical(Vertical::Top)
-        .anchor_horizontal(Horizontal::Right)
-        .margin(Margin {
-            top: 8,
-            right: 8,
-            bottom: 0,
-            left: 0,
-        })
-        .namespace("amane-network")
-        .child(
-            Rectangle::new()
-                .width(Parent)
-                .height(Parent)
-                .fill(t.bg_deep)
-                .border(1.0, t.bg3)
-                .padding(PADDING)
-                .child(Column::new(parts).gap(GAP)),
-        );
-
-    panel_window(monitor, NETWORK, base, |_: Key| {})
+    ui::corner_frame(t, GAP, parts)
 }
 
 // closes the password box and forgets what was typed in it
@@ -111,7 +84,9 @@ fn header(t: &Theme, network: &Network) -> Row {
 
     let enabled = network.wifi_enabled();
 
-    let switch = ui::switch(t, "Wi-Fi", enabled, move |_| Network::set_wifi(!enabled));
+    let switch = ui::switch(t, "Wi-Fi", 92.0, enabled, move |_| {
+        Network::set_wifi(!enabled)
+    });
 
     Row::new(children![title, rescan, switch])
         .gap(GAP)

@@ -8,23 +8,21 @@
 
 use std::io::Write;
 use std::process::{Command, Stdio};
+use std::sync::Arc;
 use std::thread;
 use std::time::Duration;
 
-use amane::{
-    Cursor::Pointer, Key, LayerWindow, Monitor, Service, TextInput, Vertical, Widget, lines, output,
-};
+use amane::{LayerWindow, Monitor, Rectangle, Service, lines, output};
 
-use super::list::{self, Cursor};
-use super::{CLIPBOARD, Panels, panel_window};
-use crate::theme::theme;
-
-const INPUT: &str = "clipboard-search";
+use super::CLIPBOARD;
+use super::list;
+use super::picker::{self, Picker};
+use crate::theme::Theme;
 
 // stores every new selection, then prints a line so the history knows to reload
 const WATCH: &str = "wl-paste --watch sh -c 'cliphist store; echo'";
 
-struct Entry {
+pub struct Entry {
     // the line exactly as `cliphist list` printed it, which `cliphist decode` takes back
     line: String,
 
@@ -35,7 +33,7 @@ struct Entry {
 enum State {
     Loading,
     Missing,
-    Ready(Vec<Entry>),
+    Ready(Vec<Arc<Entry>>),
 }
 
 // newest first
@@ -77,7 +75,11 @@ impl Service for History {
 }
 
 fn reload() {
-    let entries = output("cliphist list").lines().filter_map(parse).collect();
+    let entries = output("cliphist list")
+        .lines()
+        .filter_map(parse)
+        .map(Arc::new)
+        .collect();
 
     History::write().state = State::Ready(entries);
 }
@@ -95,153 +97,65 @@ fn parse(line: &str) -> Option<Entry> {
     })
 }
 
-struct Clipboard {
-    query: String,
-    cursor: Cursor,
+/*
+ * records the clipboard from startup on, not only once the panel first opens;
+ * the history starts when something first reads it
+ */
+pub fn start() {
+    drop(History::read());
 }
 
-impl Service for Clipboard {
-    fn new() -> Self {
-        Self {
-            query: String::new(),
-            cursor: Cursor::default(),
-        }
+pub struct Clipboard;
+
+impl Picker for Clipboard {
+    const PANEL: &'static str = CLIPBOARD;
+    const INPUT: &'static str = "clipboard-search";
+    const PLACEHOLDER: &'static str = "Search clipboard history";
+    const NAMESPACE: &'static str = "amane-clipboard";
+
+    // shared, so listing hundreds of entries copies no text
+    type Item = Arc<Entry>;
+
+    fn items(query: &str) -> Vec<Arc<Entry>> {
+        let history = History::read();
+
+        let State::Ready(entries) = &history.state else {
+            return Vec::new();
+        };
+
+        let query = query.trim().to_lowercase();
+
+        entries
+            .iter()
+            .filter(|entry| entry.lowercase.contains(&query))
+            .cloned()
+            .collect()
     }
 
-    // only changes through input
-    fn interval() -> Duration {
-        Duration::from_secs(3600)
+    fn row(t: &Theme, _: &Monitor, entry: &Arc<Entry>, selected: bool) -> Rectangle {
+        list::row(t, &entry.preview, selected)
+    }
+
+    fn pick(entry: Arc<Entry>) {
+        copy(entry.line.clone());
+    }
+
+    fn empty(_: &str) -> &'static str {
+        match &History::read().state {
+            State::Loading => "Loading history…",
+            State::Missing => "cliphist is not installed",
+            State::Ready(entries) if entries.is_empty() => "Nothing copied yet",
+            State::Ready(_) => "No matches",
+        }
     }
 }
 
 pub fn view(monitor: &Monitor) -> LayerWindow {
-    let t = theme();
-    let history = History::read();
-    let clipboard = Clipboard::read();
-
-    let mut rows: Vec<Box<dyn Widget>> = Vec::new();
-
-    match &history.state {
-        State::Loading => rows.push(list::message(&t, "Loading history…")),
-        State::Missing => rows.push(list::message(&t, "cliphist is not installed")),
-        State::Ready(entries) => {
-            let found = matches(entries, &clipboard.query);
-            let selected = clipboard.cursor.selected(found.len());
-
-            for index in clipboard.cursor.visible(found.len()) {
-                let entry = found[index];
-                let line = entry.line.clone();
-
-                rows.push(Box::new(
-                    list::row(&t, &entry.preview, index == selected)
-                        .cursor(Pointer)
-                        .on_click(move |_| copy(line.clone())),
-                ));
-            }
-
-            if rows.is_empty() {
-                let text = if entries.is_empty() {
-                    "Nothing copied yet"
-                } else {
-                    "No matches"
-                };
-
-                rows.push(list::message(&t, text));
-            }
-        }
-    }
-
-    let input = TextInput::new(INPUT)
-        .placeholder("Search clipboard history")
-        .focused()
-        .on_change(|text| {
-            let mut clipboard = Clipboard::write();
-
-            clipboard.query = text;
-            clipboard.cursor = Cursor::default();
-        })
-        .on_submit(|_| submit());
-
-    let rows = list::rows(rows).on_scroll(|scroll| {
-        let count = count();
-
-        Clipboard::write()
-            .cursor
-            .scroll(list::scroll_delta(scroll), count);
-    });
-
-    let base = LayerWindow::new()
-        .width(list::width())
-        .height(list::height(list::ROWS, true))
-        .anchor_vertical(Vertical::Middle)
-        .namespace("amane-clipboard")
-        .child(list::frame(&t, Some(input), rows));
-
-    panel_window(monitor, CLIPBOARD, base, key_pressed)
+    picker::view::<Clipboard>(monitor)
 }
 
-// escape is handled by the panel manager; the search box keeps letters and enter
-fn key_pressed(key: Key) {
-    let delta = match key {
-        Key::Down | Key::Tab => 1,
-        Key::Up => -1,
-        Key::Enter => return submit(),
-        _ => return,
-    };
-
-    let count = count();
-
-    Clipboard::write().cursor.step(delta, count);
-}
-
-// clears the search for the next time the panel opens
 pub fn reset() {
-    TextInput::set_text(INPUT, "");
-
-    let mut clipboard = Clipboard::write();
-
-    clipboard.query.clear();
-    clipboard.cursor = Cursor::default();
-}
-
-fn count() -> usize {
-    let history = History::read();
-    let clipboard = Clipboard::read();
-
-    match &history.state {
-        State::Ready(entries) => matches(entries, &clipboard.query).len(),
-        _ => 0,
-    }
-}
-
-fn submit() {
-    let line = {
-        let history = History::read();
-        let clipboard = Clipboard::read();
-
-        let State::Ready(entries) = &history.state else {
-            return;
-        };
-
-        let found = matches(entries, &clipboard.query);
-
-        found
-            .get(clipboard.cursor.selected(found.len()))
-            .map(|entry| entry.line.clone())
-    };
-
-    if let Some(line) = line {
-        copy(line);
-    }
-}
-
-fn matches<'a>(entries: &'a [Entry], query: &str) -> Vec<&'a Entry> {
-    let query = query.trim().to_lowercase();
-
-    entries
-        .iter()
-        .filter(|entry| entry.lowercase.contains(&query))
-        .collect()
+    picker::reset::<Clipboard>();
 }
 
 /*
@@ -250,8 +164,6 @@ fn matches<'a>(entries: &'a [Entry], query: &str) -> Vec<&'a Entry> {
  * never holds up drawing. the watcher then moves the entry to the top of the history
  */
 fn copy(line: String) {
-    let _ = Panels::close(CLIPBOARD);
-
     thread::spawn(move || {
         if let Err(error) = decode_and_copy(&line) {
             eprintln!("clipboard: failed to copy entry: {error}");

@@ -20,6 +20,10 @@ use crate::panels::{NETWORK, Panels};
 
 pub use details::Details;
 
+// networkmanager on the system bus, for details.rs and profiles.rs
+const NAME: &str = "org.freedesktop.NetworkManager";
+const PATH: &str = "/org/freedesktop/NetworkManager";
+
 // an attempt that hasn't joined by then counts as failed
 const ATTEMPT_TIMEOUT: Duration = Duration::from_secs(30);
 

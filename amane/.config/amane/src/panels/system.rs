@@ -10,28 +10,26 @@ use amane::{
     Align::{Center, End, Start},
     Battery, Column, Cpu,
     Cursor::Pointer,
-    Horizontal, Key, LayerWindow, Margin, Memory, Monitor, Rectangle, Row, Service,
+    Key, LayerWindow, Memory, Monitor, Rectangle, Row, Service,
     Size::Parent,
-    Text, Vertical, Weight, Widget, children,
+    Text, Weight, Widget, children,
 };
 
-use super::ui::{self, BUTTON};
-use super::{NOTIFICATIONS, Panels, SESSION, SYSTEM, panel_window};
+use super::ui::{self, BUTTON, CORNER_WIDTH, PADDING};
+use super::{NOTIFICATIONS, Panels, SESSION, SYSTEM, panel};
 use crate::notifications::{self, ICON_BELL, ICON_BELL_OUTLINE};
 use crate::system::{self, NetworkSpeed, SystemInfo};
-use crate::theme::{ACCENTS, Accent, Theme, theme};
+use crate::theme::{ACCENTS, Accent, Theme};
 
-const WIDTH: f32 = 400.0;
 // header with key hints, details, five diagnostics rows (a laptop's battery included) and the settings
 const HEIGHT: f32 = 338.0;
-const PADDING: f32 = 12.0;
 const GAP: f32 = 8.0;
 const LINE: f32 = 20.0;
 
 // a meter row: name, bar, then the numbers taking the rest
 const NAME: f32 = 64.0;
 const METER: f32 = 128.0;
-const NUMBERS: f32 = WIDTH - PADDING * 2.0 - NAME - METER - GAP * 2.0;
+const NUMBERS: f32 = CORNER_WIDTH - PADDING * 2.0 - NAME - METER - GAP * 2.0;
 
 // the interface name at the end of the network row
 const INTERFACE: f32 = 72.0;
@@ -47,53 +45,24 @@ const KEY_NOTIFICATIONS: char = 'n';
 const KEY_SESSION: char = 's';
 
 pub fn view(monitor: &Monitor) -> LayerWindow {
-    let t = theme();
-    let info = SystemInfo::read();
+    let base = ui::corner(HEIGHT, "amane-system");
 
-    /*
-     * a hidden window still runs its view whenever a service it read changes,
-     * so cpu, memory and battery are only read while the panel shows
-     */
-    let shown = Panels::read().shown_on(SYSTEM, monitor);
-
-    let mut parts: Vec<Box<dyn Widget>> =
-        vec![Box::new(header(&t, &info)), Box::new(details(&t, &info))];
-
-    if shown {
-        parts.extend(meters(&t, &info));
-    }
-
-    parts.push(Box::new(section(&t, "Settings")));
-    parts.push(Box::new(accent_setting(&t)));
-
-    let base = LayerWindow::new()
-        .width(WIDTH)
-        .height(HEIGHT)
-        .anchor_vertical(Vertical::Top)
-        .anchor_horizontal(Horizontal::Right)
-        .margin(Margin {
-            top: 8,
-            right: 8,
-            bottom: 0,
-            left: 0,
-        })
-        .namespace("amane-system")
-        .child(
-            Rectangle::new()
-                .width(Parent)
-                .height(Parent)
-                .fill(t.bg_deep)
-                .border(1.0, t.bg3)
-                .padding(PADDING)
-                .clip()
-                .child(Column::new(parts).gap(GAP)),
-        );
-
-    panel_window(monitor, SYSTEM, base, key_pressed)
+    panel(monitor, SYSTEM, base, key_pressed, content)
 }
 
-// nothing to clear
-pub fn reset() {}
+fn content(t: &Theme) -> Rectangle {
+    let info = SystemInfo::read();
+
+    let mut parts: Vec<Box<dyn Widget>> =
+        vec![Box::new(header(t, &info)), Box::new(details(t, &info))];
+
+    parts.extend(meters(t, &info));
+
+    parts.push(Box::new(section(t, "Settings")));
+    parts.push(Box::new(accent_setting(t)));
+
+    ui::corner_frame(t, GAP, parts)
+}
 
 // the header buttons by their letters, uppercase too; escape is handled by the panel manager
 fn key_pressed(key: Key) {

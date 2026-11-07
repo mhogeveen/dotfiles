@@ -10,77 +10,48 @@ use amane::{
     Align::{Center, Start},
     Bluetooth, BluetoothDevice, Column,
     Cursor::Pointer,
-    Horizontal, Key, LayerWindow, Margin, Monitor, Padding, Rectangle, Row, ScrollArea, Service,
+    Key, LayerWindow, Monitor, Rectangle, Row, ScrollArea, Service,
     Size::Parent,
-    Text, Vertical, Weight, Widget, children,
+    Text, Weight, Widget, children,
 };
 
-use super::ui::{self, BUTTON, button};
-use super::{BLUETOOTH, panel_window};
+use super::ui::{self, BUTTON, PADDING, SIDES, button};
+use super::{BLUETOOTH, panel};
 use crate::bluetooth::agent::{self, Agent, Kind, Request};
 use crate::bluetooth::{self, BluetoothPanel, ICON_RESCAN, Job};
-use crate::theme::{Theme, theme};
+use crate::theme::Theme;
 
-const WIDTH: f32 = 400.0;
 const HEIGHT: f32 = 560.0;
-const PADDING: f32 = 12.0;
 const GAP: f32 = 8.0;
 const LINE: f32 = 20.0;
 const ROW: f32 = 40.0;
 const SECTION: f32 = 28.0;
 
-const SIDES: Padding = Padding {
-    top: 0.0,
-    right: PADDING,
-    bottom: 0.0,
-    left: PADDING,
-};
-
 pub fn view(monitor: &Monitor) -> LayerWindow {
-    let t = theme();
+    let base = ui::corner(HEIGHT, "amane-bluetooth");
+
+    panel(monitor, BLUETOOTH, base, |_: Key| {}, content)
+}
+
+fn content(t: &Theme) -> Rectangle {
     let bluetooth = Bluetooth::read();
     let panel = BluetoothPanel::read();
     let agent = Agent::read();
 
-    let mut parts: Vec<Box<dyn Widget>> = vec![Box::new(header(&t, &bluetooth))];
+    let mut parts: Vec<Box<dyn Widget>> = vec![Box::new(header(t, &bluetooth))];
 
     if let Some(request) = agent.request() {
-        parts.push(Box::new(pairing(&t, request)));
+        parts.push(Box::new(pairing(t, request)));
     }
 
     if let Some(failure) = panel.failure() {
-        parts.push(Box::new(failure_line(&t, failure)));
+        parts.push(Box::new(failure_line(t, failure)));
     }
 
-    parts.push(Box::new(devices(&t, &bluetooth, &panel)));
+    parts.push(Box::new(devices(t, &bluetooth, &panel)));
 
-    let base = LayerWindow::new()
-        .width(WIDTH)
-        .height(HEIGHT)
-        .anchor_vertical(Vertical::Top)
-        .anchor_horizontal(Horizontal::Right)
-        .margin(Margin {
-            top: 8,
-            right: 8,
-            bottom: 0,
-            left: 0,
-        })
-        .namespace("amane-bluetooth")
-        .child(
-            Rectangle::new()
-                .width(Parent)
-                .height(Parent)
-                .fill(t.bg_deep)
-                .border(1.0, t.bg3)
-                .padding(PADDING)
-                .child(Column::new(parts).gap(GAP)),
-        );
-
-    panel_window(monitor, BLUETOOTH, base, |_: Key| {})
+    ui::corner_frame(t, GAP, parts)
 }
-
-// nothing to clear: scanning stops on the next tick, a pairing code stays until answered
-pub fn reset() {}
 
 // "Bluetooth", scanning and rescan, and the power switch
 fn header(t: &Theme, bluetooth: &Bluetooth) -> Row {
@@ -99,9 +70,13 @@ fn header(t: &Theme, bluetooth: &Bluetooth) -> Row {
     if bluetooth.available() {
         let powered = bluetooth.powered();
 
-        parts.push(Box::new(ui::switch(t, "Bluetooth", powered, move |_| {
-            BluetoothPanel::power(!powered)
-        })));
+        parts.push(Box::new(ui::switch(
+            t,
+            "Bluetooth",
+            124.0,
+            powered,
+            move |_| BluetoothPanel::power(!powered),
+        )));
     }
 
     Row::new(parts).gap(GAP).align(Center).height(BUTTON)

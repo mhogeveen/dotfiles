@@ -169,6 +169,14 @@ fn tick() {
     }
 }
 
+/*
+ * starts the tick at startup, not when the panel first opens: it registers the
+ * pairing agent again whenever bluetoothd comes back, panel open or not
+ */
+pub fn start() {
+    drop(BluetoothPanel::read());
+}
+
 // reading, safe inside views
 impl BluetoothPanel {
     // what this device is waiting on, if anything

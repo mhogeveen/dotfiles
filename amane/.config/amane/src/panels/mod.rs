@@ -10,7 +10,9 @@
 use std::thread;
 use std::time::Duration;
 
-use amane::{Key, Keyboard, Layer, LayerWindow, Monitor, Service, Workspaces};
+use amane::{Key, Keyboard, Layer, LayerWindow, Monitor, Rectangle, Service, Workspaces};
+
+use crate::theme::{Theme, theme};
 
 pub mod audio;
 pub mod backdrop;
@@ -19,8 +21,10 @@ pub mod clipboard;
 pub mod launcher;
 pub mod layout;
 mod list;
+mod menu;
 pub mod network;
 pub mod notifications;
+mod picker;
 pub mod screenshot;
 pub mod session;
 pub mod system;
@@ -45,9 +49,10 @@ pub struct PanelDef {
 
     /*
      * runs whenever the panel closes, however that happens, to clear its search and
-     * selection; always on the draw thread, so it may touch TextInput
+     * selection; always on the draw thread, so it may touch TextInput. None when
+     * there is nothing to clear
      */
-    pub on_close: fn(),
+    pub on_close: Option<fn()>,
 }
 
 // every panel and its relationships, the single place to configure them
@@ -55,27 +60,27 @@ static REGISTRY: &[PanelDef] = &[
     PanelDef {
         name: LAUNCHER,
         groups: &["center"],
-        on_close: launcher::reset,
+        on_close: Some(launcher::reset),
     },
     PanelDef {
         name: CLIPBOARD,
         groups: &["center"],
-        on_close: clipboard::reset,
+        on_close: Some(clipboard::reset),
     },
     PanelDef {
         name: SCREENSHOT,
         groups: &["center"],
-        on_close: screenshot::reset,
+        on_close: Some(screenshot::reset),
     },
     PanelDef {
         name: SESSION,
         groups: &["center"],
-        on_close: session::reset,
+        on_close: Some(session::reset),
     },
     PanelDef {
         name: LAYOUT,
         groups: &["center"],
-        on_close: layout::reset,
+        on_close: Some(layout::reset),
     },
     /*
      * the top-right corner, apart from the center ones so either can stay open
@@ -84,27 +89,27 @@ static REGISTRY: &[PanelDef] = &[
     PanelDef {
         name: NOTIFICATIONS,
         groups: &["right"],
-        on_close: notifications::reset,
+        on_close: Some(notifications::reset),
     },
     PanelDef {
         name: NETWORK,
         groups: &["right"],
-        on_close: network::reset,
+        on_close: Some(network::reset),
     },
     PanelDef {
         name: BLUETOOTH,
         groups: &["right"],
-        on_close: bluetooth::reset,
+        on_close: None,
     },
     PanelDef {
         name: AUDIO,
         groups: &["right"],
-        on_close: audio::reset,
+        on_close: None,
     },
     PanelDef {
         name: SYSTEM,
         groups: &["right"],
-        on_close: system::reset,
+        on_close: None,
     },
 ];
 
@@ -300,7 +305,9 @@ impl Panels {
 // called without the Panels lock held, so hooks may read or write any service
 fn run_close_hooks(closed: &[&'static PanelDef]) {
     for def in closed {
-        (def.on_close)();
+        if let Some(on_close) = def.on_close {
+            on_close();
+        }
     }
 }
 
@@ -357,9 +364,14 @@ pub fn ipc(arguments: &[String]) -> String {
 }
 
 /*
- * the base every panel builds on: shown on the monitor it was opened on,
- * above the backdrop, taking the keyboard and closing on escape; every other key
- * that reaches the window goes to the panel's own handler
+ * every panel's window: shown on the monitor it was opened on, above the
+ * backdrop, taking the keyboard and closing on escape; every other key that
+ * reaches the window goes to the panel's own handler
+ *
+ * content is only built while the panel shows. a hidden window still runs its
+ * view whenever a service it read changes, so a panel that read the network or
+ * the volume while hidden would run again on every signal-strength or volume
+ * change; built lazily, a hidden panel reads nothing but Panels
  *
  * on-demand rather than exclusive: amane keeps a hidden window's last keyboard mode,
  * and mango hands exclusive focus to any exclusive layer surface, even unmapped ones,
@@ -367,13 +379,21 @@ pub fn ipc(arguments: &[String]) -> String {
  * mango still focuses an on-demand surface as soon as it shows, and the backdrop
  * covers everything else, so the panel keeps the keyboard while it's open
  */
-pub fn panel_window(
+pub fn panel(
     monitor: &Monitor,
     name: &'static str,
     base: LayerWindow,
     on_key: fn(Key),
+    content: impl FnOnce(&Theme) -> Rectangle,
 ) -> LayerWindow {
     let shown = Panels::read().shown_on(name, monitor);
+
+    // a window needs a child even while hidden, though nothing draws it
+    let child = if shown {
+        content(&theme())
+    } else {
+        Rectangle::new().width(1.0).height(1.0)
+    };
 
     base.layer(Layer::Overlay)
         .visible(shown)
@@ -385,4 +405,5 @@ pub fn panel_window(
                 on_key(key);
             }
         })
+        .child(child)
 }

@@ -40,20 +40,23 @@ pub fn theme() -> Theme {
 
     Theme {
         accent: accent.color(),
-        on_accent: Color::from("#0f0c0a"),
-        fg: Color::from("#e6d5c2"),
-        fg_dim: Color::from("#a09384"),
-        comment: Color::from("#73665b"),
-        gutter: Color::from("#4e4641"),
-        bg_deep: Color::from("#0f0c0a"),
-        bg0: Color::from("#171311"),
-        bg1: Color::from("#201b19"),
-        bg2: Color::from("#2a2422"),
-        bg3: Color::from("#362f2c"),
-        bg4: Color::from("#463e3a"),
-        bg5: Color::from("#5a504c"),
+        on_accent: BG_DEEP,
+        fg: Color::rgb(0xe6, 0xd5, 0xc2),
+        fg_dim: Color::rgb(0xa0, 0x93, 0x84),
+        comment: Color::rgb(0x73, 0x66, 0x5b),
+        gutter: Color::rgb(0x4e, 0x46, 0x41),
+        bg_deep: BG_DEEP,
+        bg0: Color::rgb(0x17, 0x13, 0x11),
+        bg1: Color::rgb(0x20, 0x1b, 0x19),
+        bg2: Color::rgb(0x2a, 0x24, 0x22),
+        bg3: Color::rgb(0x36, 0x2f, 0x2c),
+        bg4: Color::rgb(0x46, 0x3e, 0x3a),
+        bg5: Color::rgb(0x5a, 0x50, 0x4c),
     }
 }
+
+// the darkest background, also the text on an accent fill
+const BG_DEEP: Color = Color::rgb(0x0f, 0x0c, 0x0a);
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum AccentColor {
@@ -84,14 +87,14 @@ impl AccentColor {
         }
     }
 
-    pub fn color(self) -> Color {
-        Color::from(match self {
-            AccentColor::Cinder => "#d1766e",
-            AccentColor::Ember => "#ea9875",
-            AccentColor::Brass => "#fcba81",
-            AccentColor::Sap => "#99af6b",
-            AccentColor::Frost => "#4e89a2",
-        })
+    pub const fn color(self) -> Color {
+        match self {
+            AccentColor::Cinder => Color::rgb(0xd1, 0x76, 0x6e),
+            AccentColor::Ember => Color::rgb(0xea, 0x98, 0x75),
+            AccentColor::Brass => Color::rgb(0xfc, 0xba, 0x81),
+            AccentColor::Sap => Color::rgb(0x99, 0xaf, 0x6b),
+            AccentColor::Frost => Color::rgb(0x4e, 0x89, 0xa2),
+        }
     }
 
     pub fn from_name(name: &str) -> Option<Self> {

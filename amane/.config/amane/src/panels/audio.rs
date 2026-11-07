@@ -10,18 +10,16 @@ use amane::{
     Align::{Center, Start},
     Audio, Column,
     Cursor::Pointer,
-    Horizontal, Key, LayerWindow, Margin, Monitor, Padding, Rectangle, Row, Service,
+    Key, LayerWindow, Monitor, Rectangle, Row, Service,
     Size::Parent,
-    Text, Vertical, Weight, Widget, children,
+    Text, Weight, Widget, children,
 };
 
-use super::ui::{self, BUTTON, button};
-use super::{AUDIO, panel_window};
+use super::ui::{self, BUTTON, CORNER_WIDTH, PADDING, SIDES, button};
+use super::{AUDIO, panel};
 use crate::audio::{Device, Devices, State};
-use crate::theme::{Theme, theme};
+use crate::theme::Theme;
 
-const WIDTH: f32 = 400.0;
-const PADDING: f32 = 12.0;
 const GAP: f32 = 8.0;
 const ROW: f32 = 36.0;
 const ICON: f32 = 20.0;
@@ -32,14 +30,8 @@ const MUTE: f32 = 64.0;
 const HEIGHT: f32 = 460.0;
 
 // the slider takes what's left of the row
-const SLIDER: f32 = WIDTH - PADDING * 2.0 - ICON - PERCENT - MUTE - GAP * 3.0 - PADDING * 2.0;
-
-const SIDES: Padding = Padding {
-    top: 0.0,
-    right: PADDING,
-    bottom: 0.0,
-    left: PADDING,
-};
+const SLIDER: f32 =
+    CORNER_WIDTH - PADDING * 2.0 - ICON - PERCENT - MUTE - GAP * 3.0 - PADDING * 2.0;
 
 // nerd font material design glyphs
 const ICON_MUTED: &str = "\u{f075f}";
@@ -60,7 +52,12 @@ pub fn volume_icon(volume: u8, muted: bool) -> &'static str {
 }
 
 pub fn view(monitor: &Monitor) -> LayerWindow {
-    let t = theme();
+    let base = ui::corner(HEIGHT, "amane-audio");
+
+    panel(monitor, AUDIO, base, |_: Key| {}, content)
+}
+
+fn content(t: &Theme) -> Rectangle {
     let audio = Audio::read();
     let devices = Devices::read();
 
@@ -84,41 +81,14 @@ pub fn view(monitor: &Monitor) -> LayerWindow {
         toggle_mute: Audio::toggle_microphone_mute,
     };
 
-    let content = Column::new(children![
-        ui::title(&t, "Audio"),
-        section(&t, "Output", &output, devices.outputs(), devices.state()),
-        section(&t, "Input", &input, devices.inputs(), devices.state()),
-    ])
-    .gap(GAP * 2.0);
+    let parts = children![
+        ui::title(t, "Audio"),
+        section(t, "Output", &output, devices.outputs(), devices.state()),
+        section(t, "Input", &input, devices.inputs(), devices.state()),
+    ];
 
-    let base = LayerWindow::new()
-        .width(WIDTH)
-        .height(HEIGHT)
-        .anchor_vertical(Vertical::Top)
-        .anchor_horizontal(Horizontal::Right)
-        .margin(Margin {
-            top: 8,
-            right: 8,
-            bottom: 0,
-            left: 0,
-        })
-        .namespace("amane-audio")
-        .child(
-            Rectangle::new()
-                .width(Parent)
-                .height(Parent)
-                .fill(t.bg_deep)
-                .border(1.0, t.bg3)
-                .padding(PADDING)
-                .clip()
-                .child(content),
-        );
-
-    panel_window(monitor, AUDIO, base, |_: Key| {})
+    ui::corner_frame(t, GAP * 2.0, parts)
 }
-
-// nothing to clear, the device lists stop being read on their own
-pub fn reset() {}
 
 // one side of the panel: the output or the microphone
 struct Level {

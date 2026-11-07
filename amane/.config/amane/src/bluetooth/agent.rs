@@ -16,13 +16,12 @@ use std::thread;
 
 use amane::{Argument, Bus, Method, Service, Urgency};
 
+use super::{BLUEZ, DEVICE};
 use crate::notifications;
 use crate::panels::{BLUETOOTH, Panels};
 
-const BLUEZ: &str = "org.bluez";
 const AGENT: &str = "org.bluez.Agent1";
 const AGENT_MANAGER: &str = "org.bluez.AgentManager1";
-const DEVICE: &str = "org.bluez.Device1";
 const PATH: &str = "/org/amane/bluetooth_agent";
 
 // answers with a yes or no, and can show a code: what a panel with buttons can do
