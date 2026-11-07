@@ -187,9 +187,9 @@ pub fn numbered_row(t: &Theme, number: usize, label: &str, selected: bool) -> Re
     row_with(t, Some(number), label, selected, None)
 }
 
-// a selected numbered row in the warning color, for an action waiting to be confirmed
+// a selected numbered row with its label in the accent, for an action waiting to be confirmed
 pub fn armed_row(t: &Theme, number: usize, label: &str) -> Rectangle {
-    row_with(t, Some(number), label, true, Some(t.brass))
+    row_with(t, Some(number), label, true, Some(t.accent))
 }
 
 /*
@@ -207,7 +207,7 @@ pub fn detail_row(t: &Theme, label: &str, detail: &str, selected: bool, marked: 
     let stripe = Rectangle::new()
         .width(STRIPE_WIDTH)
         .height(ROW_HEIGHT)
-        .fill(if marked { t.frost } else { fill });
+        .fill(if marked { t.accent } else { fill });
 
     let label = Rectangle::new()
         .width(Parent)

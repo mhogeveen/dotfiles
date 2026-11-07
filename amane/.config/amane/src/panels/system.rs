@@ -8,8 +8,9 @@
 
 use amane::{
     Align::{Center, Start},
-    Battery, Column, Cpu, Horizontal, Key, LayerWindow, Margin, Memory, Monitor, Rectangle, Row,
-    Service,
+    Battery, Column, Cpu,
+    Cursor::Pointer,
+    Horizontal, Key, LayerWindow, Margin, Memory, Monitor, Rectangle, Row, Service,
     Size::Parent,
     Text, Vertical, Weight, Widget, children,
 };
@@ -18,11 +19,11 @@ use super::ui::{self, BUTTON};
 use super::{NOTIFICATIONS, Panels, SESSION, SYSTEM, panel_window};
 use crate::notifications::{self, ICON_BELL, ICON_BELL_OUTLINE};
 use crate::system::{self, SystemInfo};
-use crate::theme::{Theme, theme};
+use crate::theme::{ACCENTS, Accent, Theme, theme};
 
 const WIDTH: f32 = 400.0;
-// header, details and four meter rows, so a laptop's battery fits too
-const HEIGHT: f32 = 224.0;
+// header, details, four meter rows (a laptop's battery included) and the settings
+const HEIGHT: f32 = 288.0;
 const PADDING: f32 = 12.0;
 const GAP: f32 = 8.0;
 const LINE: f32 = 20.0;
@@ -51,6 +52,9 @@ pub fn view(monitor: &Monitor) -> LayerWindow {
     if shown {
         parts.extend(meters(&t, &info));
     }
+
+    parts.push(Box::new(section(&t, "Settings")));
+    parts.push(Box::new(accent_setting(&t)));
 
     let base = LayerWindow::new()
         .width(WIDTH)
@@ -95,9 +99,9 @@ fn header(t: &Theme, info: &SystemInfo) -> Row {
                 .elide(),
         );
 
-    // frost while something waits unread, the same as the bar's snowflake
+    // the accent while something waits unread, the same as the bar's snowflake
     let (bell, color) = if notifications::has_unread() {
-        (ICON_BELL, t.frost)
+        (ICON_BELL, t.accent)
     } else {
         (ICON_BELL_OUTLINE, t.fg)
     };
@@ -205,6 +209,61 @@ fn meter_row(t: &Theme, name: &str, percent: u8, numbers: String) -> Row {
             .height(BUTTON)
             .align_child(Start, Center)
             .child(Text::new(numbers).size(12.0).color(t.fg_dim).elide()),
+    ])
+    .gap(GAP)
+    .align(Center)
+    .height(BUTTON)
+}
+
+fn section(t: &Theme, title: &str) -> Rectangle {
+    Rectangle::new()
+        .width(Parent)
+        .height(LINE)
+        .align_child(Start, Center)
+        .child(
+            Text::new(title)
+                .size(12.0)
+                .weight(Weight::Bold)
+                .color(t.comment),
+        )
+}
+
+const SWATCH: f32 = 20.0;
+const SWATCH_GAP: f32 = 6.0;
+
+// the accent used throughout the shell: one square per color, the one in use outlined
+fn accent_setting(t: &Theme) -> Row {
+    let current = Accent::read().color();
+
+    let mut swatches: Vec<Box<dyn Widget>> = Vec::new();
+
+    for accent in ACCENTS {
+        let swatch = Rectangle::new()
+            .width(SWATCH)
+            .height(SWATCH)
+            .fill(accent.color())
+            .cursor(Pointer)
+            .on_click(move |_| Accent::set(accent));
+
+        let swatch = if accent == current {
+            swatch.border(2.0, t.fg)
+        } else {
+            swatch
+        };
+
+        swatches.push(Box::new(swatch));
+    }
+
+    Row::new(children![
+        Rectangle::new()
+            .width(NAME)
+            .height(BUTTON)
+            .align_child(Start, Center)
+            .child(Text::new("Accent").size(13.0).color(t.fg)),
+        Row::new(swatches)
+            .gap(SWATCH_GAP)
+            .align(Center)
+            .height(BUTTON),
     ])
     .gap(GAP)
     .align(Center)

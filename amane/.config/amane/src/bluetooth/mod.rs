@@ -171,10 +171,6 @@ fn tick() {
 
 // reading, safe inside views
 impl BluetoothPanel {
-    pub fn busy(&self) -> Option<&Busy> {
-        self.busy.as_ref()
-    }
-
     // what this device is waiting on, if anything
     pub fn job_for(&self, device: &str) -> Option<Job> {
         self.busy

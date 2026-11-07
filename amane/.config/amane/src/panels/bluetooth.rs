@@ -164,7 +164,7 @@ fn pairing(t: &Theme, request: &Request) -> Rectangle {
         .width(Parent)
         .height(height)
         .fill(t.bg1)
-        .border(1.0, t.brass)
+        .border(1.0, t.accent)
         .padding(PADDING)
         .child(Column::new(parts).gap(GAP))
 }
@@ -175,7 +175,7 @@ fn failure_line(t: &Theme, failure: &str) -> Row {
             .width(Parent)
             .height(BUTTON)
             .align_child(Start, Center)
-            .child(Text::new(failure).size(13.0).color(t.cinder).elide()),
+            .child(Text::new(failure).size(13.0).color(t.accent).elide()),
         button(t, "Dismiss", 72.0, |_| BluetoothPanel::dismiss_failure()),
     ])
     .gap(GAP)

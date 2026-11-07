@@ -32,7 +32,7 @@ pub fn view(_monitor: &Monitor) -> LayerWindow {
     let (status, status_color) = if lock.checking() {
         ("Checking…", t.fg_dim)
     } else if lock.failed() {
-        ("Wrong password", t.cinder)
+        ("Wrong password", t.accent)
     } else {
         ("", t.fg_dim)
     };
@@ -47,7 +47,7 @@ pub fn view(_monitor: &Monitor) -> LayerWindow {
         .width(320.0)
         .height(44.0)
         .fill(t.bg1)
-        .border(1.0, if lock.failed() { t.cinder } else { t.bg3 })
+        .border(1.0, if lock.failed() { t.accent } else { t.bg3 })
         .padding(Padding {
             top: 0.0,
             right: 12.0,

@@ -25,6 +25,7 @@ fn main() {
         .font("BlexMono Nerd Font")
         .ipc("panel", panels::ipc)
         .ipc("lock", session::lock_ipc)
+        .ipc("accent", theme::accent_ipc)
         .window_per_monitor(bar::view)
         .window_per_monitor(panels::backdrop::view)
         .window_per_monitor(notifications::popups::view)

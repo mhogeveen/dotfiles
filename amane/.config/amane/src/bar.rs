@@ -56,7 +56,7 @@ fn workspaces(t: &Theme, monitor: &Monitor) -> Rectangle {
 
     for workspace in workspaces.list() {
         let (width, fill) = if workspace.focused() {
-            (20.0, t.frost)
+            (20.0, t.accent)
         } else if workspace.windows() > 0 {
             (8.0, t.bg4)
         } else {
@@ -140,12 +140,12 @@ fn status_icons(t: &Theme) -> Vec<Box<dyn Widget>> {
 const ICON_WIDTH: f32 = 24.0;
 
 /*
- * the nixos snowflake, frost while notifications wait unread; opens the system
+ * the nixos snowflake, in the accent while notifications wait unread; opens the system
  * panel, which has the way into the notification center and the session menu
  */
 fn system(t: &Theme) -> Rectangle {
     let color = if notifications::has_unread() {
-        t.frost
+        t.accent
     } else {
         t.fg_dim
     };
@@ -168,7 +168,7 @@ fn network(t: &Theme) -> Rectangle {
     let status = net::status(&network);
 
     let color = match status {
-        net::Status::NoInternet => t.brass,
+        net::Status::NoInternet => t.accent,
         net::Status::Offline | net::Status::WifiOff | net::Status::Connecting => t.comment,
         _ => t.fg_dim,
     };
@@ -184,7 +184,7 @@ fn network(t: &Theme) -> Rectangle {
         .child(Text::new(status.icon()).size(14.0).color(color))
 }
 
-// off, on, or a device connected; brass while a pairing code waits for an answer
+// off, on, or a device connected; the accent while a pairing code waits for an answer
 fn bluetooth(t: &Theme) -> Option<Rectangle> {
     let bluetooth = Bluetooth::read();
 
@@ -197,7 +197,7 @@ fn bluetooth(t: &Theme) -> Option<Rectangle> {
     let connected = bluetooth.devices().iter().any(|device| device.connected());
 
     let (icon, color) = if waiting {
-        (bt::ICON_ON, t.brass)
+        (bt::ICON_ON, t.accent)
     } else if !bluetooth.powered() {
         (bt::ICON_OFF, t.comment)
     } else if connected {

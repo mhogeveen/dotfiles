@@ -107,7 +107,7 @@ pub fn card(
     }
 
     let border = match notification.urgency() {
-        Urgency::Critical => t.cinder,
+        Urgency::Critical => t.accent,
         _ => t.bg3,
     };
 

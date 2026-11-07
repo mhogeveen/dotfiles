@@ -141,7 +141,7 @@ fn connection(t: &Theme, network: &Network, panel: &NetworkPanel) -> Rectangle {
     };
 
     let state_color = match status {
-        Status::NoInternet => t.brass,
+        Status::NoInternet => t.accent,
         _ => t.fg_dim,
     };
 
@@ -236,7 +236,7 @@ fn result_line(t: &Theme, result: &Outcome) -> Row {
             .width(Parent)
             .height(BUTTON)
             .align_child(Start, Center)
-            .child(Text::new(text).size(13.0).color(t.cinder).elide()),
+            .child(Text::new(text).size(13.0).color(t.accent).elide()),
     )];
 
     // forgetting a network saved with a mistyped password lets you type it again

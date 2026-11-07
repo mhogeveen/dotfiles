@@ -65,7 +65,7 @@ pub fn title(t: &Theme, text: &str) -> Rectangle {
 // an on/off switch like "Wi-Fi on"; click flips it
 pub fn switch(t: &Theme, label: &str, on: bool, on_click: impl Fn(Button) + 'static) -> Rectangle {
     let (state, fill, color) = if on {
-        ("on", t.frost, t.fg)
+        ("on", t.accent, t.on_accent)
     } else {
         ("off", t.bg2, t.fg_dim)
     };
@@ -97,7 +97,7 @@ pub fn slider(t: &Theme, width: f32, value: u8, dimmed: bool, on_change: fn(u8))
     let fill = Rectangle::new()
         .width(filled)
         .height(SLIDER_HEIGHT)
-        .fill(if dimmed { t.bg5 } else { t.frost });
+        .fill(if dimmed { t.bg5 } else { t.accent });
 
     // a taller invisible area around the thin bar, so it's easy to grab
     Rectangle::new()
@@ -123,23 +123,14 @@ pub fn slider(t: &Theme, width: f32, value: u8, dimmed: bool, on_change: fn(u8))
         )
 }
 
-/*
- * a 0 to 100 bar that only shows a level, like cpu or disk use; it turns
- * brass when getting full and red when nearly full
- */
+// a 0 to 100 bar that only shows a level, like cpu or disk use, in the accent
 pub fn meter(t: &Theme, width: f32, percent: u8) -> Rectangle {
     let percent = percent.min(100);
-
-    let color = match percent {
-        95.. => t.cinder,
-        80.. => t.brass,
-        _ => t.frost,
-    };
 
     let fill = Rectangle::new()
         .width(width * f32::from(percent) / 100.0)
         .height(SLIDER_HEIGHT)
-        .fill(color);
+        .fill(t.accent);
 
     Rectangle::new()
         .width(width)

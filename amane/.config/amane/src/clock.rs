@@ -1,4 +1,4 @@
-use amane::{Align::Center, Rectangle, Row, Service, Size::Parent, Text, Weight, children};
+use amane::{Align::Center, Rectangle, Row, Service, Size::Parent, Text, children};
 
 use crate::theme::Theme;
 
