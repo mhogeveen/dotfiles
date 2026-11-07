@@ -7,7 +7,7 @@
  */
 
 use amane::{
-    Align::{Center, Start},
+    Align::{Center, End, Start},
     Battery, Column, Cpu,
     Cursor::Pointer,
     Horizontal, Key, LayerWindow, Margin, Memory, Monitor, Rectangle, Row, Service,
@@ -18,12 +18,12 @@ use amane::{
 use super::ui::{self, BUTTON};
 use super::{NOTIFICATIONS, Panels, SESSION, SYSTEM, panel_window};
 use crate::notifications::{self, ICON_BELL, ICON_BELL_OUTLINE};
-use crate::system::{self, SystemInfo};
+use crate::system::{self, NetworkSpeed, SystemInfo};
 use crate::theme::{ACCENTS, Accent, Theme, theme};
 
 const WIDTH: f32 = 400.0;
-// header, details, four meter rows (a laptop's battery included) and the settings
-const HEIGHT: f32 = 288.0;
+// header with key hints, details, five diagnostics rows (a laptop's battery included) and the settings
+const HEIGHT: f32 = 338.0;
 const PADDING: f32 = 12.0;
 const GAP: f32 = 8.0;
 const LINE: f32 = 20.0;
@@ -33,8 +33,18 @@ const NAME: f32 = 64.0;
 const METER: f32 = 128.0;
 const NUMBERS: f32 = WIDTH - PADDING * 2.0 - NAME - METER - GAP * 2.0;
 
+// the interface name at the end of the network row
+const INTERFACE: f32 = 72.0;
+
 // nerd font material design power glyph
 const ICON_SESSION: &str = "\u{f0425}";
+
+// the key letter under a header button
+const HINT: f32 = 12.0;
+const HINT_GAP: f32 = 2.0;
+
+const KEY_NOTIFICATIONS: char = 'n';
+const KEY_SESSION: char = 's';
 
 pub fn view(monitor: &Monitor) -> LayerWindow {
     let t = theme();
@@ -79,11 +89,34 @@ pub fn view(monitor: &Monitor) -> LayerWindow {
                 .child(Column::new(parts).gap(GAP)),
         );
 
-    panel_window(monitor, SYSTEM, base, |_: Key| {})
+    panel_window(monitor, SYSTEM, base, key_pressed)
 }
 
 // nothing to clear
 pub fn reset() {}
+
+// the header buttons by their letters, uppercase too; escape is handled by the panel manager
+fn key_pressed(key: Key) {
+    let Key::Character(letter) = key else {
+        return;
+    };
+
+    match letter.to_ascii_lowercase() {
+        KEY_NOTIFICATIONS => open_notifications(),
+        KEY_SESSION => open_session(),
+        _ => {}
+    }
+}
+
+// both sit in the right corner's group, so the center simply takes this panel's place
+fn open_notifications() {
+    let _ = Panels::open(NOTIFICATIONS);
+}
+
+// the session menu takes over; switch waits for this panel to hide first
+fn open_session() {
+    let _ = Panels::switch(SYSTEM, SESSION);
+}
 
 // user@host, and the ways into the notification center and the session menu
 fn header(t: &Theme, info: &SystemInfo) -> Row {
@@ -106,20 +139,36 @@ fn header(t: &Theme, info: &SystemInfo) -> Row {
         (ICON_BELL_OUTLINE, t.fg)
     };
 
-    // both sit in the right corner's group, so the center simply takes this panel's place
-    let notifications = ui::icon_button_colored(t, bell, color, |_| {
-        let _ = Panels::open(NOTIFICATIONS);
-    });
+    let notifications = with_hint(
+        t,
+        ui::icon_button_colored(t, bell, color, |_| open_notifications()),
+        KEY_NOTIFICATIONS,
+    );
 
-    // the session menu takes over; switch waits for this panel to hide first
-    let session = ui::icon_button(t, ICON_SESSION, |_| {
-        let _ = Panels::switch(SYSTEM, SESSION);
-    });
+    let session = with_hint(
+        t,
+        ui::icon_button(t, ICON_SESSION, |_| open_session()),
+        KEY_SESSION,
+    );
 
     Row::new(children![title, notifications, session])
         .gap(GAP)
         .align(Center)
-        .height(BUTTON)
+        .height(BUTTON + HINT_GAP + HINT)
+}
+
+// a header button with the key that does the same written small underneath
+fn with_hint(t: &Theme, button: Rectangle, key: char) -> Column {
+    let hint = Rectangle::new()
+        .width(BUTTON)
+        .height(HINT)
+        .align_child(Center, Center)
+        .child(Text::new(key.to_string()).size(10.0).color(t.comment));
+
+    Column::new(children![button, hint])
+        .gap(HINT_GAP)
+        .width(BUTTON)
+        .height(BUTTON + HINT_GAP + HINT)
 }
 
 // NixOS 26.05 (Yarara) · kernel 6.18.60 · up 2h 14m
@@ -175,6 +224,8 @@ fn meters(t: &Theme, info: &SystemInfo) -> Vec<Box<dyn Widget>> {
         )));
     }
 
+    rows.push(Box::new(network_row(t, info.network.as_ref())));
+
     // desktops have none, a mouse's battery doesn't count
     if battery.present() {
         let state = if battery.charging() {
@@ -210,6 +261,47 @@ fn meter_row(t: &Theme, name: &str, percent: u8, numbers: String) -> Row {
             .align_child(Start, Center)
             .child(Text::new(numbers).size(12.0).color(t.fg_dim).elide()),
     ])
+    .gap(GAP)
+    .align(Center)
+    .height(BUTTON)
+}
+
+// down and up speed of the default-route interface, no bar since a speed has no maximum
+fn network_row(t: &Theme, network: Option<&NetworkSpeed>) -> Row {
+    let (speeds, interface) = match network {
+        None => (String::from("Offline"), String::new()),
+        Some(network) => {
+            let speeds = match network.rate {
+                Some((down, up)) => {
+                    format!("↓ {}   ↑ {}", system::speed(down), system::speed(up))
+                }
+
+                // the first second has only one reading to go on
+                None => String::from("…"),
+            };
+
+            (speeds, network.interface.clone())
+        }
+    };
+
+    Row::new(children![
+        Rectangle::new()
+            .width(NAME)
+            .height(BUTTON)
+            .align_child(Start, Center)
+            .child(Text::new("Network").size(13.0).color(t.fg)),
+        Rectangle::new()
+            .width(Parent)
+            .height(BUTTON)
+            .align_child(Start, Center)
+            .child(Text::new(speeds).size(12.0).color(t.fg).elide()),
+        Rectangle::new()
+            .width(INTERFACE)
+            .height(BUTTON)
+            .align_child(End, Center)
+            .child(Text::new(interface).size(12.0).color(t.comment).elide()),
+    ])
+    .width(Parent)
     .gap(GAP)
     .align(Center)
     .height(BUTTON)
