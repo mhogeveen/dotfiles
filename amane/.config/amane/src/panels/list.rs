@@ -26,6 +26,7 @@ const SEARCH_HEIGHT: f32 = 44.0;
 const ROW_HEIGHT: f32 = 40.0;
 const TEXT_SIZE: f32 = 15.0;
 const NUMBER_WIDTH: f32 = 24.0;
+const FOOTER_HEIGHT: f32 = 28.0;
 const STRIPE_WIDTH: f32 = 2.0;
 
 pub fn width() -> f32 {
@@ -37,6 +38,22 @@ pub fn height(rows: usize, search: bool) -> f32 {
     let search = if search { SEARCH_HEIGHT + GAP } else { 0.0 };
 
     PADDING * 2.0 + search + rows as f32 * ROW_HEIGHT
+}
+
+// with an area beside the list this wide, like a preview; 0 for none
+pub fn width_with(beside: f32) -> f32 {
+    if beside > 0.0 {
+        WIDTH + GAP + beside
+    } else {
+        WIDTH
+    }
+}
+
+// with a row of buttons under the list
+pub fn height_with(rows: usize, search: bool, footer: bool) -> f32 {
+    let footer = if footer { GAP + FOOTER_HEIGHT } else { 0.0 };
+
+    height(rows, search) + footer
 }
 
 /*
@@ -136,6 +153,21 @@ pub fn scroll_delta(scroll: Scroll) -> isize {
 
 // the whole panel: the search box on top when there is one, rows under it
 pub fn frame(t: &Theme, search: Option<TextInput>, rows: Rectangle) -> Rectangle {
+    frame_with(t, search, rows, None, None, 0.0)
+}
+
+/*
+ * the same, with a row under the list (footer) and an area of this width beside
+ * it (like a preview of the selected item)
+ */
+pub fn frame_with(
+    t: &Theme,
+    search: Option<TextInput>,
+    rows: Rectangle,
+    footer: Option<Rectangle>,
+    beside: Option<Rectangle>,
+    beside_width: f32,
+) -> Rectangle {
     let mut parts: Vec<Box<dyn Widget>> = Vec::new();
 
     if let Some(input) = search {
@@ -152,13 +184,37 @@ pub fn frame(t: &Theme, search: Option<TextInput>, rows: Rectangle) -> Rectangle
 
     parts.push(Box::new(rows));
 
-    Rectangle::new()
+    if let Some(footer) = footer {
+        parts.push(Box::new(footer));
+    }
+
+    let list = Column::new(parts).width(Parent).gap(GAP);
+
+    let frame = Rectangle::new()
         .width(Parent)
         .height(Parent)
         .fill(t.bg0)
         .border(1.0, t.bg3)
-        .padding(PADDING)
-        .child(Column::new(parts).gap(GAP))
+        .padding(PADDING);
+
+    let Some(beside) = beside else {
+        return frame.child(list);
+    };
+
+    let beside = Rectangle::new()
+        .width(beside_width)
+        .height(Parent)
+        .child(beside);
+
+    frame.child(Row::new(children![list, beside]).gap(GAP).height(Parent))
+}
+
+// the row under a list: its parts from the left; a Parent-wide part pushes the rest right
+pub fn footer(parts: Vec<Box<dyn Widget>>) -> Rectangle {
+    Rectangle::new()
+        .width(Parent)
+        .height(FOOTER_HEIGHT)
+        .child(Row::new(parts).gap(GAP).align(Center).height(FOOTER_HEIGHT))
 }
 
 // the area the rows go in, whatever room the window leaves; add on_scroll to it to move the window
@@ -177,6 +233,37 @@ pub fn row(t: &Theme, label: &str, selected: bool) -> Rectangle {
 // a row with the number key that picks it in front, see hotkey()
 pub fn numbered_row(t: &Theme, number: usize, label: &str, selected: bool) -> Rectangle {
     row_with(t, Some(number), label, selected, None)
+}
+
+/*
+ * a row with a button at its end, like a delete button on the selected row
+ */
+pub fn button_row(t: &Theme, label: &str, selected: bool, button: Option<Rectangle>) -> Rectangle {
+    let (fill, color) = if selected {
+        (t.bg3, t.fg)
+    } else {
+        (t.bg0, t.fg_dim)
+    };
+
+    let label = Rectangle::new()
+        .width(Parent)
+        .height(ROW_HEIGHT)
+        .align_child(Start, Center)
+        .child(Text::new(label).size(TEXT_SIZE).color(color).elide());
+
+    let mut parts: Vec<Box<dyn Widget>> = vec![Box::new(label)];
+
+    if let Some(button) = button {
+        parts.push(Box::new(button));
+    }
+
+    Rectangle::new()
+        .width(Parent)
+        .height(ROW_HEIGHT)
+        .fill(fill)
+        .padding(SIDES)
+        .align_child(Start, Center)
+        .child(Row::new(parts).width(Parent).gap(GAP).align(Center))
 }
 
 // a selected numbered row with its label in the accent, for an action waiting to be confirmed

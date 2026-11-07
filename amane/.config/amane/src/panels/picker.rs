@@ -49,6 +49,25 @@ pub trait Picker: Send + Sync + 'static {
 
     // the help screen's own lines: what to press or type, and what it does
     fn help() -> &'static [(&'static str, &'static str)];
+
+    // how wide an area to the right of the list showing the selected item is; 0 for none
+    const PREVIEW: f32 = 0.0;
+
+    // whether there's a row of buttons under the list
+    const FOOTER: bool = false;
+
+    // the area to the right of the list, for the selected item
+    fn preview(_t: &Theme, _selected: Option<&Self::Item>) -> Option<Rectangle> {
+        None
+    }
+
+    // the row under the list
+    fn footer(_t: &Theme) -> Option<Rectangle> {
+        None
+    }
+
+    // after the selection moved or the search changed
+    fn moved() {}
 }
 
 // under every picker's own help lines
@@ -86,8 +105,8 @@ impl<P: Picker> Service for Search<P> {
 
 pub fn view<P: Picker>(monitor: &Monitor) -> LayerWindow {
     let base = LayerWindow::new()
-        .width(list::width())
-        .height(list::height(list::ROWS, true))
+        .width(list::width_with(P::PREVIEW))
+        .height(list::height_with(list::ROWS, true, P::FOOTER))
         .anchor_vertical(Vertical::Middle)
         .namespace(P::NAMESPACE);
 
@@ -105,6 +124,9 @@ fn content<P: Picker>(t: &Theme, monitor: &Monitor) -> Rectangle {
 
     let mut rows: Vec<Box<dyn Widget>> = Vec::new();
 
+    // what the preview shows; nothing while the help does
+    let mut chosen = None;
+
     if help {
         for (keys, does) in P::help().iter().chain(SHARED_HELP.iter()) {
             rows.push(Box::new(list::help_row(t, keys, does)));
@@ -112,6 +134,8 @@ fn content<P: Picker>(t: &Theme, monitor: &Monitor) -> Rectangle {
     } else {
         let found = P::items(&query);
         let selected = cursor.selected(found.len());
+
+        chosen = found.get(selected).cloned();
 
         for index in cursor.visible(found.len()) {
             let item = found[index].clone();
@@ -144,9 +168,13 @@ fn content<P: Picker>(t: &Theme, monitor: &Monitor) -> Rectangle {
         Search::<P>::write()
             .cursor
             .scroll(list::scroll_delta(scroll), count);
+
+        P::moved();
     });
 
-    list::frame(t, Some(input), rows)
+    let preview = P::preview(t, chosen.as_ref());
+
+    list::frame_with(t, Some(input), rows, P::footer(t), preview, P::PREVIEW)
 }
 
 /*
@@ -167,6 +195,10 @@ fn changed<P: Picker>(text: String) {
     search.help = false;
     search.query = text;
     search.cursor = Cursor::default();
+
+    drop(search);
+
+    P::moved();
 }
 
 // closes the help if it was showing, so the key that did it doesn't act on a list nobody saw
@@ -196,6 +228,21 @@ fn key_pressed<P: Picker>(key: Key) {
     let count = count::<P>();
 
     Search::<P>::write().cursor.step(delta, count);
+
+    P::moved();
+}
+
+// the item the selection is on, if any
+fn selected<P: Picker>() -> Option<P::Item> {
+    let (query, cursor) = {
+        let search = Search::<P>::read();
+
+        (search.query.clone(), search.cursor)
+    };
+
+    let found = P::items(&query);
+
+    found.get(cursor.selected(found.len())).cloned()
 }
 
 // clears the search and the help for the next time the panel opens
@@ -227,16 +274,8 @@ fn submit<P: Picker>() {
         return;
     }
 
-    let (query, cursor) = {
-        let search = Search::<P>::read();
-
-        (search.query.clone(), search.cursor)
-    };
-
-    let found = P::items(&query);
-
-    if let Some(item) = found.get(cursor.selected(found.len())) {
-        choose::<P>(item.clone());
+    if let Some(item) = selected::<P>() {
+        choose::<P>(item);
     }
 }
 

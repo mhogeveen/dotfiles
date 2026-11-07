@@ -5,6 +5,7 @@ mod bar;
 mod bluetooth;
 mod calculator;
 mod calendar;
+mod clipboard_preview;
 mod clock;
 mod layout;
 mod lock;

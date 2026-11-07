@@ -117,7 +117,13 @@ Settled earlier, no need to revisit:
 - **To settle:** which of the three.
 
 ### 8. Clipboard
-- **Status:** open
+- **Status:** done: the × on the selected row removes an entry (`cliphist
+  delete`); no delete key, as amane reports Delete like Shift or Ctrl (see the
+  upstream list); a "Clear history" button under the list, clicked
+  twice, wipes it all; the selected entry shows in full beside the list (text,
+  or the picture decoded to `$XDG_RUNTIME_DIR/amane-shell/clipboard`,
+  `src/clipboard_preview.rs`). Picker hooks for this: `moved`, `footer`,
+  `preview`.
 - **Why:** entries can't be deleted, and the history can't be cleared.
 - **Hooks in:** `src/panels/clipboard.rs` (a `Picker`): `cliphist delete` for
   the selected entry and `cliphist wipe` for all. The search box takes letter
@@ -189,6 +195,10 @@ up as issue texts.
   (`CONNECTED_GLOBAL`).
 - **No modifiers and no key repeat** in `KeyboardHandler`, so no Ctrl+n/p/y in
   lists and no held arrow keys.
+- **Delete, Insert, Page Up/Down, F-keys and modifier keys pressed alone are all
+  `Key::Other`** (`character()` in `wayland/keyboard.rs`: Delete types the DEL
+  control character, a lone modifier types nothing), so none of them can be a
+  keybind; the clipboard panel wanted Delete for removing an entry.
 - **No D-Bus error replies** (`Method` can only `reply`), which the Bluetooth
   agent works around by cancelling pairings instead of rejecting them.
 - **No error from connect/pair/forget** in `Network` and `Bluetooth`; the shell
