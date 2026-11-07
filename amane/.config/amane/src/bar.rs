@@ -54,9 +54,31 @@ fn workspaces(t: &Theme, monitor: &Monitor) -> Rectangle {
 
     let mut buttons: Vec<Box<dyn Widget>> = Vec::new();
 
-    for workspace in workspaces.list() {
-        let (width, fill) = if workspace.focused() {
-            (20.0, t.accent)
+    /*
+     * only this monitor's own workspaces; one the compositor doesn't place on a
+     * monitor shows everywhere rather than nowhere
+     */
+    let own = workspaces.list().iter().filter(|workspace| {
+        workspace
+            .output()
+            .is_none_or(|output| output == monitor.name)
+    });
+
+    for workspace in own {
+        /*
+         * the one shown on this monitor is wide: in the accent when this monitor
+         * has focus, dimmer when another one does; an urgent one is a dot in the accent
+         */
+        let (width, fill) = if workspace.active() {
+            let fill = if workspace.focused() {
+                t.accent
+            } else {
+                t.fg_dim
+            };
+
+            (20.0, fill)
+        } else if workspace.urgent() {
+            (8.0, t.accent)
         } else if workspace.windows() > 0 {
             (8.0, t.bg4)
         } else {

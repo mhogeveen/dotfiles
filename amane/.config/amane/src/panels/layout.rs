@@ -22,7 +22,7 @@ pub struct Layouts;
 impl Picker for Layouts {
     const PANEL: &'static str = LAYOUT;
     const INPUT: &'static str = "layout-search";
-    const PLACEHOLDER: &'static str = "Search layouts";
+    const PLACEHOLDER: &'static str = "Search layouts  ·  ? for help";
     const NAMESPACE: &'static str = "amane-layout";
 
     type Item = &'static Layout;
@@ -44,6 +44,13 @@ impl Picker for Layouts {
 
     fn empty(_: &str) -> &'static str {
         "No matches"
+    }
+
+    fn help() -> &'static [(&'static str, &'static str)] {
+        &[
+            ("tile, vs", "search by name or symbol"),
+            ("Enter", "switch the current tag to it"),
+        ]
     }
 }
 

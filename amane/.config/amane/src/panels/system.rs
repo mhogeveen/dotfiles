@@ -8,7 +8,7 @@
 
 use amane::{
     Align::{Center, End, Start},
-    Battery, Column, Cpu,
+    Battery, Cpu,
     Cursor::Pointer,
     Key, LayerWindow, Memory, Monitor, Rectangle, Row, Service,
     Size::Parent,
@@ -21,8 +21,8 @@ use crate::notifications::{self, ICON_BELL, ICON_BELL_OUTLINE};
 use crate::system::{self, NetworkSpeed, SystemInfo};
 use crate::theme::{ACCENTS, Accent, Theme};
 
-// header with key hints, details, five diagnostics rows (a laptop's battery included) and the settings
-const HEIGHT: f32 = 338.0;
+// header, details, five diagnostics rows (a laptop's battery included) and the settings
+const HEIGHT: f32 = 324.0;
 const GAP: f32 = 8.0;
 const LINE: f32 = 20.0;
 
@@ -36,10 +36,6 @@ const INTERFACE: f32 = 72.0;
 
 // nerd font material design power glyph
 const ICON_SESSION: &str = "\u{f0425}";
-
-// the key letter under a header button
-const HINT: f32 = 12.0;
-const HINT_GAP: f32 = 2.0;
 
 const KEY_NOTIFICATIONS: char = 'n';
 const KEY_SESSION: char = 's';
@@ -61,7 +57,7 @@ fn content(t: &Theme) -> Rectangle {
     parts.push(Box::new(section(t, "Settings")));
     parts.push(Box::new(accent_setting(t)));
 
-    ui::corner_frame(t, GAP, parts)
+    ui::frame(t, GAP, parts)
 }
 
 // the header buttons by their letters, uppercase too; escape is handled by the panel manager
@@ -108,36 +104,15 @@ fn header(t: &Theme, info: &SystemInfo) -> Row {
         (ICON_BELL_OUTLINE, t.fg)
     };
 
-    let notifications = with_hint(
-        t,
-        ui::icon_button_colored(t, bell, color, |_| open_notifications()),
-        KEY_NOTIFICATIONS,
-    );
+    let notifications =
+        ui::key_button_colored(t, bell, color, KEY_NOTIFICATIONS, |_| open_notifications());
 
-    let session = with_hint(
-        t,
-        ui::icon_button(t, ICON_SESSION, |_| open_session()),
-        KEY_SESSION,
-    );
+    let session = ui::key_button(t, ICON_SESSION, KEY_SESSION, |_| open_session());
 
     Row::new(children![title, notifications, session])
         .gap(GAP)
         .align(Center)
-        .height(BUTTON + HINT_GAP + HINT)
-}
-
-// a header button with the key that does the same written small underneath
-fn with_hint(t: &Theme, button: Rectangle, key: char) -> Column {
-    let hint = Rectangle::new()
-        .width(BUTTON)
-        .height(HINT)
-        .align_child(Center, Center)
-        .child(Text::new(key.to_string()).size(10.0).color(t.comment));
-
-    Column::new(children![button, hint])
-        .gap(HINT_GAP)
-        .width(BUTTON)
-        .height(BUTTON + HINT_GAP + HINT)
+        .height(BUTTON)
 }
 
 // NixOS 26.05 (Yarara) · kernel 6.18.60 · up 2h 14m

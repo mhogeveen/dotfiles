@@ -6,11 +6,14 @@
  * every window by itself: the bar, panels, popups, lock screen
  */
 
-use std::env;
 use std::fs;
-use std::path::PathBuf;
 
 use amane::{Color, Service};
+
+use crate::state;
+
+// the file in the state folder the accent is kept in
+const STATE: &str = "accent";
 
 pub struct Theme {
     // the one picked in the system panel, used for every accent in the shell
@@ -121,7 +124,7 @@ pub struct Accent {
 impl Service for Accent {
     // a file of a few bytes, quick enough for the first view that asks
     fn new() -> Self {
-        let color = fs::read_to_string(state_file())
+        let color = fs::read_to_string(state::path(STATE))
             .ok()
             .and_then(|name| AccentColor::from_name(&name))
             .unwrap_or(AccentColor::Frost);
@@ -142,18 +145,8 @@ impl Accent {
     pub fn set(color: AccentColor) {
         Accent::write().color = color;
 
-        let path = state_file();
-
-        let saved = path
-            .parent()
-            .map_or(Ok(()), fs::create_dir_all)
-            .and_then(|()| fs::write(&path, color.name()));
-
-        if let Err(error) = saved {
-            eprintln!(
-                "theme: couldn't save the accent to {}: {error}",
-                path.display()
-            );
+        if let Err(error) = state::save(STATE, color.name()) {
+            eprintln!("theme: couldn't save the accent: {error}");
         }
     }
 
@@ -162,20 +155,6 @@ impl Accent {
 
         Accent::set(next);
     }
-}
-
-// $XDG_STATE_HOME/amane-shell/accent, outside the config repo so picking doesn't dirty git
-fn state_file() -> PathBuf {
-    let state = env::var_os("XDG_STATE_HOME")
-        .map(PathBuf::from)
-        .filter(|path| path.is_absolute())
-        .unwrap_or_else(|| {
-            let home = env::var_os("HOME").map(PathBuf::from).unwrap_or_default();
-
-            home.join(".local").join("state")
-        });
-
-    state.join("amane-shell").join("accent")
 }
 
 /*

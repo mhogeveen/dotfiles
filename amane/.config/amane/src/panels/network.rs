@@ -39,7 +39,29 @@ static PASSWORD: Mutex<String> = Mutex::new(String::new());
 pub fn view(monitor: &Monitor) -> LayerWindow {
     let base = ui::corner(HEIGHT, "amane-network");
 
-    panel(monitor, NETWORK, base, |_: Key| {}, content)
+    panel(monitor, NETWORK, base, key_pressed, content)
+}
+
+const KEY_WIFI: char = 'w';
+const KEY_RESCAN: char = 'r';
+
+// the header's buttons by their letters; a password being typed keeps the letters for itself
+fn key_pressed(key: Key) {
+    let Key::Character(letter) = key else {
+        return;
+    };
+
+    match letter.to_ascii_lowercase() {
+        KEY_WIFI => toggle_wifi(),
+        KEY_RESCAN => Network::scan(),
+        _ => {}
+    }
+}
+
+fn toggle_wifi() {
+    let enabled = Network::read().wifi_enabled();
+
+    Network::set_wifi(!enabled);
 }
 
 fn content(t: &Theme) -> Rectangle {
@@ -57,7 +79,7 @@ fn content(t: &Theme) -> Rectangle {
 
     parts.push(Box::new(networks(t, &network, &panel)));
 
-    ui::corner_frame(t, GAP, parts)
+    ui::frame(t, GAP, parts)
 }
 
 // closes the password box and forgets what was typed in it
@@ -80,13 +102,11 @@ fn clear_password() {
 fn header(t: &Theme, network: &Network) -> Row {
     let title = ui::title(t, "Network");
 
-    let rescan = ui::icon_button(t, ICON_RESCAN, |_| Network::scan());
+    let rescan = ui::key_button(t, ICON_RESCAN, KEY_RESCAN, |_| Network::scan());
 
     let enabled = network.wifi_enabled();
 
-    let switch = ui::switch(t, "Wi-Fi", 92.0, enabled, move |_| {
-        Network::set_wifi(!enabled)
-    });
+    let switch = ui::switch(t, "Wi-Fi", 92.0, enabled, KEY_WIFI, |_| toggle_wifi());
 
     Row::new(children![title, rescan, switch])
         .gap(GAP)

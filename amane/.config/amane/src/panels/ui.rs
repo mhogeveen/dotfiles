@@ -12,6 +12,7 @@ use amane::{
     Text, Vertical, Weight, Widget,
 };
 
+use super::hints;
 use crate::theme::Theme;
 
 pub const BUTTON: f32 = 28.0;
@@ -43,12 +44,29 @@ pub fn button(
         .child(Text::new(label).size(13.0).color(t.fg))
 }
 
-// a square button with a glyph, like rescan or the way into the session menu
-pub fn icon_button(t: &Theme, glyph: &str, on_click: impl Fn(Button) + 'static) -> Rectangle {
-    icon_button_colored(t, glyph, t.fg, on_click)
+// a text button with a key that does the same; while ? hints show, the key replaces the label
+pub fn key_text_button(
+    t: &Theme,
+    label: &str,
+    width: f32,
+    key: char,
+    on_click: impl Fn(Button) + 'static,
+) -> Rectangle {
+    if !hints::shown() {
+        return button(t, label, width, on_click);
+    }
+
+    Rectangle::new()
+        .width(width)
+        .height(BUTTON)
+        .fill(t.bg2)
+        .align_child(Center, Center)
+        .cursor(Pointer)
+        .on_click(on_click)
+        .child(key_text(key, t.accent))
 }
 
-// the same, with the glyph in its own color, like a bell that lights up
+// a square button with a glyph in its own color, like a bell that lights up
 pub fn icon_button_colored(
     t: &Theme,
     glyph: &str,
@@ -74,12 +92,13 @@ pub fn title(t: &Theme, text: &str) -> Rectangle {
         .child(Text::new(text).size(15.0).weight(Weight::Bold).color(t.fg))
 }
 
-// an on/off switch like "Wi-Fi on"; click flips it
+// an on/off switch like "Wi-Fi on" with a key that flips it too; click flips it
 pub fn switch(
     t: &Theme,
     label: &str,
     width: f32,
     on: bool,
+    key: char,
     on_click: impl Fn(Button) + 'static,
 ) -> Rectangle {
     let (state, fill, color) = if on {
@@ -95,11 +114,14 @@ pub fn switch(
         .align_child(Center, Center)
         .cursor(Pointer)
         .on_click(on_click)
-        .child(
+        .child(if hints::shown() {
+            // the switch's own text color, the accent wouldn't show on an accent fill
+            key_text(key, color)
+        } else {
             Text::new(format!("{label} {state}"))
                 .size(13.0)
-                .color(color),
-        )
+                .color(color)
+        })
 }
 
 const SLIDER_HEIGHT: f32 = 8.0;
@@ -183,8 +205,8 @@ pub fn corner(height: f32, namespace: &'static str) -> LayerWindow {
         .namespace(namespace)
 }
 
-// a top-right panel's background, border and padding around its parts, top to bottom
-pub fn corner_frame(t: &Theme, gap: f32, parts: Vec<Box<dyn Widget>>) -> Rectangle {
+// a panel's background, border and padding around its parts, top to bottom
+pub fn frame(t: &Theme, gap: f32, parts: Vec<Box<dyn Widget>>) -> Rectangle {
     Rectangle::new()
         .width(Parent)
         .height(Parent)
@@ -193,4 +215,44 @@ pub fn corner_frame(t: &Theme, gap: f32, parts: Vec<Box<dyn Widget>>) -> Rectang
         .padding(PADDING)
         .clip()
         .child(Column::new(parts).gap(gap))
+}
+
+// a square button with a key that does the same; while ? hints show, the key replaces the glyph
+pub fn key_button(
+    t: &Theme,
+    glyph: &str,
+    key: char,
+    on_click: impl Fn(Button) + 'static,
+) -> Rectangle {
+    key_button_colored(t, glyph, t.fg, key, on_click)
+}
+
+// a square button with a glyph in its own color, like a bell that lights up
+pub fn key_button_colored(
+    t: &Theme,
+    glyph: &str,
+    color: Color,
+    key: char,
+    on_click: impl Fn(Button) + 'static,
+) -> Rectangle {
+    if !hints::shown() {
+        return icon_button_colored(t, glyph, color, on_click);
+    }
+
+    Rectangle::new()
+        .width(BUTTON)
+        .height(BUTTON)
+        .fill(t.bg2)
+        .align_child(Center, Center)
+        .cursor(Pointer)
+        .on_click(on_click)
+        .child(key_text(key, t.accent))
+}
+
+// a key letter as the ? hints show it
+fn key_text(key: char, color: Color) -> Text {
+    Text::new(key.to_string())
+        .size(14.0)
+        .weight(Weight::Bold)
+        .color(color)
 }

@@ -325,6 +325,31 @@ pub fn fuzzy(query: &str, text: &str) -> Option<i32> {
     Some(score)
 }
 
+// the width of a help row's first column, what to press or type
+const HELP_KEYS: f32 = 140.0;
+
+// a line of a help screen: what to press or type in the accent, then what it does
+pub fn help_row(t: &Theme, keys: &str, does: &str) -> Rectangle {
+    let keys = Rectangle::new()
+        .width(HELP_KEYS)
+        .height(ROW_HEIGHT)
+        .align_child(Start, Center)
+        .child(Text::new(keys).size(TEXT_SIZE).color(t.accent));
+
+    let does = Rectangle::new()
+        .width(Parent)
+        .height(ROW_HEIGHT)
+        .align_child(Start, Center)
+        .child(Text::new(does).size(TEXT_SIZE).color(t.fg_dim).elide());
+
+    Rectangle::new()
+        .width(Parent)
+        .height(ROW_HEIGHT)
+        .padding(SIDES)
+        .align_child(Start, Center)
+        .child(Row::new(children![keys, does]).width(Parent))
+}
+
 // shown instead of rows when there are none
 pub fn message(t: &Theme, text: &str) -> Box<dyn Widget> {
     Box::new(

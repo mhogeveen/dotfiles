@@ -3,6 +3,8 @@ use amane::App;
 mod audio;
 mod bar;
 mod bluetooth;
+mod calculator;
+mod calendar;
 mod clock;
 mod layout;
 mod lock;
@@ -11,8 +13,10 @@ mod notifications;
 mod panels;
 mod screenshot;
 mod session;
+mod state;
 mod system;
 mod theme;
+mod usage;
 
 fn main() {
     // locks on suspend and `loginctl lock-session`
@@ -44,6 +48,7 @@ fn main() {
         .window_per_monitor(panels::bluetooth::view)
         .window_per_monitor(panels::audio::view)
         .window_per_monitor(panels::system::view)
+        .window_per_monitor(panels::calendar::view)
         .lock(lock::view)
         .run();
 }

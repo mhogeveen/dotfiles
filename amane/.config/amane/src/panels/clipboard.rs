@@ -110,7 +110,7 @@ pub struct Clipboard;
 impl Picker for Clipboard {
     const PANEL: &'static str = CLIPBOARD;
     const INPUT: &'static str = "clipboard-search";
-    const PLACEHOLDER: &'static str = "Search clipboard history";
+    const PLACEHOLDER: &'static str = "Search clipboard history  ·  ? for help";
     const NAMESPACE: &'static str = "amane-clipboard";
 
     // shared, so listing hundreds of entries copies no text
@@ -138,6 +138,13 @@ impl Picker for Clipboard {
 
     fn pick(entry: Arc<Entry>) {
         copy(entry.line.clone());
+    }
+
+    fn help() -> &'static [(&'static str, &'static str)] {
+        &[
+            ("any text", "search the history"),
+            ("Enter", "copy it back to the clipboard"),
+        ]
     }
 
     fn empty(_: &str) -> &'static str {

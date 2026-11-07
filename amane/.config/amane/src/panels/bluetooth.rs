@@ -30,7 +30,43 @@ const SECTION: f32 = 28.0;
 pub fn view(monitor: &Monitor) -> LayerWindow {
     let base = ui::corner(HEIGHT, "amane-bluetooth");
 
-    panel(monitor, BLUETOOTH, base, |_: Key| {}, content)
+    panel(monitor, BLUETOOTH, base, key_pressed, content)
+}
+
+const KEY_POWER: char = 'b';
+const KEY_RESCAN: char = 'r';
+
+// the header's buttons by their letters
+fn key_pressed(key: Key) {
+    let Key::Character(letter) = key else {
+        return;
+    };
+
+    match letter.to_ascii_lowercase() {
+        KEY_POWER => toggle_power(),
+        KEY_RESCAN => rescan(),
+        _ => {}
+    }
+}
+
+// only with an adapter, like the switch
+fn toggle_power() {
+    let (available, powered) = {
+        let bluetooth = Bluetooth::read();
+
+        (bluetooth.available(), bluetooth.powered())
+    };
+
+    if available {
+        BluetoothPanel::power(!powered);
+    }
+}
+
+// only while on, like the button
+fn rescan() {
+    if Bluetooth::read().powered() {
+        Bluetooth::start_scan();
+    }
 }
 
 fn content(t: &Theme) -> Rectangle {
@@ -50,7 +86,7 @@ fn content(t: &Theme) -> Rectangle {
 
     parts.push(Box::new(devices(t, &bluetooth, &panel)));
 
-    ui::corner_frame(t, GAP, parts)
+    ui::frame(t, GAP, parts)
 }
 
 // "Bluetooth", scanning and rescan, and the power switch
@@ -62,20 +98,19 @@ fn header(t: &Theme, bluetooth: &Bluetooth) -> Row {
             parts.push(Box::new(Text::new("scanning").size(12.0).color(t.comment)));
         }
 
-        parts.push(Box::new(ui::icon_button(t, ICON_RESCAN, |_| {
-            Bluetooth::start_scan()
+        parts.push(Box::new(ui::key_button(t, ICON_RESCAN, KEY_RESCAN, |_| {
+            rescan()
         })));
     }
 
     if bluetooth.available() {
-        let powered = bluetooth.powered();
-
         parts.push(Box::new(ui::switch(
             t,
             "Bluetooth",
             124.0,
-            powered,
-            move |_| BluetoothPanel::power(!powered),
+            bluetooth.powered(),
+            KEY_POWER,
+            |_| toggle_power(),
         )));
     }
 

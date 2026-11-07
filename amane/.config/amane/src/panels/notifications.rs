@@ -10,7 +10,7 @@ use amane::{
     ScrollArea, Service, Widget, children,
 };
 
-use super::ui::{self, BUTTON, CORNER_WIDTH, PADDING, button};
+use super::ui::{self, BUTTON, CORNER_WIDTH, PADDING};
 use super::{NOTIFICATIONS, panel};
 use crate::clock::Clock;
 use crate::notifications::{
@@ -25,7 +25,17 @@ const GAP: f32 = 8.0;
 pub fn view(monitor: &Monitor) -> LayerWindow {
     let base = ui::corner(HEIGHT, "amane-notification-center");
 
-    panel(monitor, NOTIFICATIONS, base, |_: Key| {}, content)
+    panel(monitor, NOTIFICATIONS, base, key_pressed, content)
+}
+
+const KEY_CLEAR: char = 'c';
+
+fn key_pressed(key: Key) {
+    if let Key::Character(letter) = key
+        && letter.to_ascii_lowercase() == KEY_CLEAR
+    {
+        Notifications::clear();
+    }
 }
 
 fn content(t: &Theme) -> Rectangle {
@@ -68,14 +78,14 @@ fn content(t: &Theme) -> Rectangle {
 
     let header = Row::new(children![
         ui::title(t, "Notifications"),
-        button(t, "Clear all", 80.0, |_| Notifications::clear()),
+        ui::key_text_button(t, "Clear all", 80.0, KEY_CLEAR, |_| Notifications::clear()),
     ])
     .align(Center)
     .height(BUTTON);
 
     let list = ScrollArea::new("notification-center", Column::new(cards).gap(GAP));
 
-    ui::corner_frame(t, GAP, children![header, list])
+    ui::frame(t, GAP, children![header, list])
 }
 
 // everything shown while it was open counts as read

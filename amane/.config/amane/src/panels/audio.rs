@@ -15,8 +15,8 @@ use amane::{
     Text, Weight, Widget, children,
 };
 
-use super::ui::{self, BUTTON, CORNER_WIDTH, PADDING, SIDES, button};
-use super::{AUDIO, panel};
+use super::ui::{self, BUTTON, CORNER_WIDTH, PADDING, SIDES};
+use super::{AUDIO, hints, panel};
 use crate::audio::{Device, Devices, State};
 use crate::theme::Theme;
 
@@ -54,7 +54,36 @@ pub fn volume_icon(volume: u8, muted: bool) -> &'static str {
 pub fn view(monitor: &Monitor) -> LayerWindow {
     let base = ui::corner(HEIGHT, "amane-audio");
 
-    panel(monitor, AUDIO, base, |_: Key| {}, content)
+    panel(monitor, AUDIO, base, key_pressed, content)
+}
+
+const KEY_MUTE: char = 'm';
+const KEY_MIC_MUTE: char = 'n';
+const KEY_QUIETER: char = 'j';
+const KEY_LOUDER: char = 'k';
+
+// how far j and k move the volume
+const STEP: i32 = 5;
+
+fn key_pressed(key: Key) {
+    let Key::Character(letter) = key else {
+        return;
+    };
+
+    match letter.to_ascii_lowercase() {
+        KEY_MUTE => Audio::toggle_mute(),
+        KEY_MIC_MUTE => Audio::toggle_microphone_mute(),
+        KEY_QUIETER => step(-STEP),
+        KEY_LOUDER => step(STEP),
+        _ => {}
+    }
+}
+
+// the output volume, kept between 0 and 100
+fn step(by: i32) {
+    let volume = i32::from(Audio::read().volume());
+
+    Audio::set_volume((volume + by).clamp(0, 100) as u8);
 }
 
 fn content(t: &Theme) -> Rectangle {
@@ -67,6 +96,8 @@ fn content(t: &Theme) -> Rectangle {
         muted: audio.muted(),
         set_volume: Audio::set_volume,
         toggle_mute: Audio::toggle_mute,
+        mute_key: KEY_MUTE,
+        volume_keys: Some((KEY_QUIETER, KEY_LOUDER)),
     };
 
     let input = Level {
@@ -79,6 +110,8 @@ fn content(t: &Theme) -> Rectangle {
         muted: audio.microphone_muted(),
         set_volume: Audio::set_microphone_volume,
         toggle_mute: Audio::toggle_microphone_mute,
+        mute_key: KEY_MIC_MUTE,
+        volume_keys: None,
     };
 
     let parts = children![
@@ -87,7 +120,7 @@ fn content(t: &Theme) -> Rectangle {
         section(t, "Input", &input, devices.inputs(), devices.state()),
     ];
 
-    ui::corner_frame(t, GAP * 2.0, parts)
+    ui::frame(t, GAP * 2.0, parts)
 }
 
 // one side of the panel: the output or the microphone
@@ -97,6 +130,10 @@ struct Level {
     muted: bool,
     set_volume: fn(u8),
     toggle_mute: fn(),
+
+    // what ? shows: the mute key, and the volume keys where there are any
+    mute_key: char,
+    volume_keys: Option<(char, char)>,
 }
 
 fn section(t: &Theme, title: &str, level: &Level, devices: &[Device], state: &State) -> Column {
@@ -144,12 +181,24 @@ fn level_row(t: &Theme, level: &Level) -> Rectangle {
 
     let toggle_mute = level.toggle_mute;
 
-    let mute = button(
+    let mute = ui::key_text_button(
         t,
         if level.muted { "Unmute" } else { "Mute" },
         MUTE,
+        level.mute_key,
         move |_| toggle_mute(),
     );
+
+    // while ? hints show, the percentage says which keys change the volume
+    let percent = match (hints::shown(), level.volume_keys) {
+        (true, Some((quieter, louder))) => Text::new(format!("{quieter} {louder}"))
+            .size(13.0)
+            .weight(Weight::Bold)
+            .color(t.accent),
+        _ => Text::new(format!("{}%", level.volume))
+            .size(13.0)
+            .color(color),
+    };
 
     let row = Row::new(children![
         Rectangle::new()
@@ -162,11 +211,7 @@ fn level_row(t: &Theme, level: &Level) -> Rectangle {
             .width(PERCENT)
             .height(BUTTON)
             .align_child(Center, Center)
-            .child(
-                Text::new(format!("{}%", level.volume))
-                    .size(13.0)
-                    .color(color)
-            ),
+            .child(percent),
         mute,
     ])
     .gap(GAP)

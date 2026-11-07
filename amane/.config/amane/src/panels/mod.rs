@@ -17,7 +17,9 @@ use crate::theme::{Theme, theme};
 pub mod audio;
 pub mod backdrop;
 pub mod bluetooth;
+pub mod calendar;
 pub mod clipboard;
+mod hints;
 pub mod launcher;
 pub mod layout;
 mod list;
@@ -40,6 +42,7 @@ pub const BLUETOOTH: &str = "bluetooth";
 pub const AUDIO: &str = "audio";
 pub const LAYOUT: &str = "layout";
 pub const SYSTEM: &str = "system";
+pub const CALENDAR: &str = "calendar";
 
 pub struct PanelDef {
     pub name: &'static str,
@@ -113,6 +116,11 @@ static REGISTRY: &[PanelDef] = &[
         name: SYSTEM,
         groups: &[PANELS],
         on_close: None,
+    },
+    PanelDef {
+        name: CALENDAR,
+        groups: &[PANELS],
+        on_close: Some(calendar::reset),
     },
 ];
 
@@ -291,6 +299,10 @@ impl Panels {
 
 // called without the Panels lock held, so hooks may read or write any service
 fn run_close_hooks(closed: &[&'static PanelDef]) {
+    if !closed.is_empty() {
+        hints::hide();
+    }
+
     for def in closed {
         if let Some(on_close) = def.on_close {
             on_close();
@@ -353,7 +365,8 @@ pub fn ipc(arguments: &[String]) -> String {
 /*
  * every panel's window: shown on the monitor it was opened on, above the
  * backdrop, taking the keyboard and closing on escape; every other key that
- * reaches the window goes to the panel's own handler
+ * reaches the window goes to the panel's own handler, except ? which shows the
+ * key hints (see hints.rs)
  *
  * content is only built while the panel shows. a hidden window still runs its
  * view whenever a service it read changes, so a panel that read the network or
@@ -386,10 +399,15 @@ pub fn panel(
         .visible(shown)
         .keyboard(Keyboard::OnDemand)
         .on_key(move |key| {
-            if key == Key::Escape {
-                let _ = Panels::close(name);
-            } else {
-                on_key(key);
+            match key {
+                Key::Escape => {
+                    let _ = Panels::close(name);
+                }
+
+                // every panel shows its buttons' keys for a moment
+                Key::Character('?') => hints::show(),
+
+                _ => on_key(key),
             }
         })
         .child(child)
