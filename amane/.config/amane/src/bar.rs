@@ -12,13 +12,17 @@ use crate::{
         self as bt,
         agent::{Agent, Request},
     },
-    clock, network as net,
+    clock,
+    layout::MangoLayout,
+    network as net,
     notifications::Seen,
-    panels::{AUDIO, BLUETOOTH, NETWORK, NOTIFICATIONS, Panels, SESSION, audio::volume_icon},
+    panels::{
+        AUDIO, BLUETOOTH, NETWORK, NOTIFICATIONS, Panels, SESSION, audio::volume_icon, layout,
+    },
     theme::{Theme, theme},
 };
 
-pub fn view(_monitor: &Monitor) -> LayerWindow {
+pub fn view(monitor: &Monitor) -> LayerWindow {
     let t = theme();
 
     LayerWindow::new()
@@ -41,14 +45,14 @@ pub fn view(_monitor: &Monitor) -> LayerWindow {
                 .child(
                     // the two Parent-sized sides split the leftover space evenly,
                     // which keeps the fixed-width clock exactly centered
-                    Row::new(children![workspaces(&t), clock(&t), status(&t)])
+                    Row::new(children![workspaces(&t, monitor), clock(&t), status(&t)])
                         .height(Parent)
                         .align(Center),
                 ),
         )
 }
 
-fn workspaces(t: &Theme) -> Rectangle {
+fn workspaces(t: &Theme, monitor: &Monitor) -> Rectangle {
     let workspaces = Workspaces::read();
 
     let mut buttons: Vec<Box<dyn Widget>> = Vec::new();
@@ -75,11 +79,39 @@ fn workspaces(t: &Theme) -> Rectangle {
         ));
     }
 
-    Rectangle::new()
-        .width(Parent)
-        .height(Parent)
-        .child(Row::new(buttons).gap(4.0).align(Center).height(Parent))
+    Rectangle::new().width(Parent).height(Parent).child(
+        Row::new(children![
+            Row::new(buttons).gap(4.0).align(Center).height(Parent),
+            layout(t, monitor),
+        ])
+        .gap(8.0)
+        .align(Center)
+        .height(Parent),
+    )
 }
+
+// this monitor's mango layout like [S]; opens the layout picker on it
+fn layout(t: &Theme, monitor: &Monitor) -> Rectangle {
+    let symbol = MangoLayout::read().symbol(&monitor.name).map(String::from);
+
+    let text = symbol
+        .as_deref()
+        .map(|symbol| format!("[{symbol}]"))
+        .unwrap_or_default();
+
+    // BlexMono is monospaced, so the width follows from the number of characters
+    let width = text.chars().count() as f32 * LAYOUT_SIZE * 0.6;
+
+    Rectangle::new()
+        .width(width)
+        .height(Parent)
+        .align_child(Center, Center)
+        .cursor(Pointer)
+        .on_click(move |_| layout::toggle_from(symbol.as_deref()))
+        .child(Text::new(text).size(LAYOUT_SIZE).color(t.fg_dim))
+}
+
+const LAYOUT_SIZE: f32 = 12.0;
 
 fn clock(t: &Theme) -> Rectangle {
     clock::view(t)

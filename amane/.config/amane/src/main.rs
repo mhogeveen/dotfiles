@@ -4,6 +4,7 @@ mod audio;
 mod bar;
 mod bluetooth;
 mod clock;
+mod layout;
 mod lock;
 mod network;
 mod notifications;
@@ -30,6 +31,7 @@ fn main() {
         .window_per_monitor(panels::clipboard::view)
         .window_per_monitor(panels::screenshot::view)
         .window_per_monitor(panels::session::view)
+        .window_per_monitor(panels::layout::view)
         .window_per_monitor(panels::notifications::view)
         .window_per_monitor(panels::network::view)
         .window_per_monitor(panels::bluetooth::view)

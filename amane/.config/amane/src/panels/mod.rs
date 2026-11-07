@@ -17,6 +17,7 @@ pub mod backdrop;
 pub mod bluetooth;
 pub mod clipboard;
 pub mod launcher;
+pub mod layout;
 mod list;
 pub mod network;
 pub mod notifications;
@@ -32,6 +33,7 @@ pub const SESSION: &str = "session";
 pub const NETWORK: &str = "network";
 pub const BLUETOOTH: &str = "bluetooth";
 pub const AUDIO: &str = "audio";
+pub const LAYOUT: &str = "layout";
 
 pub struct PanelDef {
     pub name: &'static str,
@@ -67,6 +69,11 @@ static REGISTRY: &[PanelDef] = &[
         name: SESSION,
         groups: &["center"],
         on_close: session::reset,
+    },
+    PanelDef {
+        name: LAYOUT,
+        groups: &["center"],
+        on_close: layout::reset,
     },
     /*
      * the top-right corner, apart from the center ones so either can stay open

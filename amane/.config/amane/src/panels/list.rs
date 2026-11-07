@@ -26,6 +26,7 @@ const SEARCH_HEIGHT: f32 = 44.0;
 const ROW_HEIGHT: f32 = 40.0;
 const TEXT_SIZE: f32 = 15.0;
 const NUMBER_WIDTH: f32 = 24.0;
+const STRIPE_WIDTH: f32 = 2.0;
 
 // room on the left and right only, so rows and the search box center vertically
 const SIDES: Padding = Padding {
@@ -189,6 +190,56 @@ pub fn numbered_row(t: &Theme, number: usize, label: &str, selected: bool) -> Re
 // a selected numbered row in the warning color, for an action waiting to be confirmed
 pub fn armed_row(t: &Theme, number: usize, label: &str) -> Rectangle {
     row_with(t, Some(number), label, true, Some(t.brass))
+}
+
+/*
+ * a row with a dimmed detail on the right, like a layout's symbol; marked puts
+ * a thin accent stripe on its left edge, like for the layout in use. every row
+ * keeps room for the stripe, so the labels line up either way
+ */
+pub fn detail_row(t: &Theme, label: &str, detail: &str, selected: bool, marked: bool) -> Rectangle {
+    let (fill, color) = if selected {
+        (t.bg3, t.fg)
+    } else {
+        (t.bg0, t.fg_dim)
+    };
+
+    let stripe = Rectangle::new()
+        .width(STRIPE_WIDTH)
+        .height(ROW_HEIGHT)
+        .fill(if marked { t.frost } else { fill });
+
+    let label = Rectangle::new()
+        .width(Parent)
+        .height(ROW_HEIGHT)
+        .align_child(Start, Center)
+        .child(Text::new(label).size(TEXT_SIZE).color(color).elide());
+
+    let detail = Text::new(detail).size(TEXT_SIZE).color(t.comment);
+
+    // the stripe takes its width out of the left padding, so the text stays put
+    let content = Rectangle::new()
+        .width(Parent)
+        .height(ROW_HEIGHT)
+        .padding(Padding {
+            top: 0.0,
+            right: PADDING,
+            bottom: 0.0,
+            left: PADDING - STRIPE_WIDTH,
+        })
+        .align_child(Start, Center)
+        .child(
+            Row::new(children![label, detail])
+                .width(Parent)
+                .gap(GAP)
+                .align(Center),
+        );
+
+    Rectangle::new()
+        .width(Parent)
+        .height(ROW_HEIGHT)
+        .fill(fill)
+        .child(Row::new(children![stripe, content]).width(Parent))
 }
 
 fn row_with(
