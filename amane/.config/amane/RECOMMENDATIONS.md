@@ -25,19 +25,23 @@ Settled earlier, no need to revisit:
 ## Gaps worth closing first
 
 ### 1. Idle lock, screen off, suspend
-- **Status:** open
-- **Why:** the lock screen only runs when triggered by hand, so an unattended
-  machine stays unlocked. No idle daemon is installed (neither hypridle nor
-  swayidle); `hypr/.config/hypr/hypridle.conf` is a Hyprland leftover that
-  nothing runs under mango.
-- **Hooks in:** an idle daemon started from mango's `exec_once` (or a
-  home-manager service) calling `amane ipc call lock`, then turning the
-  screen off, then `systemctl suspend`. The shell already locks before any
-  suspend (`session::watch_logind` in `src/session.rs`). The mango config has
-  `idle_inhibit_*` settings, so it supports the idle protocols.
-- **To settle:** hypridle or swayidle; the timeouts (e.g. lock after 5 min,
-  screen off after 6, suspend after 30); how to turn the screen off under
-  mango (`mmsg` dispatch or `wlopm`).
+- **Status:** done outside the shell: hypridle as a home-manager service in
+  `~/.nixos/home/hypridle.nix` (a systemd user service on
+  `graphical-session.target`, which mango's session target brings up). Lock
+  after 5 min, screen off after 5.5, suspend after 30.
+- **How it fits:** hypridle only calls `loginctl lock-session`; the shell's
+  `session::watch_logind` puts up amane's lock screen on logind's `Lock` (and
+  on `PrepareForSleep`), so there's no `lock_cmd`. The screen goes off with
+  `wlopm` (mango has wlr-output-power-management), not `mmsg dispatch
+  disable_monitor`, which removes the output and reshuffles layer surfaces.
+- **Limits:** mango has no lock-notify protocol, so hypridle can't hold sleep
+  until the lock screen is up (`inhibit_sleep = 3`); `before_sleep_cmd` waits
+  a second after locking instead, like the session menu's
+  `LOCK_BEFORE_SUSPEND`. No dimming: the old Hyprland setup used ddcutil,
+  which needs I2C (`hardware.i2c.enable`) and isn't set up. Idle locking
+  needs `XDG_SESSION_ID` in the shell's environment (mango's `exec_once`
+  passes it); without it, `lock_cmd = "amane ipc call lock"` would be the
+  fallback.
 
 ### 2. Volume and media keys, with an on-screen popup
 - **Status:** open
@@ -170,14 +174,39 @@ Settled earlier, no need to revisit:
 ## Outside the shell
 
 ### 10. Polkit agent
-- **Status:** open
+- **Status:** blocked on amane. The polkit daemon is on (`security.polkit.enable
+  = true` in `hosts/prometheus/default.nix`) and its helper socket
+  `/run/polkit/agent-helper.socket` listens, but registering as an agent needs
+  a D-Bus struct argument amane doesn't have (see the upstream list). No agent
+  runs until then.
 - **Why:** with no polkit agent running, anything that asks for an admin
   password fails silently (NetworkManager was hit; the `networkmanager` group
   worked around that one).
-- **Hooks in:** start an agent such as `polkit_gnome` or `hyprpolkitagent`
-  from mango's `exec_once` or as a home-manager service. Building one into
-  amane is possible but sizeable.
-- **To settle:** which agent, or build one.
+- **Decided:** an agent built into the shell, its prompt a centered dialog
+  like the screenshot and session menus (what's asked, the program and
+  action, a password field, Cancel and Authenticate); opening it closes other
+  panels so it gets the keyboard.
+- **Notes for later:**
+  - register with `org.freedesktop.PolicyKit1.Authority.RegisterAuthenticationAgent`
+    (subject `("unix-session", {"session-id": <"1">})`, from `XDG_SESSION_ID` or
+    logind's `GetSessionByPID`), and export
+    `org.freedesktop.PolicyKit1.AuthenticationAgent` with `BeginAuthentication`
+    and `CancelAuthentication`, the way `src/bluetooth/agent.rs` exports BlueZ's
+    agent; register again when polkitd restarts.
+  - the helper (polkit 127, socket-activated): connect to
+    `/run/polkit/agent-helper.socket` with `std::os::unix::net::UnixStream`,
+    write `username\n` and `cookie\n`, then read lines (escaped like
+    `g_strcompress`): `PAM_PROMPT_ECHO_OFF <prompt>` and `PAM_PROMPT_ECHO_ON`
+    are answered with a line, `PAM_ERROR_MSG`/`PAM_TEXT_INFO` are shown, and
+    `SUCCESS` or `FAILURE` ends it. On `FAILURE`, connect again with the same
+    cookie to let you retry.
+  - reply to `BeginAuthentication` only after the helper says `SUCCESS`;
+    polkitd then checks whether the cookie was authenticated. amane can't send
+    error replies, but that's fine here: cancelling is replying without
+    authenticating, which callers report as "Not authorized" instead of
+    "Request dismissed".
+  - the identity: your own user if polkit lists it, else the first
+    `unix-user`; requests arriving while one is open wait their turn.
 
 ### 11. Wallpaper
 - **Status:** open
@@ -226,6 +255,16 @@ up as issue texts.
   keybind; the clipboard panel wanted Delete for removing an entry.
 - **No D-Bus error replies** (`Method` can only `reply`), which the Bluetooth
   agent works around by cancelling pairings instead of rejecting them.
+- **No struct arguments for D-Bus calls.** `Argument` builds basic values,
+  lists, `a{sv}` maps, groups and variants, but no struct, so methods taking
+  one can't be called. Example: polkit's `RegisterAuthenticationAgent(subject
+  (sa{sv}), locale s, object_path s)`, needed for a polkit agent, where the
+  subject is `("unix-session", {"session-id": <"1">})`. Calling it through
+  `busctl` doesn't help, since polkit sends its requests to the connection that
+  registered. Suggested fix: `Argument::Struct(Vec<Argument>)`, converted in
+  `dbus/convert.rs` with the `StructureBuilder` that `body()` already uses
+  (`Variant::Structure(...)`). Incoming structs already arrive as
+  `Value::List`, so only sending is missing. Blocks item 10.
 - **No error from connect/pair/forget** in `Network` and `Bluetooth`; the shell
   makes its own calls to report failures.
 - **Patches to `~/.cache/amane/library` are overwritten** by `amane compile`,
