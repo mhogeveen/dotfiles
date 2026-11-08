@@ -159,3 +159,27 @@ are kept, so references between the two files still work.
   (`src/state.rs`) and show it again after a restart (`src/notifications/`).
 - **To settle:** whether amane's `Notifications` service can be seeded, or the
   shell keeps its own copy; how many to keep; whether a reboot drops them.
+
+### 2. Volume and media keys, with an on-screen popup
+- **Status:** done (`src/osd.rs`, mango config): `SUPER+=` / `SUPER+-` change
+  the volume 5% (capped at 100%), `SUPER+0` mutes, `SUPER+SHIFT+0` mutes the
+  mic, all through `wpctl` and `bindl` (also while locked); the same
+  `XF86Audio*` binds are there for a keyboard that sends media keys (the
+  NuPhy Halo65 doesn't, its Fn layer could be remapped). A popup at the
+  bottom center of the focused monitor shows the speaker or microphone, a
+  bar and the percentage (dimmed, "Muted" when muted) for 1.5 s after any
+  change, whatever made it; not at startup and not while the audio panel is
+  open. It watches amane's `Audio` 10 times a second, in an always-mapped,
+  click-through window that only draws while showing. Playback keys:
+  `SUPER+\` play/pause, `SUPER+]` next, `SUPER+[` previous, through
+  `amane ipc call media play-pause|next|previous` (amane's `Media`).
+- **Why:** `mango/.config/mango/config.conf` binds no `XF86Audio*` keys, so the
+  volume keys do nothing.
+- **Hooks in:** new IPC handlers in `src/main.rs`, e.g. `amane ipc call volume
+  up|down|mute`, using amane's `Audio` service (as `src/panels/audio.rs` does);
+  mango binds for the keys; a small popup near the top that shows the volume
+  for a moment after a change. The popup would be an always-mapped,
+  click-through window like `src/notifications/popups.rs`, since showing and
+  hiding windows quickly risks the crash.
+- **To settle:** step size (5%?), whether the popup also shows for mic mute,
+  and where it sits.

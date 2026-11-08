@@ -12,6 +12,7 @@ mod layout;
 mod lock;
 mod network;
 mod notifications;
+mod osd;
 mod panels;
 mod screenshot;
 mod session;
@@ -38,17 +39,22 @@ fn main() {
     // restores the notifications from before a restart, and keeps saving them
     notifications::history::start();
 
+    // the volume popup follows every change from the start
+    osd::start();
+
     App::new()
         .font("BlexMono Nerd Font")
         .ipc("panel", panels::ipc)
         .ipc("lock", session::lock_ipc)
         .ipc("accent", theme::accent_ipc)
         .ipc("weather", weather::ipc)
+        .ipc("media", osd::media_ipc)
         // first, so it is the bottom-most window
         .window_per_monitor(wallpaper::view)
         .window_per_monitor(bar::view)
         .window_per_monitor(panels::backdrop::view)
         .window_per_monitor(notifications::popups::view)
+        .window_per_monitor(osd::view)
         .window_per_monitor(panels::launcher::view)
         .window_per_monitor(panels::clipboard::view)
         .window_per_monitor(panels::screenshot::view)

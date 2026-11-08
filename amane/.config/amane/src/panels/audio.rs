@@ -38,8 +38,8 @@ const ICON_MUTED: &str = "\u{f075f}";
 const ICON_LOW: &str = "\u{f057f}";
 const ICON_MEDIUM: &str = "\u{f0580}";
 const ICON_HIGH: &str = "\u{f057e}";
-const ICON_MIC: &str = "\u{f036c}";
-const ICON_MIC_MUTED: &str = "\u{f036d}";
+pub const ICON_MIC: &str = "\u{f036c}";
+pub const ICON_MIC_MUTED: &str = "\u{f036d}";
 
 // the speaker glyph for this volume, shared with the bar
 pub fn volume_icon(volume: u8, muted: bool) -> &'static str {

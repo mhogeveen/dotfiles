@@ -209,7 +209,7 @@ fn meter_row(t: &Theme, name: &str, percent: u8, numbers: String) -> Row {
             .height(BUTTON)
             .align_child(Start, Center)
             .child(Text::new(name).size(13.0).color(t.fg)),
-        ui::meter(t, METER, percent),
+        ui::meter(t, METER, percent, false),
         Rectangle::new()
             .width(NUMBERS)
             .height(BUTTON)

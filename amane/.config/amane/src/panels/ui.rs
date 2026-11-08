@@ -180,14 +180,14 @@ pub fn slider(t: &Theme, width: f32, value: u8, dimmed: bool, on_change: fn(u8))
         )
 }
 
-// a 0 to 100 bar that only shows a level, like cpu or disk use, in the accent
-pub fn meter(t: &Theme, width: f32, percent: u8) -> Rectangle {
+// a 0 to 100 bar that only shows a level, like cpu or disk use, in the accent; dimmed like a muted slider
+pub fn meter(t: &Theme, width: f32, percent: u8, dimmed: bool) -> Rectangle {
     let percent = percent.min(100);
 
     let fill = Rectangle::new()
         .width(width * f32::from(percent) / 100.0)
         .height(SLIDER_HEIGHT)
-        .fill(t.accent);
+        .fill(if dimmed { t.bg5 } else { t.accent });
 
     Rectangle::new()
         .width(width)

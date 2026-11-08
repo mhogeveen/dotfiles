@@ -35,21 +35,9 @@ Settled earlier, no need to revisit:
 
 ## Gaps worth closing first
 
-### 2. Volume and media keys, with an on-screen popup
-- **Status:** open
-- **Why:** `mango/.config/mango/config.conf` binds no `XF86Audio*` keys, so the
-  volume keys do nothing.
-- **Hooks in:** new IPC handlers in `src/main.rs`, e.g. `amane ipc call volume
-  up|down|mute`, using amane's `Audio` service (as `src/panels/audio.rs` does);
-  mango binds for the keys; a small popup near the top that shows the volume
-  for a moment after a change. The popup would be an always-mapped,
-  click-through window like `src/notifications/popups.rs`, since showing and
-  hiding windows quickly risks the crash.
-- **To settle:** step size (5%?), whether the popup also shows for mic mute,
-  and where it sits.
-
 ### 3. Media controls
-- **Status:** open
+- **Status:** open; the playback keys are bound already (item 2 in DONE.md:
+  `SUPER+\`, `SUPER+]`, `SUPER+[` and `amane ipc call media …`), only the UI is left
 - **Why:** amane has `Media`/`MediaPlayer` services (MPRIS: qutebrowser,
   Spotify, mpv and so on) that nothing in the shell uses yet.
 - **Hooks in:** play/pause/next and the track title in `src/panels/audio.rs`;
@@ -68,7 +56,8 @@ Settled earlier, no need to revisit:
   `amane ipc call panel toggle <name>`; `SUPER+m` could open the session menu
   instead.
 - **To settle:** which keys (several `SUPER+letter` are taken: h j k l t b q
-  r f g i o v c s n p m; `SUPER+w` is free, a fit for the wallpaper picker).
+  r f g i o v c s n p m, plus `=`, `-`, `0`, `[`, `]` and `\` for volume and
+  playback; `SUPER+w` is free, a fit for the wallpaper picker).
 
 ## Polish on what exists
 

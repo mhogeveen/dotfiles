@@ -30,7 +30,7 @@ mod picker;
 pub mod screenshot;
 pub mod session;
 pub mod system;
-mod ui;
+pub mod ui;
 pub mod wallpaper;
 
 pub const LAUNCHER: &str = "launcher";
