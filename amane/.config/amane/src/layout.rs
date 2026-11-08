@@ -3,10 +3,7 @@
  *
  * amane already follows mango for the workspaces, but doesn't pass the layout
  * on, so this opens its own `watch all-monitors` on mango's socket; mango sends
- * the whole state as one json line on every change
- *
- * amane's json library isn't available to the config, so a small scanner reads
- * just the two fields needed (see parse)
+ * the whole state as one json line on every change, read with src/json.rs
  */
 
 use std::env;
@@ -16,6 +13,8 @@ use std::thread;
 use std::time::Duration;
 
 use amane::Service;
+
+use crate::json::{self, Value};
 
 // how long to wait before trying mango's socket again
 const RETRY: Duration = Duration::from_secs(5);
@@ -181,126 +180,26 @@ fn send(command: &str) -> Option<UnixStream> {
  *
  *   {"monitors":[{"name":"DP-1",...,"layout_symbol":"S","tags":[{..."layout":"S"}],...}]}
  *
- * keys only count directly inside a monitor object, so the tags' "layout" and
- * nested objects never get mixed in; None when there's no monitors array
+ * only a monitor's own keys count, so the tags' "layout" and nested objects never
+ * get mixed in; None when there's no monitors array, like mango's "ok"
  */
 fn parse(line: &str) -> Option<Vec<Monitor>> {
-    let mut characters = line.chars();
+    let status = json::parse(line)?;
 
-    // how many objects and arrays the scanner is inside of
-    let mut depth = 0usize;
+    let Value::List(monitors) = status.get("monitors") else {
+        return None;
+    };
 
-    // the depth just inside the monitors array, once it opened
-    let mut monitors_at: Option<usize> = None;
-    let mut found_monitors = false;
-
-    let mut key: Option<String> = None;
-    let mut wants_value = false;
-
-    let mut current: Option<Monitor> = None;
-    let mut monitors = Vec::new();
-
-    while let Some(character) = characters.next() {
-        match character {
-            '"' => {
-                let text = read_string(&mut characters)?;
-
-                if !wants_value {
-                    key = Some(text);
-
-                    continue;
-                }
-
-                let in_monitor = monitors_at.is_some_and(|at| depth == at + 1);
-
-                if let (true, Some(monitor), Some(key)) = (in_monitor, &mut current, &key) {
-                    match key.as_str() {
-                        "name" => monitor.name = text,
-                        "layout_symbol" => monitor.symbol = text,
-                        _ => {}
-                    }
-                }
-
-                key = None;
-                wants_value = false;
-            }
-
-            ':' => wants_value = true,
-
-            ',' => {
-                key = None;
-                wants_value = false;
-            }
-
-            '{' | '[' => {
-                if character == '[' && depth == 1 && key.as_deref() == Some("monitors") {
-                    monitors_at = Some(depth + 1);
-                    found_monitors = true;
-                }
-
-                if character == '{' && monitors_at == Some(depth) {
-                    current = Some(Monitor::default());
-                }
-
-                depth += 1;
-
-                key = None;
-                wants_value = false;
-            }
-
-            '}' | ']' => {
-                if character == '}' && monitors_at.is_some_and(|at| depth == at + 1) {
-                    if let Some(monitor) = current.take() {
-                        if !monitor.name.is_empty() {
-                            monitors.push(monitor);
-                        }
-                    }
-                }
-
-                if character == ']' && monitors_at == Some(depth) {
-                    monitors_at = None;
-                }
-
-                depth = depth.checked_sub(1)?;
-
-                key = None;
-                wants_value = false;
-            }
-
-            _ => {}
-        }
-    }
-
-    found_monitors.then_some(monitors)
-}
-
-// the rest of a string whose opening quote was just read, escapes undone
-fn read_string(characters: &mut std::str::Chars) -> Option<String> {
-    let mut text = String::new();
-
-    loop {
-        match characters.next()? {
-            '"' => return Some(text),
-
-            '\\' => match characters.next()? {
-                'n' => text.push('\n'),
-                't' => text.push('\t'),
-                'r' => text.push('\r'),
-                'b' => text.push('\u{8}'),
-                'f' => text.push('\u{c}'),
-                'u' => {
-                    let hex: String = characters.by_ref().take(4).collect();
-                    let code = u32::from_str_radix(&hex, 16).ok()?;
-
-                    // half of a surrogate pair can't stand alone, it only shows up in emoji titles
-                    text.push(char::from_u32(code).unwrap_or('\u{fffd}'));
-                }
-                other => text.push(other),
-            },
-
-            character => text.push(character),
-        }
-    }
+    Some(
+        monitors
+            .iter()
+            .filter(|monitor| !monitor.get("name").text().is_empty())
+            .map(|monitor| Monitor {
+                name: String::from(monitor.get("name").text()),
+                symbol: String::from(monitor.get("layout_symbol").text()),
+            })
+            .collect(),
+    )
 }
 
 #[cfg(test)]
@@ -343,5 +242,10 @@ mod tests {
     fn anything_else_is_not_read() {
         assert!(parse("ok").is_none());
         assert!(parse(r#"{"other":[]}"#).is_none());
+    }
+
+    #[test]
+    fn no_monitors_is_an_empty_list() {
+        assert_eq!(parse(r#"{"monitors":[]}"#), Some(Vec::new()));
     }
 }

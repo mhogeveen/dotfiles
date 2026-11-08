@@ -1,6 +1,7 @@
 /*
- * a small json reader, for answers like `tailscale status --json`; amane's own
- * json library isn't available to the config, which can't add crates
+ * a small json reader, for answers like `tailscale status --json` and mango's
+ * `watch all-monitors`; amane's own json library isn't available to the config,
+ * which can't add crates
  *
  * reading is forgiving the way views like it: a missing key or the wrong kind
  * gives an empty answer (Null, "", false, an empty list) instead of an error

@@ -1,8 +1,9 @@
 # amane shell: recommendations
 
 Ideas for the shell, kept so they aren't lost between sessions. Each item has a
-status (open, done, dropped), why it's worth doing, where it would hook in and
-what to settle first. Update the status as items get done or dropped.
+status (open, blocked, parked), why it's worth doing, where it would hook in and
+what to settle first. Update the status as things change; once an item is
+built, move it to DONE.md, keeping its number.
 
 `amane compile` only builds `src/`, so this file doesn't affect the shell.
 
@@ -12,36 +13,27 @@ Settled earlier, no need to revisit:
 
 - Only one panel open at a time: every panel is in one group (`PANELS` in
   `src/panels/mod.rs`). Mango never gives the keyboard back to a panel left open
-  underneath, so stacked panels broke Escape.
+  underneath, so stacked panels broke Escape. The exception is the screenshot
+  menu, which is in no group, so it opens on top of other panels and they can
+  be captured.
 - amane's own `Apps` and `Network` services stay, despite their idle cost
   (~1% CPU each; see the upstream list).
 - No Do Not Disturb mode.
 - Font stays `BlexMono Nerd Font`, not the Mono or Propo variant.
 - Every accent, warning and error uses the accent picked in the system panel;
-  there are no separate warning/error colors.
+  there are no separate warning/error colors. Five fixed status colors
+  (error, warning, ok, hint, info) were tried and reverted.
 - Panels have a fixed size (showing, hiding or resizing a layer surface while
   another changes can crash the shell, see the upstream list).
+- Neovim: the relative `path = 'src/main.rs'` in `Cargo.toml` is what lets
+  rust-analyzer find the crate. Its `cargo check` diagnostics still fail, since
+  the dependencies' build scripts need amane's `pkg-config` setup; a
+  `rust-analyzer.toml` ignored the override commands, and changing the Neovim
+  config was declined.
+- No interim polkit agent (like `polkit_gnome`); wait for amane instead (item
+  10).
 
 ## Gaps worth closing first
-
-### 1. Idle lock, screen off, suspend
-- **Status:** done outside the shell: hypridle as a home-manager service in
-  `~/.nixos/home/hypridle.nix` (a systemd user service on
-  `graphical-session.target`, which mango's session target brings up). Lock
-  after 5 min, screen off after 5.5, suspend after 30.
-- **How it fits:** hypridle only calls `loginctl lock-session`; the shell's
-  `session::watch_logind` puts up amane's lock screen on logind's `Lock` (and
-  on `PrepareForSleep`), so there's no `lock_cmd`. The screen goes off with
-  `wlopm` (mango has wlr-output-power-management), not `mmsg dispatch
-  disable_monitor`, which removes the output and reshuffles layer surfaces.
-- **Limits:** mango has no lock-notify protocol, so hypridle can't hold sleep
-  until the lock screen is up (`inhibit_sleep = 3`); `before_sleep_cmd` waits
-  a second after locking instead, like the session menu's
-  `LOCK_BEFORE_SUSPEND`. No dimming: the old Hyprland setup used ddcutil,
-  which needs I2C (`hardware.i2c.enable`) and isn't set up. Idle locking
-  needs `XDG_SESSION_ID` in the shell's environment (mango's `exec_once`
-  passes it); without it, `lock_cmd = "amane ipc call lock"` would be the
-  fallback.
 
 ### 2. Volume and media keys, with an on-screen popup
 - **Status:** open
@@ -68,108 +60,46 @@ Settled earlier, no need to revisit:
 
 ### 4. Missing keybinds
 - **Status:** open
-- **Why:** session, calendar, screenshot (has `SUPER+p`), network, Bluetooth
-  and audio panels have no mango bind, except the ones listed in
+- **Why:** session, calendar, screenshot (has `SUPER+p`), network, Bluetooth,
+  audio and wallpaper panels have no mango bind, except the ones listed in
   `config.conf`. `SUPER+m` runs mango's `quit` straight away, while the session
   menu asks twice before logging out.
 - **Hooks in:** `mango/.config/mango/config.conf` only, using
   `amane ipc call panel toggle <name>`; `SUPER+m` could open the session menu
   instead.
 - **To settle:** which keys (several `SUPER+letter` are taken: h j k l t b q
-  r f g i o v c s n p m).
+  r f g i o v c s n p m; `SUPER+w` is free, a fit for the wallpaper picker).
 
 ## Polish on what exists
 
-### 5. Workspaces per monitor
-- **Status:** done: each bar shows only its monitor's workspaces; the one shown
-  on a monitor is wide (accent on the focused monitor, dimmed on others), urgent
-  ones are accent dots. No scrolling (decided against).
-- **Why:** every bar shows the workspaces of all monitors; with a second
-  screen each bar would show both. Urgent workspaces aren't marked.
-- **Hooks in:** `workspaces()` in `src/bar.rs`: filter `Workspaces::read()` on
-  `workspace.output() == monitor.name`; give urgent ones the accent; an
-  `on_scroll` on the dots to move between workspaces.
-- **To settle:** what scrolling should do (next/previous workspace, or
-  nothing).
+### 14. Notification history across restarts
+- **Status:** open
+- **Why:** every shell restart (`amane compile --restart`, `amane restart`)
+  empties the notification center.
+- **Hooks in:** keep the history in the state folder like the accent
+  (`src/state.rs`) and show it again after a restart (`src/notifications/`).
+- **To settle:** whether amane's `Notifications` service can be seeded, or the
+  shell keeps its own copy; how many to keep; whether a reboot drops them.
 
-### 6. Keys in the corner panels
-- **Status:** done: network `w` Wi-Fi, `r` rescan; Bluetooth `b` power, `r`
-  rescan; audio `m` mute, `n` mic mute, `j`/`k` volume -/+5%; notifications
-  `c` clear all. `?` shows them in the buttons, the switches and (for `j k`) the
-  volume percentage. Helpers: `ui::key_text_button`, `ui::switch` with a key.
-- **Why:** network, Bluetooth, audio and the notification center have no keys,
-  so `?` has nothing to show there.
-- **Hooks in:** each panel's `view` passes a key handler to `panel()` and uses
-  `ui::key_button` (`src/panels/ui.rs`) for the buttons with a key. Ideas:
-  network `w` Wi-Fi on/off, `r` rescan; Bluetooth `b` power, `r` rescan;
-  audio `m` mute, `j`/`k` volume; notifications `c` clear all.
-- **To settle:** the exact letters. The on/off switches aren't square, so
-  they'd need a key variant of `ui::switch`.
+### 15. A key for the clipboard's "Clear history"
+- **Status:** open
+- **Why:** clearing is click-only (click twice); every other action in the
+  panels has a key.
+- **Hooks in:** `src/panels/clipboard.rs`, arming and confirming like the
+  button does, e.g. with `!`.
+- **To settle:** which key, given that the search box takes every typed
+  character.
 
-### 7. Launcher
-- **Status:** done: frecency ranking (score +1 per launch, halves every 7 days,
-  kept in `~/.local/state/amane-shell/launches`, `src/usage.rs`); empty search
-  shows used apps first; `=sum` calculator (`src/calculator.rs`), Enter copies
-  the answer; `>cmd` runs in the background, `>>cmd` in foot, then your shell.
-  `?` in an empty search box shows a help screen in every search panel
-  (launcher, clipboard, layout); `Picker::help()` in `src/panels/picker.rs`.
-- **Why:** results are ranked by match quality only.
-- **Hooks in:** `src/panels/launcher.rs` (a `Picker`): remember launch counts
-  in a state file like the accent (`~/.local/state/amane-shell/`) and use them
-  as a tie-breaker; optionally a `=` prefix for a calculator or `>` to run a
-  command.
-- **To settle:** which of the three.
-
-### 8. Clipboard
-- **Status:** done: the × on the selected row removes an entry (`cliphist
-  delete`); no delete key, as amane reports Delete like Shift or Ctrl (see the
-  upstream list); a "Clear history" button under the list, clicked
-  twice, wipes it all; the selected entry shows in full beside the list (text,
-  or the picture decoded to `$XDG_RUNTIME_DIR/amane-shell/clipboard`,
-  `src/clipboard_preview.rs`). Picker hooks for this: `moved`, `footer`,
-  `preview`.
-- **Why:** entries can't be deleted, and the history can't be cleared.
-- **Hooks in:** `src/panels/clipboard.rs` (a `Picker`): `cliphist delete` for
-  the selected entry and `cliphist wipe` for all. The search box takes letter
-  keys, so these need buttons or non-letter keys (amane has no modifiers or
-  Delete key). Optionally a preview of image entries via `cliphist decode` to a
-  temporary file.
-- **To settle:** how to trigger delete and clear without modifier keys.
-
-### 9. Weather in the calendar
-- **Status:** done: beside the month in the calendar panel, from Open-Meteo
-  (csv, no key; `src/weather/`): now, 7 three-hour slots for the next 24
-  hours (the first labelled Now) and 7 day slots, under "Next 24 hours" and
-  "Next 7 days". Fetched when the panel opens, at most every 30 min; `r`
-  refetches. Place set with `amane ipc call weather location <lat> <lon>
-  <name>`, kept in `~/.local/state/amane-shell/weather` (Hilversum by
-  default).
-- **Why:** asked for when the calendar was built; the panel was laid out as a
-  list of sections for this.
-- **Hooks in:** a new section after `calendar_section` in
-  `src/panels/calendar.rs`, a weather service fetched only when the panel opens
-  and kept for a while, and a `HEIGHT` increase.
-- **To settle:** source (wttr.in or Open-Meteo, both need no API key), the
-  location, and what to show (now only, or a few days).
-
-### 13. VPN and Tailscale
-- **Status:** done in the shell (`src/vpn/`, `src/json.rs`): a small shield badge
-  on the network icon's corner while a vpn is up (accent when all traffic goes
-  through it, found with `ip route get`); a Tailscale card in the network panel
-  (Tailscale@name, its IP, Connect/Disconnect on `v`, Log in on `i`) and
-  lines for other tunnels (WireGuard, tun); the shield in the system panel's
-  network row. Exit nodes: with hundreds on the tailnet (Mullvad), the card
-  shows only None, what `tailscale exit-node suggest` suggests (asked when the
-  panel opens and after each change), and the one in use if that's another
-  (named via `tailscale whois`, asked once per change). Status is read with
-  `--peers=false` (3 KB instead of 850 KB). Checks every 5 s (2 s with the
-  network or system panel open); `ip` and `tailscale` only run while a tunnel
-  exists.
-- **Your part:** `services.tailscale.enable = true;` in
-  `~/.nixos/hosts/prometheus/default.nix`, then once `sudo tailscale up` and
-  `sudo tailscale set --operator=maarten`.
-- **Later, maybe:** `src/layout.rs` has its own small reader for mango's json;
-  it could use `src/json.rs` now.
+### 17. Decorations for floating windows
+- **Status:** parked
+- **Why:** floating windows have no title bars.
+- **Hooks in:** not amane: layer surfaces can't stack between app windows
+  (they're above or below all of them), and moving them along with a window
+  risks the layer-surface crash. mango has `allow_csd` (apps draw their own
+  title bars), borders, `border_radius` and scenefx shadows; its group and tab
+  bars only decorate grouped windows.
+- **To settle:** whether `allow_csd` and the border/shadow options are enough,
+  after checking mango's docs.
 
 ## Outside the shell
 
@@ -208,22 +138,6 @@ Settled earlier, no need to revisit:
   - the identity: your own user if polkit lists it, else the first
     `unix-user`; requests arriving while one is open wait their turn.
 
-### 11. Wallpaper
-- **Status:** done (`src/wallpaper.rs`, `src/panels/wallpaper.rs`): a window
-  per monitor on the background layer draws the picture (decoded at most at
-  twice the monitor's size), or stays see-through for None so mango's
-  `root_color` shows. The picker is a full-width strip along the bottom,
-  opened from the system panel (`w`) or `amane ipc call panel toggle
-  wallpaper`: None, then the PNG/JPEG files in `~/Pictures/Wallpapers` (told
-  apart by their first bytes, read again each time it opens or on `r`).
-  h/l or the arrows preview on the real background, Enter or a click keeps
-  it, Escape or clicking outside puts back the one in use. The choice is in
-  the state file `wallpaper` (a path or `none`). The lock screen shows the
-  wallpaper blurred and darkened, plain `bg_deep` with None.
-- **Limits:** the preview only shows where no window covers the background
-  (decided against drawing it over windows). WebP isn't supported by amane's
-  decoder. The wallpaper doesn't follow the accent (decided against).
-
 ### 12. Leftovers
 - **Status:** open
 - **Why:** no longer used since the shell took over.
@@ -233,7 +147,21 @@ Settled earlier, no need to revisit:
   - `fuzzel` in `~/.nixos/home/packages.nix`, its config symlink there, and
     the `fuzzel` config folder
   - the `wlogout` config (points at `uwsm stop`, which isn't installed)
-  - the `hypr` folder, if Hyprland isn't used any more
+  - the `hypr` folder: unused here, since hypridle's config is now generated
+    by home-manager (`~/.nixos/home/hypridle.nix`)
+  - the `rofi`, `waybar` and `uwsm` folders in `~/.nixos/config`. That folder
+    is a git submodule that also holds macOS configs (hammerspoon, karabiner
+    and others), so these may be used on another machine; check before
+    deleting.
+
+### 18. Dimming before the lock
+- **Status:** open
+- **Why:** the old Hyprland setup dimmed the monitor with `ddcutil` before
+  locking; hypridle (item 1 in DONE.md) only locks, turns the screen off and
+  suspends.
+- **Hooks in:** a listener in `~/.nixos/home/hypridle.nix`; NixOS needs
+  `hardware.i2c.enable = true`, the `i2c` group and `ddcutil`.
+- **To settle:** whether it's wanted, and whether the monitor supports DDC/CI.
 
 ## Worth reporting to amane upstream
 
@@ -276,3 +204,10 @@ up as issue texts.
   makes its own calls to report failures.
 - **Patches to `~/.cache/amane/library` are overwritten** by `amane compile`,
   so library fixes can't be tried locally.
+- **`ScrollArea` only scrolls up and down**, so the wallpaper strip slides its
+  window along with the selection instead.
+- **`Monitor` has no scale factor**, so the wallpaper is decoded at twice the
+  monitor's size in widget units, a guess that covers scales up to 2.
+- **The image decoder reads PNG and JPEG only**, not WebP.
+- **Every image asked for starts its own decode thread**, with no limit: many
+  full-size pictures requested at once all decode in parallel.
