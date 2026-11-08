@@ -10,9 +10,11 @@
  * the cards clickable and let clicks through everywhere else
  */
 
+use std::path::PathBuf;
 use std::time::SystemTime;
 
 use amane::{
+    Action,
     Align::{Center, Start},
     Apps, Button, Column,
     Cursor::Pointer,
@@ -23,6 +25,7 @@ use amane::{
 
 use crate::theme::Theme;
 
+use super::history::Kept;
 use super::{icon_path, plain, time_ago};
 
 const PADDING: f32 = 12.0;
@@ -40,29 +43,69 @@ pub struct Options {
     pub now: Option<SystemTime>,
 }
 
+/*
+ * what a card shows, from a live notification or one restored after a restart
+ * (src/notifications/history.rs)
+ */
+pub struct Content<'a> {
+    app_name: &'a str,
+    summary: &'a str,
+    body: &'a str,
+    icon: Option<PathBuf>,
+    urgency: Urgency,
+    received: SystemTime,
+
+    // the live notification's id and buttons; a restored one has neither
+    live: Option<(u32, &'a [Action])>,
+}
+
+impl<'a> Content<'a> {
+    pub fn live(notification: &'a Notification, apps: &Apps) -> Self {
+        Self {
+            app_name: notification.app_name(),
+            summary: notification.summary(),
+            body: notification.body(),
+            icon: icon_path(
+                notification.image(),
+                notification.icon(),
+                notification.app_name(),
+                apps,
+            ),
+            urgency: notification.urgency(),
+            received: notification.received(),
+            live: Some((notification.id(), notification.actions())),
+        }
+    }
+
+    // its sender can't be reached any more: no buttons, and clicking it does nothing
+    pub fn kept(kept: &'a Kept, apps: &Apps) -> Self {
+        Self {
+            app_name: &kept.app_name,
+            summary: &kept.summary,
+            body: &kept.body,
+            icon: icon_path(&kept.image, &kept.icon, &kept.app_name, apps),
+            urgency: kept.urgency,
+            received: kept.received,
+            live: None,
+        }
+    }
+}
+
 // the card and its height
 pub fn card(
     t: &Theme,
-    apps: &Apps,
-    notification: &Notification,
+    content: Content,
     options: Options,
     on_close: impl Fn(Button) + 'static,
 ) -> (Rectangle, f32) {
     let inner = options.width - PADDING * 2.0;
-    let id = notification.id();
 
     let mut parts: Vec<Box<dyn Widget>> = Vec::new();
     let mut height = PADDING * 2.0 + HEADER;
 
-    parts.push(Box::new(header(
-        t,
-        apps,
-        notification,
-        options.now,
-        on_close,
-    )));
+    parts.push(Box::new(header(t, &content, options.now, on_close)));
 
-    let summary = notification.summary().trim();
+    let summary = content.summary.trim();
 
     let summary = (!summary.is_empty()).then(|| {
         Text::new(summary)
@@ -72,7 +115,7 @@ pub fn card(
             .elide()
     });
 
-    let body = plain(notification.body());
+    let body = plain(content.body);
     let body = body.trim();
 
     let body = (!body.is_empty()).then(|| {
@@ -100,13 +143,15 @@ pub fn card(
         ));
     }
 
-    if !notification.actions().is_empty() {
+    if let Some((id, buttons)) = content.live
+        && !buttons.is_empty()
+    {
         height += GAP + ACTIONS;
 
-        parts.push(Box::new(actions(t, notification)));
+        parts.push(Box::new(actions(t, id, buttons)));
     }
 
-    let border = match notification.urgency() {
+    let border = match content.urgency {
         Urgency::Critical => t.accent,
         _ => t.bg3,
     };
@@ -117,31 +162,35 @@ pub fn card(
         .fill(t.bg0)
         .border(1.0, border)
         .padding(PADDING)
-        .clip()
-        .cursor(Pointer)
-        .on_click(move |_| Notifications::click(id))
-        .child(Column::new(parts).gap(GAP));
+        .clip();
 
-    (card, height)
+    // only a live one does something when clicked
+    let card = match content.live {
+        Some((id, _)) => card
+            .cursor(Pointer)
+            .on_click(move |_| Notifications::click(id)),
+        None => card,
+    };
+
+    (card.child(Column::new(parts).gap(GAP)), height)
 }
 
 fn header(
     t: &Theme,
-    apps: &Apps,
-    notification: &Notification,
+    content: &Content,
     now: Option<SystemTime>,
     on_close: impl Fn(Button) + 'static,
 ) -> Row {
     let icon = Rectangle::new().width(HEADER).height(HEADER);
 
-    let icon = match icon_path(notification, apps) {
-        Some(path) => icon.fill(Image::contain(path)),
+    let icon = match &content.icon {
+        Some(path) => icon.fill(Image::contain(path.clone())),
         None => icon
             .align_child(Center, Center)
             .child(Text::new("\u{f009a}").size(14.0).color(t.fg_dim)),
     };
 
-    let sender = match notification.app_name() {
+    let sender = match content.app_name {
         "" => "Notification",
         name => name,
     };
@@ -156,7 +205,7 @@ fn header(
 
     if let Some(now) = now {
         parts.push(Box::new(
-            Text::new(time_ago(notification.received(), now))
+            Text::new(time_ago(content.received, now))
                 .size(12.0)
                 .color(t.comment),
         ));
@@ -176,15 +225,13 @@ fn header(
 }
 
 // the buttons share the row evenly
-fn actions(t: &Theme, notification: &Notification) -> Row {
-    let id = notification.id();
+fn actions(t: &Theme, id: u32, buttons: &[Action]) -> Row {
+    let mut row: Vec<Box<dyn Widget>> = Vec::new();
 
-    let mut buttons: Vec<Box<dyn Widget>> = Vec::new();
-
-    for action in notification.actions() {
+    for action in buttons {
         let key = String::from(action.key());
 
-        buttons.push(Box::new(
+        row.push(Box::new(
             Rectangle::new()
                 .width(Parent)
                 .height(ACTIONS)
@@ -202,7 +249,7 @@ fn actions(t: &Theme, notification: &Notification) -> Row {
         ));
     }
 
-    Row::new(buttons).gap(GAP).height(ACTIONS)
+    Row::new(row).gap(GAP).height(ACTIONS)
 }
 
 // a placeholder card-sized message, for the center's empty state

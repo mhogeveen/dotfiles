@@ -35,6 +35,9 @@ fn main() {
     // records the clipboard from the start, the panel only reads it when open
     panels::clipboard::start();
 
+    // restores the notifications from before a restart, and keeps saving them
+    notifications::history::start();
+
     App::new()
         .font("BlexMono Nerd Font")
         .ipc("panel", panels::ipc)

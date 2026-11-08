@@ -198,9 +198,10 @@ pub fn view(monitor: &Monitor) -> LayerWindow {
                 now: None,
             };
 
-            let (card, height) = card::card(&t, &apps, notification, options, move |_| {
-                Toasts::hide(id, received)
-            });
+            let content = card::Content::live(notification, &apps);
+
+            let (card, height) =
+                card::card(&t, content, options, move |_| Toasts::hide(id, received));
 
             // a card that wouldn't fit whole waits for room
             if top + height > HEIGHT {

@@ -47,8 +47,6 @@ impl Value {
         matches!(self, Value::Bool(true))
     }
 
-    // nothing reads numbers yet, the reader has them for whoever does
-    #[allow(dead_code)]
     pub fn number(&self) -> Option<f64> {
         match self {
             Value::Number(number) => Some(*number),
@@ -75,6 +73,31 @@ impl Value {
     pub fn is_null(&self) -> bool {
         matches!(self, Value::Null)
     }
+}
+
+// text as a json string, quotes included: what parse reads back as the same text
+pub fn quote(text: &str) -> String {
+    let mut quoted = String::with_capacity(text.len() + 2);
+
+    quoted.push('"');
+
+    for character in text.chars() {
+        match character {
+            '"' => quoted.push_str("\\\""),
+            '\\' => quoted.push_str("\\\\"),
+            '\n' => quoted.push_str("\\n"),
+            '\t' => quoted.push_str("\\t"),
+            '\r' => quoted.push_str("\\r"),
+            control if control < ' ' => {
+                quoted.push_str(&format!("\\u{:04x}", control as u32));
+            }
+            character => quoted.push(character),
+        }
+    }
+
+    quoted.push('"');
+
+    quoted
 }
 
 // the whole text must be one json value, with only whitespace around it
@@ -318,6 +341,22 @@ mod tests {
         assert_eq!(value.list()[1].text(), "é😀");
         assert_eq!(value.list()[2].number(), Some(-150.0));
         assert_eq!(value.list()[3].number(), Some(0.0));
+    }
+
+    #[test]
+    fn quoted_text_reads_back_the_same() {
+        for text in [
+            "",
+            "plain",
+            "a \"quote\" and \\",
+            "lines\nand\ttabs\r",
+            "bell\u{7}",
+            "é 😀",
+        ] {
+            assert_eq!(parse(&quote(text)).expect("json").text(), text);
+        }
+
+        assert_eq!(quote("a\"b"), r#""a\"b""#);
     }
 
     #[test]

@@ -8,11 +8,12 @@ use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 use std::time::{Duration, SystemTime};
 
-use amane::{Apps, Argument, Bus, Notification, Notifications, Service, Urgency};
+use amane::{Apps, Argument, Bus, Notifications, Service, Urgency};
 
 use crate::panels::{NOTIFICATIONS, Panels};
 
 pub mod card;
+pub mod history;
 pub mod popups;
 
 // when the notification center was last closed; anything newer is unread
@@ -117,26 +118,23 @@ pub fn send(app_name: &str, summary: &str, body: &str, urgency: Urgency, image: 
 }
 
 /*
- * the picture to show: the notification's own image, then its icon as a file,
- * then the icon of the installed app it names or comes from
+ * the picture to show: a notification's own image, then its icon as a file,
+ * then the icon of the installed app it names (icon) or comes from (sender)
  */
-pub fn icon_path(notification: &Notification, apps: &Apps) -> Option<PathBuf> {
+pub fn icon_path(image: &str, icon: &str, sender: &str, apps: &Apps) -> Option<PathBuf> {
     let file = |value: &str| {
         let path = PathBuf::from(value.strip_prefix("file://").unwrap_or(value));
 
         (path.is_absolute() && path.exists()).then_some(path)
     };
 
-    if let Some(path) = file(notification.image()) {
+    if let Some(path) = file(image) {
         return Some(path);
     }
 
-    if let Some(path) = file(notification.icon()) {
+    if let Some(path) = file(icon) {
         return Some(path);
     }
-
-    let icon = notification.icon();
-    let sender = notification.app_name();
 
     apps.list()
         .iter()

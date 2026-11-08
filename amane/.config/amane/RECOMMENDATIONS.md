@@ -72,15 +72,6 @@ Settled earlier, no need to revisit:
 
 ## Polish on what exists
 
-### 14. Notification history across restarts
-- **Status:** open
-- **Why:** every shell restart (`amane compile --restart`, `amane restart`)
-  empties the notification center.
-- **Hooks in:** keep the history in the state folder like the accent
-  (`src/state.rs`) and show it again after a restart (`src/notifications/`).
-- **To settle:** whether amane's `Notifications` service can be seeded, or the
-  shell keeps its own copy; how many to keep; whether a reboot drops them.
-
 ### 15. A key for the clipboard's "Clear history"
 - **Status:** open
 - **Why:** clearing is click-only (click twice); every other action in the

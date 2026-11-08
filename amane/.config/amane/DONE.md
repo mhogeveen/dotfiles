@@ -141,3 +141,21 @@ are kept, so references between the two files still work.
   shared reader in `src/json.rs` came later (noted under item 13 in DONE.md).
 - **Hooks in:** `src/layout.rs` only, with its tests kept.
 - **To settle:** nothing, it's a cleanup.
+
+### 14. Notification history across restarts
+- **Status:** done (`src/notifications/history.rs`): the notifications in the
+  center are saved to `$XDG_RUNTIME_DIR/amane-shell/notifications.json` (the
+  newest 50, written within a second of a change, through a temporary file),
+  so they survive shell restarts but not logout or reboot. A restarted shell
+  shows them under "Earlier" below the live ones: read-only, since their
+  senders can't be reached (amane's ids start over), so no buttons and
+  clicking does nothing; × and Clear all remove them, along with pictures
+  amane saved for them. They never pop up again and count as read. amane's
+  list can't be seeded (crate-private fields), so `card::Content` takes a live
+  or a restored one; `json::quote` writes the file.
+- **Why:** every shell restart (`amane compile --restart`, `amane restart`)
+  empties the notification center.
+- **Hooks in:** keep the history in the state folder like the accent
+  (`src/state.rs`) and show it again after a restart (`src/notifications/`).
+- **To settle:** whether amane's `Notifications` service can be seeded, or the
+  shell keeps its own copy; how many to keep; whether a reboot drops them.
