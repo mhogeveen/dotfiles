@@ -59,9 +59,13 @@ pub struct PanelDef {
 }
 
 /*
- * the one group every panel is in, so only one is ever open: when a panel that has
+ * the group every panel is in, so only one is ever open: when a panel that has
  * the keyboard closes, mango gives the keyboard to a window, never to another
  * panel, so escape could no longer reach a panel left open underneath
+ *
+ * except the screenshot menu, which opens on top so open panels can be captured;
+ * the panel underneath loses the keyboard once the menu (or slurp) closes, and
+ * gets it back when clicked
  */
 const PANELS: &str = "panels";
 
@@ -79,7 +83,7 @@ static REGISTRY: &[PanelDef] = &[
     },
     PanelDef {
         name: SCREENSHOT,
-        groups: &[PANELS],
+        groups: &[],
         on_close: Some(screenshot::reset),
     },
     PanelDef {

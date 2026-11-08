@@ -7,6 +7,7 @@ mod calculator;
 mod calendar;
 mod clipboard_preview;
 mod clock;
+mod json;
 mod layout;
 mod lock;
 mod network;
@@ -18,6 +19,8 @@ mod state;
 mod system;
 mod theme;
 mod usage;
+mod vpn;
+mod weather;
 
 fn main() {
     // locks on suspend and `loginctl lock-session`
@@ -36,6 +39,7 @@ fn main() {
         .ipc("panel", panels::ipc)
         .ipc("lock", session::lock_ipc)
         .ipc("accent", theme::accent_ipc)
+        .ipc("weather", weather::ipc)
         .window_per_monitor(bar::view)
         .window_per_monitor(panels::backdrop::view)
         .window_per_monitor(notifications::popups::view)

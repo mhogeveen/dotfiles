@@ -4,7 +4,7 @@ use amane::{
     Cursor::Pointer,
     Full, Layer, LayerWindow, Monitor, Network, Padding, Rectangle, Row, Service,
     Size::Parent,
-    Text, Vertical, Widget, Workspaces, Zone, children,
+    Stack, Text, Vertical, Widget, Workspaces, Zone, children,
 };
 
 use crate::{
@@ -17,6 +17,7 @@ use crate::{
     network as net, notifications,
     panels::{AUDIO, BLUETOOTH, NETWORK, Panels, SYSTEM, audio::volume_icon, layout},
     theme::{Theme, theme},
+    vpn::{self, Vpn},
 };
 
 pub fn view(monitor: &Monitor) -> LayerWindow {
@@ -195,6 +196,35 @@ fn network(t: &Theme) -> Rectangle {
         _ => t.fg_dim,
     };
 
+    let icon = Rectangle::new()
+        .width(GLYPH)
+        .height(GLYPH)
+        .align_child(Center, Center)
+        .child(Text::new(status.icon()).size(14.0).color(color));
+
+    let mut layers: Vec<Box<dyn Widget>> = vec![Box::new(icon)];
+
+    /*
+     * a badge on the icon's top-right corner while a vpn is up: dim while it only
+     * reaches its own network, in the accent while all traffic goes through it,
+     * like a tailscale exit node. a disc of the bar's own color under the shield
+     * cuts it loose from the wifi bars it overlaps
+     */
+    if let Some(all_traffic) = Vpn::read().shield() {
+        let shield = if all_traffic { t.accent } else { t.fg_dim };
+
+        layers.push(Box::new(
+            Rectangle::new()
+                .width(BADGE)
+                .height(BADGE)
+                .radius(Full)
+                .fill(t.bg_deep)
+                .align_child(Center, Center)
+                .translate(BADGE_X, BADGE_Y)
+                .child(Text::new(vpn::ICON_SHIELD).size(BADGE_GLYPH).color(shield)),
+        ));
+    }
+
     Rectangle::new()
         .width(ICON_WIDTH)
         .height(Parent)
@@ -203,8 +233,15 @@ fn network(t: &Theme) -> Rectangle {
         .on_click(|_| {
             let _ = Panels::toggle(NETWORK);
         })
-        .child(Text::new(status.icon()).size(14.0).color(color))
+        .child(Stack::new(layers))
 }
+
+// the network glyph's box, and the vpn badge on its top-right corner
+const GLYPH: f32 = 16.0;
+const BADGE: f32 = 10.0;
+const BADGE_GLYPH: f32 = 9.0;
+const BADGE_X: f32 = 10.0;
+const BADGE_Y: f32 = -4.0;
 
 // off, on, or a device connected; the accent while a pairing code waits for an answer
 fn bluetooth(t: &Theme) -> Option<Rectangle> {

@@ -12,7 +12,7 @@ use amane::{
     Cursor::Pointer,
     Key, LayerWindow, Monitor, Rectangle, Row, ScrollArea, Service,
     Size::Parent,
-    Text, Weight, Widget, children,
+    Text, Widget, children,
 };
 
 use super::ui::{self, BUTTON, PADDING, SIDES, button};
@@ -247,7 +247,7 @@ fn devices(t: &Theme, bluetooth: &Bluetooth, panel: &BluetoothPanel) -> Rectangl
                 continue;
             }
 
-            rows.push(section(t, title));
+            rows.push(Box::new(ui::heading(t, title, SECTION).padding(SIDES)));
 
             if devices.is_empty() {
                 let text = if bluetooth.scanning() {
@@ -272,22 +272,6 @@ fn devices(t: &Theme, bluetooth: &Bluetooth, panel: &BluetoothPanel) -> Rectangl
         .border(1.0, t.bg3)
         .clip()
         .child(ScrollArea::new("bluetooth-list", Column::new(rows)))
-}
-
-fn section(t: &Theme, title: &str) -> Box<dyn Widget> {
-    Box::new(
-        Rectangle::new()
-            .width(Parent)
-            .height(SECTION)
-            .padding(SIDES)
-            .align_child(Start, Center)
-            .child(
-                Text::new(title)
-                    .size(12.0)
-                    .weight(Weight::Bold)
-                    .color(t.comment),
-            ),
-    )
 }
 
 fn note(t: &Theme, text: &str) -> Box<dyn Widget> {

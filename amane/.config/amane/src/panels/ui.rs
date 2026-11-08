@@ -83,6 +83,23 @@ pub fn icon_button_colored(
         .child(Text::new(glyph).size(14.0).color(color))
 }
 
+// a section heading's usual height
+pub const HEADING: f32 = 16.0;
+
+// a small bold dim title over a part of a panel, like "Settings" or "Next 7 days"
+pub fn heading(t: &Theme, text: &str, height: f32) -> Rectangle {
+    Rectangle::new()
+        .width(Parent)
+        .height(height)
+        .align_child(Start, Center)
+        .child(
+            Text::new(text)
+                .size(12.0)
+                .weight(Weight::Bold)
+                .color(t.comment),
+        )
+}
+
 // the bold panel name on the left of a header row, taking the room the buttons leave
 pub fn title(t: &Theme, text: &str) -> Rectangle {
     Rectangle::new()

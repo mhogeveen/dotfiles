@@ -20,6 +20,7 @@ use super::{NOTIFICATIONS, Panels, SESSION, SYSTEM, panel};
 use crate::notifications::{self, ICON_BELL, ICON_BELL_OUTLINE};
 use crate::system::{self, NetworkSpeed, SystemInfo};
 use crate::theme::{ACCENTS, Accent, Theme};
+use crate::vpn::{self, Vpn};
 
 // header, details, five diagnostics rows (a laptop's battery included) and the settings
 const HEIGHT: f32 = 324.0;
@@ -54,7 +55,7 @@ fn content(t: &Theme) -> Rectangle {
 
     parts.extend(meters(t, &info));
 
-    parts.push(Box::new(section(t, "Settings")));
+    parts.push(Box::new(ui::heading(t, "Settings", LINE)));
     parts.push(Box::new(accent_setting(t)));
 
     ui::frame(t, GAP, parts)
@@ -239,29 +240,12 @@ fn network_row(t: &Theme, network: Option<&NetworkSpeed>) -> Row {
             .height(BUTTON)
             .align_child(Start, Center)
             .child(Text::new(speeds).size(12.0).color(t.fg).elide()),
-        Rectangle::new()
-            .width(INTERFACE)
-            .height(BUTTON)
-            .align_child(End, Center)
-            .child(Text::new(interface).size(12.0).color(t.comment).elide()),
+        interface_with_shield(t, interface),
     ])
     .width(Parent)
     .gap(GAP)
     .align(Center)
     .height(BUTTON)
-}
-
-fn section(t: &Theme, title: &str) -> Rectangle {
-    Rectangle::new()
-        .width(Parent)
-        .height(LINE)
-        .align_child(Start, Center)
-        .child(
-            Text::new(title)
-                .size(12.0)
-                .weight(Weight::Bold)
-                .color(t.comment),
-        )
 }
 
 const SWATCH: f32 = 20.0;
@@ -304,4 +288,28 @@ fn accent_setting(t: &Theme) -> Row {
     .gap(GAP)
     .align(Center)
     .height(BUTTON)
+}
+
+/*
+ * the interface name, with the vpn shield after it while one is up: dim for
+ * a vpn that only reaches its own network, the accent while all traffic goes
+ * through it (the speed is still measured on the interface underneath)
+ */
+fn interface_with_shield(t: &Theme, interface: String) -> Rectangle {
+    let mut parts: Vec<Box<dyn Widget>> =
+        vec![Box::new(Text::new(interface).size(12.0).color(t.comment))];
+
+    if let Some(all_traffic) = Vpn::read().shield() {
+        let color = if all_traffic { t.accent } else { t.fg_dim };
+
+        parts.push(Box::new(
+            Text::new(vpn::ICON_SHIELD).size(11.0).color(color),
+        ));
+    }
+
+    Rectangle::new()
+        .width(INTERFACE)
+        .height(BUTTON)
+        .align_child(End, Center)
+        .child(Row::new(parts).gap(4.0).align(Center))
 }

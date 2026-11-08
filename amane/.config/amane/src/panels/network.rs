@@ -22,6 +22,7 @@ use super::ui::{self, BUTTON, PADDING, SIDES, button};
 use super::{NETWORK, panel};
 use crate::network::{self, ICON_LOCK, ICON_RESCAN, NetworkPanel, Outcome, Status};
 use crate::theme::Theme;
+use crate::vpn::{self, Backend, Status as Tailscale, Suggestion, Vpn, tailscale};
 
 const HEIGHT: f32 = 560.0;
 const GAP: f32 = 8.0;
@@ -44,6 +45,8 @@ pub fn view(monitor: &Monitor) -> LayerWindow {
 
 const KEY_WIFI: char = 'w';
 const KEY_RESCAN: char = 'r';
+const KEY_TAILSCALE: char = 'v';
+const KEY_LOG_IN: char = 'i';
 
 // the header's buttons by their letters; a password being typed keeps the letters for itself
 fn key_pressed(key: Key) {
@@ -54,8 +57,19 @@ fn key_pressed(key: Key) {
     match letter.to_ascii_lowercase() {
         KEY_WIFI => toggle_wifi(),
         KEY_RESCAN => Network::scan(),
+        KEY_TAILSCALE if tailscale().0 => Vpn::toggle_tailscale(),
+        KEY_LOG_IN if tailscale().1 => Vpn::log_in(),
         _ => {}
     }
+}
+
+// whether tailscale is there, and whether it waits for a login; read and let go before acting
+fn tailscale() -> (bool, bool) {
+    let vpn = Vpn::read();
+
+    let status = vpn.tailscale();
+
+    (status.is_some(), status.is_some_and(needs_login))
 }
 
 fn toggle_wifi() {
@@ -72,6 +86,9 @@ fn content(t: &Theme) -> Rectangle {
         Box::new(header(t, &network)),
         Box::new(connection(t, &network, &panel)),
     ];
+
+    // tailscale, and any other vpn there is
+    parts.extend(vpn_parts(t));
 
     if let Some(result) = panel.result() {
         parts.push(Box::new(result_line(t, result)));
@@ -420,4 +437,279 @@ fn join(ssid: &str, password: &str) {
     clear_password();
 
     NetworkPanel::connect(ssid, Some(password));
+}
+
+const CARD_TITLE: f32 = 20.0;
+const CARD_LINE: f32 = 16.0;
+const ACTION_WIDTH: f32 = 100.0;
+
+// the tailscale card, then a line for every other tunnel
+fn vpn_parts(t: &Theme) -> Vec<Box<dyn Widget>> {
+    let vpn = Vpn::read();
+
+    let mut parts: Vec<Box<dyn Widget>> = Vec::new();
+
+    if let Some(status) = vpn.tailscale() {
+        parts.push(Box::new(tailscale_card(t, &vpn, status)));
+    }
+
+    for tunnel in vpn.others() {
+        let all = vpn.all_traffic() == Some(tunnel);
+
+        let mut line = format!("VPN {} · {}", tunnel.interface, tunnel.kind.name());
+
+        if all {
+            line.push_str(" · all traffic");
+        }
+
+        parts.push(Box::new(
+            Row::new(children![
+                Text::new(vpn::ICON_SHIELD)
+                    .size(13.0)
+                    .color(if all { t.accent } else { t.fg_dim }),
+                Rectangle::new()
+                    .width(Parent)
+                    .height(LINE)
+                    .align_child(Start, Center)
+                    .child(Text::new(line).size(12.0).color(t.fg_dim).elide()),
+            ])
+            .gap(GAP)
+            .align(Center)
+            .height(LINE),
+        ));
+    }
+
+    parts
+}
+
+/*
+ *  Tailscale@prometheus                       Connected
+ *  100.67.176.75
+ *  <the last error, click to dismiss>
+ *  [ Disconnect ]  [ Log in ]
+ *  Exit node   [ none ] [ nas ] [ vps-ams ]
+ */
+fn tailscale_card(t: &Theme, vpn: &Vpn, status: &Tailscale) -> Rectangle {
+    let connected = status.connected();
+
+    let state = if vpn.busy() {
+        "Working…"
+    } else {
+        match status.backend {
+            Backend::Running => "Connected",
+            Backend::Stopped => "Disconnected",
+            Backend::NeedsLogin => "Log in needed",
+            Backend::Starting => "Starting…",
+            Backend::Other(_) => "",
+        }
+    };
+
+    // before logging in there's no name yet
+    let title = if status.name.is_empty() {
+        String::from("Tailscale")
+    } else {
+        format!("Tailscale@{}", status.name)
+    };
+
+    let top = Row::new(children![
+        Rectangle::new()
+            .width(Parent)
+            .height(CARD_TITLE)
+            .align_child(Start, Center)
+            .child(
+                Text::new(title)
+                    .size(14.0)
+                    .weight(Weight::Bold)
+                    .color(t.fg)
+                    .elide()
+            ),
+        Text::new(state).size(12.0).color(t.fg_dim),
+    ])
+    .gap(GAP)
+    .align(Center)
+    .height(CARD_TITLE);
+
+    let mut parts: Vec<Box<dyn Widget>> = vec![Box::new(top)];
+    let mut height = PADDING * 2.0 + CARD_TITLE;
+
+    if connected {
+        height += GAP + CARD_LINE;
+
+        parts.push(Box::new(card_line(status.ip.clone(), t.comment)));
+    }
+
+    if let Some(error) = vpn.error() {
+        height += GAP + CARD_LINE;
+
+        parts.push(Box::new(
+            card_line(String::from(error), t.accent)
+                .cursor(Pointer)
+                .on_click(|_| Vpn::dismiss_error()),
+        ));
+    }
+
+    let label = if status.active() {
+        "Disconnect"
+    } else {
+        "Connect"
+    };
+
+    let mut actions: Vec<Box<dyn Widget>> = vec![Box::new(ui::key_text_button(
+        t,
+        label,
+        ACTION_WIDTH,
+        KEY_TAILSCALE,
+        |_| Vpn::toggle_tailscale(),
+    ))];
+
+    // tailscale hands out a login page instead of asking for a password
+    if needs_login(status) {
+        actions.push(Box::new(ui::key_text_button(
+            t,
+            "Log in",
+            ACTION_WIDTH,
+            KEY_LOG_IN,
+            |_| Vpn::log_in(),
+        )));
+    }
+
+    height += GAP + BUTTON;
+
+    parts.push(Box::new(Row::new(actions).gap(GAP).height(BUTTON)));
+
+    if connected {
+        let (column, column_height) = exit_nodes(t, vpn);
+
+        height += GAP + column_height;
+
+        parts.push(Box::new(column));
+    }
+
+    Rectangle::new()
+        .width(Parent)
+        .height(height)
+        .fill(t.bg0)
+        .border(1.0, t.bg3)
+        .padding(PADDING)
+        .child(Column::new(parts).gap(GAP))
+}
+
+fn needs_login(status: &Tailscale) -> bool {
+    status.backend == Backend::NeedsLogin && !status.auth_url.is_empty()
+}
+
+fn card_line(text: String, color: amane::Color) -> Rectangle {
+    Rectangle::new()
+        .width(Parent)
+        .height(CARD_LINE)
+        .align_child(Start, Center)
+        .child(Text::new(text).size(12.0).color(color).elide())
+}
+
+/*
+ *  Exit node
+ *  [ None                              ]
+ *  [ Suggested · nl-ams-wg-303         ]
+ *  [ In use · se-sto-wg-005            ]   only when that isn't the suggestion
+ *
+ * the tailnet can offer hundreds of exit nodes (mullvad's), so instead of a list
+ * there's what tailscale suggests, and the one in use; that one in the accent
+ */
+fn exit_nodes(t: &Theme, vpn: &Vpn) -> (Column, f32) {
+    let in_use = vpn.exit_node().map(String::from);
+
+    let label = Rectangle::new()
+        .width(Parent)
+        .height(CARD_LINE)
+        .align_child(Start, Center)
+        .child(Text::new("Exit node").size(12.0).color(t.fg_dim));
+
+    let mut parts: Vec<Box<dyn Widget>> = vec![
+        Box::new(label),
+        Box::new(exit_button(
+            t,
+            String::from("None"),
+            in_use.is_none(),
+            Some(None),
+        )),
+    ];
+
+    let suggested = match vpn.suggestion() {
+        Suggestion::Node(node) => Some(node.clone()),
+        _ => None,
+    };
+
+    match vpn.suggestion() {
+        Suggestion::Unknown => parts.push(Box::new(exit_button(
+            t,
+            String::from("Suggested · …"),
+            false,
+            None,
+        ))),
+
+        Suggestion::Node(node) => {
+            let chosen = in_use.as_deref() == Some(node.as_str());
+
+            parts.push(Box::new(exit_button(
+                t,
+                format!("Suggested · {}", tailscale::short_name(node)),
+                chosen,
+                Some(Some(node.clone())),
+            )));
+        }
+
+        // nothing to suggest, like when no exit node is allowed
+        Suggestion::None => {}
+    }
+
+    // what carries the traffic is always on the card, even when it wasn't the suggestion
+    if let Some(node) = &in_use
+        && suggested.as_deref() != Some(node.as_str())
+    {
+        parts.push(Box::new(exit_button(
+            t,
+            format!("In use · {}", tailscale::short_name(node)),
+            true,
+            None,
+        )));
+    }
+
+    let buttons = parts.len() - 1;
+
+    let height = CARD_LINE + buttons as f32 * (GAP + BUTTON);
+
+    (Column::new(parts).gap(GAP), height)
+}
+
+/*
+ * a full-width exit node button; target is what clicking sets, Some(None) for
+ * no exit node, None for a button that does nothing (the one in use, or a
+ * suggestion still loading)
+ */
+fn exit_button(
+    t: &Theme,
+    label: String,
+    chosen: bool,
+    target: Option<Option<String>>,
+) -> Rectangle {
+    let (fill, color) = if chosen {
+        (t.accent, t.on_accent)
+    } else {
+        (t.bg2, t.fg)
+    };
+
+    let button = Rectangle::new()
+        .width(Parent)
+        .height(BUTTON)
+        .fill(fill)
+        .padding(SIDES)
+        .align_child(Start, Center)
+        .child(Text::new(label).size(13.0).color(color).elide());
+
+    match target {
+        Some(node) if !chosen => button
+            .cursor(Pointer)
+            .on_click(move |_| Vpn::use_exit_node(node.clone())),
+        _ => button,
+    }
 }

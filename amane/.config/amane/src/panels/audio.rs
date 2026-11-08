@@ -138,12 +138,7 @@ struct Level {
 
 fn section(t: &Theme, title: &str, level: &Level, devices: &[Device], state: &State) -> Column {
     let mut parts: Vec<Box<dyn Widget>> = vec![
-        Box::new(
-            Text::new(title)
-                .size(12.0)
-                .weight(Weight::Bold)
-                .color(t.comment),
-        ),
+        Box::new(ui::heading(t, title, ui::HEADING)),
         Box::new(level_row(t, level)),
     ];
 

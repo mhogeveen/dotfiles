@@ -133,7 +133,13 @@ Settled earlier, no need to revisit:
 - **To settle:** how to trigger delete and clear without modifier keys.
 
 ### 9. Weather in the calendar
-- **Status:** open (planned when the calendar was made)
+- **Status:** done: beside the month in the calendar panel, from Open-Meteo
+  (csv, no key; `src/weather/`): now, 7 three-hour slots for the next 24
+  hours (the first labelled Now) and 7 day slots, under "Next 24 hours" and
+  "Next 7 days". Fetched when the panel opens, at most every 30 min; `r`
+  refetches. Place set with `amane ipc call weather location <lat> <lon>
+  <name>`, kept in `~/.local/state/amane-shell/weather` (Hilversum by
+  default).
 - **Why:** asked for when the calendar was built; the panel was laid out as a
   list of sections for this.
 - **Hooks in:** a new section after `calendar_section` in
@@ -141,6 +147,25 @@ Settled earlier, no need to revisit:
   and kept for a while, and a `HEIGHT` increase.
 - **To settle:** source (wttr.in or Open-Meteo, both need no API key), the
   location, and what to show (now only, or a few days).
+
+### 13. VPN and Tailscale
+- **Status:** done in the shell (`src/vpn/`, `src/json.rs`): a small shield badge
+  on the network icon's corner while a vpn is up (accent when all traffic goes
+  through it, found with `ip route get`); a Tailscale card in the network panel
+  (Tailscale@name, its IP, Connect/Disconnect on `v`, Log in on `i`) and
+  lines for other tunnels (WireGuard, tun); the shield in the system panel's
+  network row. Exit nodes: with hundreds on the tailnet (Mullvad), the card
+  shows only None, what `tailscale exit-node suggest` suggests (asked when the
+  panel opens and after each change), and the one in use if that's another
+  (named via `tailscale whois`, asked once per change). Status is read with
+  `--peers=false` (3 KB instead of 850 KB). Checks every 5 s (2 s with the
+  network or system panel open); `ip` and `tailscale` only run while a tunnel
+  exists.
+- **Your part:** `services.tailscale.enable = true;` in
+  `~/.nixos/hosts/prometheus/default.nix`, then once `sudo tailscale up` and
+  `sudo tailscale set --operator=maarten`.
+- **Later, maybe:** `src/layout.rs` has its own small reader for mango's json;
+  it could use `src/json.rs` now.
 
 ## Outside the shell
 
