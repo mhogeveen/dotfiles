@@ -239,8 +239,8 @@ fn pictures(folder: &Path) -> Option<Vec<PathBuf>> {
     Some(pictures)
 }
 
-// a png or jpeg by its first bytes, whatever its name ends in
-fn is_picture(path: &Path) -> bool {
+// a png or jpeg by its first bytes, whatever its name ends in; also for cover art
+pub fn is_picture(path: &Path) -> bool {
     let mut head = [0u8; 8];
 
     let Ok(mut file) = File::open(path) else {

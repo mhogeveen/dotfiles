@@ -1,16 +1,20 @@
 /*
- * audio panel, top-right: volume and mute for the default output and
- * microphone, and the devices to pick the default from
+ * audio panel, top-right: what's playing with its controls, volume and mute
+ * for the default output and microphone, and the devices to pick the default from
  *
  * volume and mute are amane's Audio, live; the device lists come from wpctl,
- * read while the panel is open (see src/audio)
+ * read while the panel is open (see src/audio). "Now playing" is amane's Media,
+ * its active player: the one playing, else the one shown last; covers come
+ * from src/covers.rs
  */
+
+use std::time::Duration;
 
 use amane::{
     Align::{Center, Start},
     Audio, Column,
     Cursor::Pointer,
-    Key, LayerWindow, Monitor, Rectangle, Row, Service,
+    Image, Key, LayerWindow, Media, Monitor, Rectangle, Row, Service,
     Size::Parent,
     Text, Weight, Widget, children,
 };
@@ -18,6 +22,7 @@ use amane::{
 use super::ui::{self, BUTTON, CORNER_WIDTH, PADDING, SIDES};
 use super::{AUDIO, hints, panel};
 use crate::audio::{Device, Devices, State};
+use crate::covers;
 use crate::theme::Theme;
 
 const GAP: f32 = 8.0;
@@ -26,8 +31,8 @@ const ICON: f32 = 20.0;
 const PERCENT: f32 = 40.0;
 const MUTE: f32 = 64.0;
 
-// fits one device list of 4 and one of 2 without scrolling
-const HEIGHT: f32 = 460.0;
+// fits "Now playing", one device list of 4 and one of 2 without scrolling
+const HEIGHT: f32 = 460.0 + PLAYING_SECTION + GAP * 2.0;
 
 // the slider takes what's left of the row
 const SLIDER: f32 =
@@ -61,6 +66,9 @@ const KEY_MUTE: char = 'm';
 const KEY_MIC_MUTE: char = 'n';
 const KEY_QUIETER: char = 'j';
 const KEY_LOUDER: char = 'k';
+const KEY_PLAY: char = 'p';
+const KEY_PREVIOUS: char = 'h';
+const KEY_NEXT: char = 'l';
 
 // how far j and k move the volume
 const STEP: i32 = 5;
@@ -75,6 +83,9 @@ fn key_pressed(key: Key) {
         KEY_MIC_MUTE => Audio::toggle_microphone_mute(),
         KEY_QUIETER => step(-STEP),
         KEY_LOUDER => step(STEP),
+        KEY_PLAY => Media::play_pause(),
+        KEY_PREVIOUS => Media::previous(),
+        KEY_NEXT => Media::next(),
         _ => {}
     }
 }
@@ -116,6 +127,7 @@ fn content(t: &Theme) -> Rectangle {
 
     let parts = children![
         ui::title(t, "Audio"),
+        now_playing(t),
         section(t, "Output", &output, devices.outputs(), devices.state()),
         section(t, "Input", &input, devices.inputs(), devices.state()),
     ];
@@ -290,4 +302,183 @@ fn note(t: &Theme, text: &str) -> Box<dyn Widget> {
             .align_child(Start, Center)
             .child(Text::new(text).size(13.0).color(t.comment)),
     )
+}
+
+/*
+ *  Now playing
+ *  ┌──────┐ Song title
+ *  │ art  │ Artist · Spotify
+ *  │      │ ━━━━━━━━━━━━━──────  1:23 / 3:45
+ *  └──────┘ [󰒮 h] [󰐊 p] [󰒭 l]
+ *
+ * the same height with nothing playing, since panels never change size
+ */
+const ART: f32 = 64.0;
+const TITLE_LINE: f32 = 18.0;
+const ARTIST_LINE: f32 = 16.0;
+const LINE_GAP: f32 = 4.0;
+const CARD_PADDING: f32 = 12.0;
+const PLAYING_CARD: f32 =
+    CARD_PADDING * 2.0 + TITLE_LINE + ARTIST_LINE + BUTTON * 2.0 + LINE_GAP * 3.0;
+const PLAYING_SECTION: f32 = ui::HEADING + GAP + PLAYING_CARD;
+
+// the column beside the art
+const PLAYING_TEXT: f32 = CORNER_WIDTH - PADDING * 2.0 - CARD_PADDING * 2.0 - ART - GAP * 1.5;
+
+// times are 11 wide BlexMono, monospaced, so a character is 0.6 of that
+const TIME_SIZE: f32 = 11.0;
+
+// nerd font material design glyphs
+const ICON_PLAY: &str = "\u{f040a}";
+const ICON_PAUSE: &str = "\u{f03e4}";
+const ICON_PREVIOUS: &str = "\u{f04ae}";
+const ICON_NEXT: &str = "\u{f04ad}";
+const ICON_MUSIC: &str = "\u{f075a}";
+
+fn now_playing(t: &Theme) -> Column {
+    let media = Media::read();
+
+    let card = Rectangle::new()
+        .width(Parent)
+        .height(PLAYING_CARD)
+        .fill(t.bg0)
+        .border(1.0, t.bg3)
+        .padding(CARD_PADDING);
+
+    let card = match media.active() {
+        None => card.align_child(Start, Center).child(
+            Row::new(children![
+                art(t, None),
+                Text::new("Nothing playing").size(13.0).color(t.comment),
+            ])
+            .gap(GAP * 1.5)
+            .align(Center),
+        ),
+
+        Some(player) => {
+            // a player with nothing loaded still has a name, like qutebrowser
+            let title = match player.title() {
+                "" => "Nothing playing",
+                title => title,
+            };
+
+            let source = match (player.artist(), player.identity()) {
+                ("", identity) => String::from(identity),
+                (artist, "") => String::from(artist),
+                (artist, identity) => format!("{artist} · {identity}"),
+            };
+
+            let play = if player.playing() {
+                ICON_PAUSE
+            } else {
+                ICON_PLAY
+            };
+
+            let buttons = Row::new(children![
+                ui::key_button(t, ICON_PREVIOUS, KEY_PREVIOUS, |_| Media::previous()),
+                ui::key_button(t, play, KEY_PLAY, |_| Media::play_pause()),
+                ui::key_button(t, ICON_NEXT, KEY_NEXT, |_| Media::next()),
+            ])
+            .gap(GAP)
+            .height(BUTTON);
+
+            let text = Column::new(children![
+                line(
+                    TITLE_LINE,
+                    Text::new(title)
+                        .size(14.0)
+                        .weight(Weight::Bold)
+                        .color(t.fg)
+                        .elide()
+                ),
+                line(
+                    ARTIST_LINE,
+                    Text::new(source).size(12.0).color(t.fg_dim).elide()
+                ),
+                progress(t, player.position(), player.length()),
+                buttons,
+            ])
+            .width(PLAYING_TEXT)
+            .gap(LINE_GAP);
+
+            card.child(
+                Row::new(children![art(t, covers::path(player.art_url())), text])
+                    .gap(GAP * 1.5)
+                    .align(Start),
+            )
+        }
+    };
+
+    Column::new(children![ui::heading(t, "Now playing", ui::HEADING), card]).gap(GAP)
+}
+
+// the cover, or a music glyph until there is one
+fn art(t: &Theme, cover: Option<std::path::PathBuf>) -> Rectangle {
+    let square = Rectangle::new().width(ART).height(ART).fill(t.bg2).clip();
+
+    match cover {
+        Some(path) => square.fill(Image::cover(path).thumbnail(ART as u32 * 2, ART as u32 * 2)),
+        None => square
+            .align_child(Center, Center)
+            .child(Text::new(ICON_MUSIC).size(24.0).color(t.comment)),
+    }
+}
+
+fn line(height: f32, text: Text) -> Rectangle {
+    Rectangle::new()
+        .width(Parent)
+        .height(height)
+        .align_child(Start, Center)
+        .child(text)
+}
+
+// a bar and "1:23 / 3:45"; nothing for a stream without a length
+fn progress(t: &Theme, position: Duration, length: Duration) -> Row {
+    if length.is_zero() {
+        return Row::new(Vec::new()).height(BUTTON);
+    }
+
+    let times = format!("{} / {}", clock(position), clock(length));
+
+    let width = times.chars().count() as f32 * TIME_SIZE * 0.6;
+
+    let percent = (position.as_secs_f32() / length.as_secs_f32() * 100.0).clamp(0.0, 100.0) as u8;
+
+    Row::new(children![
+        ui::meter(t, PLAYING_TEXT - width - GAP, percent, false),
+        Rectangle::new()
+            .width(width)
+            .height(BUTTON)
+            .align_child(Start, Center)
+            .child(Text::new(times).size(TIME_SIZE).color(t.comment)),
+    ])
+    .gap(GAP)
+    .align(Center)
+    .height(BUTTON)
+}
+
+// 0:05, 3:45, and 1:02:03 from an hour up
+fn clock(duration: Duration) -> String {
+    let seconds = duration.as_secs();
+
+    let (hours, minutes, seconds) = (seconds / 3600, seconds / 60 % 60, seconds % 60);
+
+    if hours > 0 {
+        format!("{hours}:{minutes:02}:{seconds:02}")
+    } else {
+        format!("{minutes}:{seconds:02}")
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn times_read_like_a_player() {
+        assert_eq!(clock(Duration::from_secs(5)), "0:05");
+        assert_eq!(clock(Duration::from_secs(225)), "3:45");
+        assert_eq!(clock(Duration::from_secs(3723)), "1:02:03");
+        assert_eq!(clock(Duration::from_millis(59_900)), "0:59");
+    }
 }

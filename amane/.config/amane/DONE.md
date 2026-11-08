@@ -183,3 +183,21 @@ are kept, so references between the two files still work.
   hiding windows quickly risks the crash.
 - **To settle:** step size (5%?), whether the popup also shows for mic mute,
   and where it sits.
+
+### 3. Media controls
+- **Status:** done: a "Now playing" card at the top of the audio panel (which
+  grew to fit, still a fixed size) for amane's active player: cover art,
+  title, artist · player, a progress bar with times (none for streams without
+  a length) and previous / play-pause / next, also on `h` `p` `l`. "Nothing
+  playing" in the same space without a player. Covers: `file://` paths as
+  they are, links fetched once with curl into
+  `$XDG_RUNTIME_DIR/amane-shell/covers` (`src/covers.rs`). The playback keys
+  were bound with item 2. Left out on purpose: a bar indicator, the title in
+  the bar, the lock screen, and picking between several players.
+- **Why:** amane has `Media`/`MediaPlayer` services (MPRIS: qutebrowser,
+  Spotify, mpv and so on) that nothing in the shell uses yet.
+- **Hooks in:** play/pause/next and the track title in `src/panels/audio.rs`;
+  optionally a small bar indicator in `src/bar.rs` while something plays, and
+  the track on the lock screen (`src/lock.rs`).
+- **To settle:** panel only, or also bar and lock screen; what to show when
+  several players are open.

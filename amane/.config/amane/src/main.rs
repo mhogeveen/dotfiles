@@ -7,6 +7,7 @@ mod calculator;
 mod calendar;
 mod clipboard_preview;
 mod clock;
+mod covers;
 mod json;
 mod layout;
 mod lock;

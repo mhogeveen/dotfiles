@@ -35,17 +35,6 @@ Settled earlier, no need to revisit:
 
 ## Gaps worth closing first
 
-### 3. Media controls
-- **Status:** open; the playback keys are bound already (item 2 in DONE.md:
-  `SUPER+\`, `SUPER+]`, `SUPER+[` and `amane ipc call media …`), only the UI is left
-- **Why:** amane has `Media`/`MediaPlayer` services (MPRIS: qutebrowser,
-  Spotify, mpv and so on) that nothing in the shell uses yet.
-- **Hooks in:** play/pause/next and the track title in `src/panels/audio.rs`;
-  optionally a small bar indicator in `src/bar.rs` while something plays, and
-  the track on the lock screen (`src/lock.rs`).
-- **To settle:** panel only, or also bar and lock screen; what to show when
-  several players are open.
-
 ### 4. Missing keybinds
 - **Status:** open
 - **Why:** session, calendar, screenshot (has `SUPER+p`), network, Bluetooth,
