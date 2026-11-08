@@ -11,16 +11,23 @@
  */
 
 use std::env;
+use std::path::PathBuf;
 
 use amane::{
     Align::{Center, Start},
-    Column, LayerWindow, Lock, Monitor, Padding, Rectangle, Service,
+    Column, Image, LayerWindow, Lock, Monitor, Padding, Rectangle, Service,
     Size::Parent,
-    Text, TextInput, Weight, children,
+    Stack, Text, TextInput, Weight, Widget, children,
 };
 
 use crate::clock::Clock;
-use crate::theme::theme;
+use crate::theme::{Theme, theme};
+use crate::wallpaper::Wallpaper;
+
+// the wallpaper behind the lock screen: a small copy, blurred once, then darkened
+const BLURRED: (u32, u32) = (320, 180);
+const BLUR: u32 = 6;
+const DARKEN: f32 = 0.6;
 
 const INPUT: &str = "lock-password";
 
@@ -84,13 +91,49 @@ pub fn view(_monitor: &Monitor) -> LayerWindow {
     .gap(12.0)
     .align(Center);
 
-    // the compositor sizes lock screens to the monitor, so this size is never used
-    LayerWindow::new().width(1.0).height(1.0).child(
+    let mut layers = background(&t);
+
+    layers.push(Box::new(
         Rectangle::new()
             .width(Parent)
             .height(Parent)
-            .fill(t.bg_deep)
             .align_child(Center, Center)
             .child(content),
-    )
+    ));
+
+    // the compositor sizes lock screens to the monitor, so this size is never used
+    LayerWindow::new()
+        .width(1.0)
+        .height(1.0)
+        .child(Stack::new(layers).width(Parent).height(Parent))
+}
+
+/*
+ * the wallpaper in use, blurred and darkened so the clock and password box read
+ * well on any picture; plain bg_deep without one, the same as mango's root_color.
+ * a lock surface can't show what's under it, so none can't be see-through here
+ */
+fn background(t: &Theme) -> Vec<Box<dyn Widget>> {
+    let plain = Rectangle::new()
+        .width(Parent)
+        .height(Parent)
+        .fill(t.bg_deep);
+
+    let Some(picture) = Wallpaper::read().current().map(PathBuf::from) else {
+        return vec![Box::new(plain)];
+    };
+
+    let blurred = Rectangle::new().width(Parent).height(Parent).fill(
+        Image::cover(picture)
+            .thumbnail(BLURRED.0, BLURRED.1)
+            .blurred(BLUR),
+    );
+
+    let dark = Rectangle::new()
+        .width(Parent)
+        .height(Parent)
+        .fill(t.bg_deep)
+        .opacity(DARKEN);
+
+    vec![Box::new(plain), Box::new(blurred), Box::new(dark)]
 }

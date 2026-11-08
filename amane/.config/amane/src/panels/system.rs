@@ -1,7 +1,7 @@
 /*
  * system panel, top-right: who and where you are, the os and kernel, uptime,
  * cpu, memory, disk and battery use, the ways into the notification center and
- * the session menu, and the system settings as they're added
+ * the session menu and the wallpaper picker, and the system settings as they're added
  *
  * the facts come from src/system.rs; cpu, memory and battery from amane
  */
@@ -16,7 +16,7 @@ use amane::{
 };
 
 use super::ui::{self, BUTTON, CORNER_WIDTH, PADDING};
-use super::{NOTIFICATIONS, Panels, SESSION, SYSTEM, panel};
+use super::{NOTIFICATIONS, Panels, SESSION, SYSTEM, WALLPAPER, panel};
 use crate::notifications::{self, ICON_BELL, ICON_BELL_OUTLINE};
 use crate::system::{self, NetworkSpeed, SystemInfo};
 use crate::theme::{ACCENTS, Accent, Theme};
@@ -35,11 +35,13 @@ const NUMBERS: f32 = CORNER_WIDTH - PADDING * 2.0 - NAME - METER - GAP * 2.0;
 // the interface name at the end of the network row
 const INTERFACE: f32 = 72.0;
 
-// nerd font material design power glyph
+// nerd font material design power and wallpaper glyphs
 const ICON_SESSION: &str = "\u{f0425}";
+const ICON_WALLPAPER: &str = "\u{f0e09}";
 
 const KEY_NOTIFICATIONS: char = 'n';
 const KEY_SESSION: char = 's';
+const KEY_WALLPAPER: char = 'w';
 
 pub fn view(monitor: &Monitor) -> LayerWindow {
     let base = ui::corner(HEIGHT, "amane-system");
@@ -70,6 +72,7 @@ fn key_pressed(key: Key) {
     match letter.to_ascii_lowercase() {
         KEY_NOTIFICATIONS => open_notifications(),
         KEY_SESSION => open_session(),
+        KEY_WALLPAPER => open_wallpaper(),
         _ => {}
     }
 }
@@ -82,6 +85,11 @@ fn open_notifications() {
 // the session menu takes this panel's place, like any other panel would
 fn open_session() {
     let _ = Panels::open(SESSION);
+}
+
+// the wallpaper picker along the bottom takes this panel's place too
+fn open_wallpaper() {
+    let _ = Panels::open(WALLPAPER);
 }
 
 // user@host, and the ways into the notification center and the session menu
@@ -108,9 +116,11 @@ fn header(t: &Theme, info: &SystemInfo) -> Row {
     let notifications =
         ui::key_button_colored(t, bell, color, KEY_NOTIFICATIONS, |_| open_notifications());
 
+    let wallpaper = ui::key_button(t, ICON_WALLPAPER, KEY_WALLPAPER, |_| open_wallpaper());
+
     let session = ui::key_button(t, ICON_SESSION, KEY_SESSION, |_| open_session());
 
-    Row::new(children![title, notifications, session])
+    Row::new(children![title, wallpaper, notifications, session])
         .gap(GAP)
         .align(Center)
         .height(BUTTON)

@@ -20,6 +20,7 @@ mod system;
 mod theme;
 mod usage;
 mod vpn;
+mod wallpaper;
 mod weather;
 
 fn main() {
@@ -40,6 +41,8 @@ fn main() {
         .ipc("lock", session::lock_ipc)
         .ipc("accent", theme::accent_ipc)
         .ipc("weather", weather::ipc)
+        // first, so it is the bottom-most window
+        .window_per_monitor(wallpaper::view)
         .window_per_monitor(bar::view)
         .window_per_monitor(panels::backdrop::view)
         .window_per_monitor(notifications::popups::view)
@@ -54,6 +57,7 @@ fn main() {
         .window_per_monitor(panels::audio::view)
         .window_per_monitor(panels::system::view)
         .window_per_monitor(panels::calendar::view)
+        .window_per_monitor(panels::wallpaper::view)
         .lock(lock::view)
         .run();
 }

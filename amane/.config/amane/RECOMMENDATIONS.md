@@ -209,13 +209,20 @@ Settled earlier, no need to revisit:
     `unix-user`; requests arriving while one is open wait their turn.
 
 ### 11. Wallpaper
-- **Status:** open
-- **Why:** nothing sets a wallpaper under mango (`hyprpaper.conf` is a
-  Hyprland leftover).
-- **Hooks in:** either an amane window per monitor on the background layer
-  drawing an image (`Image::cover`), which could follow the accent or be
-  blurred behind the lock screen, or `swaybg` from `exec_once`.
-- **To settle:** which image(s), and amane or swaybg.
+- **Status:** done (`src/wallpaper.rs`, `src/panels/wallpaper.rs`): a window
+  per monitor on the background layer draws the picture (decoded at most at
+  twice the monitor's size), or stays see-through for None so mango's
+  `root_color` shows. The picker is a full-width strip along the bottom,
+  opened from the system panel (`w`) or `amane ipc call panel toggle
+  wallpaper`: None, then the PNG/JPEG files in `~/Pictures/Wallpapers` (told
+  apart by their first bytes, read again each time it opens or on `r`).
+  h/l or the arrows preview on the real background, Enter or a click keeps
+  it, Escape or clicking outside puts back the one in use. The choice is in
+  the state file `wallpaper` (a path or `none`). The lock screen shows the
+  wallpaper blurred and darkened, plain `bg_deep` with None.
+- **Limits:** the preview only shows where no window covers the background
+  (decided against drawing it over windows). WebP isn't supported by amane's
+  decoder. The wallpaper doesn't follow the accent (decided against).
 
 ### 12. Leftovers
 - **Status:** open

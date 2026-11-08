@@ -31,6 +31,7 @@ pub mod screenshot;
 pub mod session;
 pub mod system;
 mod ui;
+pub mod wallpaper;
 
 pub const LAUNCHER: &str = "launcher";
 pub const CLIPBOARD: &str = "clipboard";
@@ -43,6 +44,7 @@ pub const AUDIO: &str = "audio";
 pub const LAYOUT: &str = "layout";
 pub const SYSTEM: &str = "system";
 pub const CALENDAR: &str = "calendar";
+pub const WALLPAPER: &str = "wallpaper";
 
 pub struct PanelDef {
     pub name: &'static str,
@@ -125,6 +127,11 @@ static REGISTRY: &[PanelDef] = &[
         name: CALENDAR,
         groups: &[PANELS],
         on_close: Some(calendar::reset),
+    },
+    PanelDef {
+        name: WALLPAPER,
+        groups: &[PANELS],
+        on_close: Some(wallpaper::reset),
     },
 ];
 
