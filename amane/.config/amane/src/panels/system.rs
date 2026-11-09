@@ -17,18 +17,20 @@ use amane::{
 
 use super::ui::{self, BUTTON, CORNER_WIDTH, PADDING};
 use super::{NOTIFICATIONS, Panels, SESSION, SYSTEM, WALLPAPER, panel};
+use crate::brightness::{self, Level};
 use crate::notifications::{self, ICON_BELL, ICON_BELL_OUTLINE};
 use crate::system::{self, NetworkSpeed, SystemInfo};
 use crate::theme::{ACCENTS, Accent, Theme};
 use crate::vpn::{self, Vpn};
 
-// header, details, five diagnostics rows (a laptop's battery included) and the settings
-const HEIGHT: f32 = 324.0;
+// header, details, five diagnostics rows (a laptop's battery included) and the settings:
+// the accent and the brightness
+const HEIGHT: f32 = 324.0 + BUTTON + GAP;
 const GAP: f32 = 8.0;
 const LINE: f32 = 20.0;
 
 // a meter row: name, bar, then the numbers taking the rest
-const NAME: f32 = 64.0;
+const NAME: f32 = 96.0;
 const METER: f32 = 128.0;
 const NUMBERS: f32 = CORNER_WIDTH - PADDING * 2.0 - NAME - METER - GAP * 2.0;
 
@@ -46,10 +48,14 @@ const KEY_WALLPAPER: char = 'w';
 pub fn view(monitor: &Monitor) -> LayerWindow {
     let base = ui::corner(HEIGHT, "amane-system");
 
-    panel(monitor, SYSTEM, base, key_pressed, content)
+    let name = monitor.name.clone();
+
+    panel(monitor, SYSTEM, base, key_pressed, move |t| {
+        content(t, &name)
+    })
 }
 
-fn content(t: &Theme) -> Rectangle {
+fn content(t: &Theme, monitor: &str) -> Rectangle {
     let info = SystemInfo::read();
 
     let mut parts: Vec<Box<dyn Widget>> =
@@ -59,6 +65,7 @@ fn content(t: &Theme) -> Rectangle {
 
     parts.push(Box::new(ui::heading(t, "Settings", LINE)));
     parts.push(Box::new(accent_setting(t)));
+    parts.push(Box::new(brightness_setting(t, monitor)));
 
     ui::frame(t, GAP, parts)
 }
@@ -298,6 +305,48 @@ fn accent_setting(t: &Theme) -> Row {
     .gap(GAP)
     .align(Center)
     .height(BUTTON)
+}
+
+/*
+ * the screen's brightness: a laptop's backlight, or the monitor's own setting
+ * over DDC/CI (src/brightness.rs); the monitor is the one this panel is on
+ */
+fn brightness_setting(t: &Theme, monitor: &str) -> Row {
+    brightness::follow(monitor);
+
+    let name = Rectangle::new()
+        .width(NAME)
+        .height(BUTTON)
+        .align_child(Start, Center)
+        .child(Text::new("Brightness").size(13.0).color(t.fg));
+
+    let numbers = |text: &str, color| {
+        Rectangle::new()
+            .width(NUMBERS)
+            .height(BUTTON)
+            .align_child(Start, Center)
+            .child(Text::new(text).size(12.0).color(color))
+    };
+
+    let row = match brightness::level(monitor) {
+        Level::Percent(percent) => children![
+            name,
+            ui::slider(t, METER, percent, false, brightness::set),
+            numbers(&format!("{percent}%"), t.fg_dim),
+        ],
+
+        // ddcutil takes a moment the first time
+        Level::Reading => children![
+            name,
+            ui::slider(t, METER, 0, true, |_| {}),
+            numbers("…", t.comment),
+        ],
+
+        // no backlight, and the monitor doesn't answer DDC/CI (it can be off in its menu)
+        Level::Unavailable => children![name, numbers("Not available", t.comment)],
+    };
+
+    Row::new(row).gap(GAP).align(Center).height(BUTTON)
 }
 
 /*

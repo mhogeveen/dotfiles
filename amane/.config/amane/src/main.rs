@@ -3,6 +3,7 @@ use amane::App;
 mod audio;
 mod bar;
 mod bluetooth;
+mod brightness;
 mod calculator;
 mod calendar;
 mod clipboard_preview;
