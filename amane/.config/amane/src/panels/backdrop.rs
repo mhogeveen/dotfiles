@@ -1,5 +1,6 @@
 use amane::{
-    Color, Full, Keyboard, Layer, LayerWindow, Monitor, Rectangle, Service, Size::Parent, Zone,
+    Color, Full, Keyboard, Layer, LayerWindow, Margin, Monitor, Rectangle, Service, Size::Parent,
+    Zone,
 };
 
 use super::Panels;
@@ -8,6 +9,9 @@ use super::Panels;
  * a transparent window covering every monitor; amane has no focus-lost event,
  * so clicking here is how clicking outside closes panels. it sits on the top layer,
  * below the panels on the overlay layer
+ *
+ * it starts below the bar (32 high, see bar.rs), so the bar stays clickable while
+ * a panel is open: clicking one of its icons goes straight to that one's panel
  *
  * it never hides, only lets clicks through while no panel is open: unmapping it
  * at the same moment a panel unmaps races mango's reconfigure of the other
@@ -20,6 +24,12 @@ pub fn view(_monitor: &Monitor) -> LayerWindow {
     let window = LayerWindow::new()
         .width(Full)
         .height(Full)
+        .margin(Margin {
+            top: 32,
+            right: 0,
+            bottom: 0,
+            left: 0,
+        })
         .layer(Layer::Top)
         .space(Zone::Ignore)
         .keyboard(Keyboard::None)

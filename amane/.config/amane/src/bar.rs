@@ -40,6 +40,9 @@ pub fn view(monitor: &Monitor) -> LayerWindow {
                     bottom: 0.0,
                     left: 8.0,
                 })
+                .on_click(|_| {
+                    let _ = Panels::close_all();
+                })
                 .child(
                     // the two Parent-sized sides split the leftover space evenly,
                     // which keeps the fixed-width clock exactly centered
