@@ -7,7 +7,7 @@
  */
 
 use amane::{
-    Align::{Center, End, Start},
+    Align::{Center, Start},
     Battery, Cpu,
     Cursor::Pointer,
     Key, LayerWindow, Memory, Monitor, Rectangle, Row, Service,

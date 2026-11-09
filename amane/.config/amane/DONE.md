@@ -201,3 +201,23 @@ are kept, so references between the two files still work.
   the track on the lock screen (`src/lock.rs`).
 - **To settle:** panel only, or also bar and lock screen; what to show when
   several players are open.
+
+### 19. Brightness popup and shortcuts
+- **Status:** done: `SUPER+SHIFT+=` / `SUPER+SHIFT+-` (and
+  `XF86MonBrightnessUp/Down`) run `amane ipc call brightness up|down`, 5% on
+  the focused monitor through `brightness::set` (a laptop backlight through
+  amane's `Brightness`); the first press after a restart finds and reads the
+  monitor first, about a second. The volume popup shows brightness too (a sun
+  that brightens with the level), for changes made through the shell only:
+  the shortcuts and the slider, not the monitor's own buttons (no DDC
+  polling). Not while the system panel is open.
+- **Why:** brightness is only in the system panel (a slider over DDC/CI,
+  `src/brightness.rs`); volume has shortcuts and a popup (item 2 in DONE.md).
+- **Hooks in:** a brightness version of the volume popup in `src/osd.rs`,
+  shown when it changes; `amane ipc call brightness up|down` going through
+  `brightness::set` (newest value only, one ddcutil call at a time), with mango
+  binds like `SUPER+SHIFT+=` / `SUPER+SHIFT+-` and `XF86MonBrightnessUp/Down`
+  for keyboards that send them.
+- **To settle:** the step size, and whether the popup should also show for
+  changes made with the monitor's own buttons, which can only be noticed by
+  polling DDC (about 0.4 s per read).

@@ -51,6 +51,7 @@ fn main() {
         .ipc("accent", theme::accent_ipc)
         .ipc("weather", weather::ipc)
         .ipc("media", osd::media_ipc)
+        .ipc("brightness", brightness::ipc)
         // first, so it is the bottom-most window
         .window_per_monitor(wallpaper::view)
         .window_per_monitor(bar::view)

@@ -332,7 +332,7 @@ pub fn is_focused(monitor: &Monitor) -> bool {
     focused_output().is_none_or(|output| output == monitor.name)
 }
 
-fn focused_output() -> Option<String> {
+pub fn focused_output() -> Option<String> {
     Workspaces::read()
         .list()
         .iter()

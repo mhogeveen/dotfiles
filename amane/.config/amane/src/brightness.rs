@@ -1,5 +1,5 @@
 /*
- * screen brightness for the system panel: a laptop's backlight through amane's
+ * screen brightness for the system panel and the shortcuts: a laptop's backlight through amane's
  * Brightness, otherwise the monitor's own setting over DDC/CI with ddcutil
  * (VCP code 10). ddcutil takes a few tenths of a second per call, so it only
  * runs on threads:
@@ -9,17 +9,21 @@
  *   - a slider drag sends many values, but only the newest is written, one
  *     call at a time, which also spares the monitor's settings memory
  *
- * the slider shows the value asked for right away, not when the monitor took it
+ * the slider shows the value asked for right away, not when the monitor took it.
+ * the shortcuts (`amane ipc call brightness up|down`) step 5% on the focused
+ * monitor, and every change made here shows the popup (osd.rs)
  */
 
 use std::collections::HashMap;
 use std::process::Command;
-use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::{Mutex, PoisonError};
 use std::thread;
 use std::time::{Duration, Instant};
 
 use amane::{Brightness, Service};
+
+use crate::panels;
 
 // the panel reads the monitor again when it's been open this long
 const READ_EVERY: Duration = Duration::from_secs(10);
@@ -194,14 +198,15 @@ fn read_level(monitor: &str) {
 static WANTED: Mutex<Option<(u32, u32)>> = Mutex::new(None);
 static WRITING: AtomicBool = AtomicBool::new(false);
 
-// from the slider, so a plain fn
+// bumped on every change made through the shell, so the popup (osd.rs) can tell
+static CHANGES: AtomicU64 = AtomicU64::new(0);
+
+pub fn changes() -> u64 {
+    CHANGES.load(Ordering::Acquire)
+}
+
+// from the slider, so a plain fn; the monitor the system panel is on
 pub fn set(percent: u8) {
-    if Brightness::read().present() {
-        Brightness::set(percent);
-
-        return;
-    }
-
     let Some(monitor) = TARGET
         .lock()
         .unwrap_or_else(PoisonError::into_inner)
@@ -210,21 +215,35 @@ pub fn set(percent: u8) {
         return;
     };
 
+    set_on(&monitor, percent);
+}
+
+fn set_on(monitor: &str, percent: u8) {
+    if Brightness::read().present() {
+        Brightness::set(percent);
+
+        CHANGES.fetch_add(1, Ordering::AcqRel);
+
+        return;
+    }
+
     let bus = {
         let mut display = Display::write();
 
         let Some(bus) = display
             .buses
             .as_ref()
-            .and_then(|buses| buses.get(&monitor).copied())
+            .and_then(|buses| buses.get(monitor).copied())
         else {
             return;
         };
 
-        display.percent.insert(monitor, percent);
+        display.percent.insert(String::from(monitor), percent);
 
         bus
     };
+
+    CHANGES.fetch_add(1, Ordering::AcqRel);
 
     *WANTED.lock().unwrap_or_else(PoisonError::into_inner) =
         Some((bus.number, value_of(percent, bus.max)));
@@ -232,6 +251,74 @@ pub fn set(percent: u8) {
     if !WRITING.swap(true, Ordering::AcqRel) {
         thread::spawn(write_newest);
     }
+}
+
+// one step at a time, so quick presses build on each other
+static STEPPING: Mutex<()> = Mutex::new(());
+
+/*
+ * up or down from where it is, on the focused monitor; from the shortcuts.
+ * the first time it may have to find and read the monitor, so on a thread
+ */
+pub fn step(by: i32) {
+    thread::spawn(move || {
+        let _one_at_a_time = STEPPING.lock().unwrap_or_else(PoisonError::into_inner);
+
+        if let Some(percent) = backlight() {
+            set_on("", stepped(percent, by));
+
+            return;
+        }
+
+        let Some(monitor) = panels::focused_output().or_else(first_monitor) else {
+            return;
+        };
+
+        if !Display::read().percent.contains_key(&monitor) {
+            read_level(&monitor);
+        }
+
+        let current = Display::read().percent.get(&monitor).copied();
+
+        if let Some(current) = current {
+            set_on(&monitor, stepped(current, by));
+        }
+    });
+}
+
+// without mango to say which monitor has focus, the first one ddcutil found
+fn first_monitor() -> Option<String> {
+    if Display::read().buses.is_none() {
+        let buses = detect();
+
+        Display::write().buses = Some(buses);
+    }
+
+    let display = Display::read();
+
+    let mut names: Vec<&String> = display.buses.as_ref()?.keys().collect();
+
+    names.sort();
+
+    names.first().map(|name| String::from(name.as_str()))
+}
+
+fn stepped(percent: u8, by: i32) -> u8 {
+    (i32::from(percent) + by).clamp(0, 100) as u8
+}
+
+// the shortcuts' step
+const STEP: i32 = 5;
+
+// `amane ipc call brightness up|down`
+pub fn ipc(arguments: &[String]) -> String {
+    match arguments.first().map(String::as_str) {
+        Some("up") => step(STEP),
+        Some("down") => step(-STEP),
+        _ => return String::from("usage: brightness up | brightness down"),
+    }
+
+    String::from(arguments[0].as_str())
 }
 
 // writes until nothing newer was asked for
@@ -416,5 +503,9 @@ Display 2
         assert_eq!(percent_of(30, 60), 50);
         assert_eq!(value_of(50, 60), 30);
         assert_eq!(value_of(65, 100), 65);
+
+        assert_eq!(stepped(65, 5), 70);
+        assert_eq!(stepped(98, 5), 100);
+        assert_eq!(stepped(3, -5), 0);
     }
 }

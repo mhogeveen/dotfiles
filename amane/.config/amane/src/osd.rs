@@ -5,6 +5,10 @@
  * default). not for the first reading at startup, and not while the audio panel
  * is open, which shows the levels already
  *
+ * the same for brightness, but only for changes made through the shell (the
+ * shortcuts, the slider): the monitor can only be asked over DDC, slowly, so
+ * its own buttons go unnoticed. not while the system panel, with its slider, is open
+ *
  * the window is always mapped, never changes size and lets every click through;
  * it only draws while showing, like the notification popups (see popups.rs)
  *
@@ -22,10 +26,24 @@ use amane::{
     Text, Vertical, children,
 };
 
+use crate::brightness::{self, Level};
 use crate::panels::audio::{ICON_MIC, ICON_MIC_MUTED, volume_icon};
 use crate::panels::ui;
-use crate::panels::{self, AUDIO, Panels};
+use crate::panels::{self, AUDIO, Panels, SYSTEM};
 use crate::theme::{Theme, theme};
+
+// nerd font material design suns, dim to bright
+const ICON_DIM: &str = "\u{f00de}";
+const ICON_MEDIUM: &str = "\u{f00df}";
+const ICON_BRIGHT: &str = "\u{f00e0}";
+
+fn brightness_icon(percent: u8) -> &'static str {
+    match percent {
+        0..=33 => ICON_DIM,
+        34..=66 => ICON_MEDIUM,
+        _ => ICON_BRIGHT,
+    }
+}
 
 // how long it stays after the last change
 const SHOWN_FOR: Duration = Duration::from_millis(1500);
@@ -47,6 +65,7 @@ const BAR: f32 = WIDTH - PADDING * 2.0 - ICON - PERCENT - GAP * 2.0;
 pub enum Device {
     Output,
     Microphone,
+    Brightness,
 }
 
 // what the audio service says, the parts the popup shows
@@ -101,27 +120,50 @@ impl Service for Osd {
     fn listen() {
         // the first reading is what the volume already was, nothing changed yet
         let mut last = Levels::read();
+        let mut brightness_changes = brightness::changes();
 
         loop {
             thread::sleep(Self::interval());
 
             // one lock at a time: the levels, then the panels, then this service
             let now = Levels::read();
-            let change = changed(last, now);
+            let sound = changed(last, now);
 
             last = now;
 
-            let audio_panel = Panels::read().is_open(AUDIO);
+            // only changes made through the shell: the shortcuts or the slider
+            let changes = brightness::changes();
+            let brightened = changes != brightness_changes;
+
+            brightness_changes = changes;
+
+            // a panel that shows the levels itself keeps the popup away
+            let (audio_panel, system_panel) = {
+                let panels = Panels::read();
+
+                (panels.is_open(AUDIO), panels.is_open(SYSTEM))
+            };
+
+            let change = match (sound, brightened) {
+                (Some(device), _) if !audio_panel => Some(device),
+                (_, true) if !system_panel => Some(Device::Brightness),
+                _ => None,
+            };
 
             let showing = Osd::read().showing;
 
+            let covered = |device| match device {
+                Device::Brightness => system_panel,
+                _ => audio_panel,
+            };
+
             match (change, showing) {
-                (Some(device), _) if !audio_panel => {
+                (Some(device), _) => {
                     Osd::write().showing = Some((device, Instant::now() + SHOWN_FOR));
                 }
 
-                // over, or the audio panel opened meanwhile
-                (_, Some((_, until))) if Instant::now() >= until || audio_panel => {
+                // over, or its panel opened meanwhile
+                (_, Some((device, until))) if Instant::now() >= until || covered(device) => {
                     Osd::write().showing = None;
                 }
 
@@ -142,7 +184,7 @@ pub fn view(monitor: &Monitor) -> LayerWindow {
     let showing = Osd::read().showing.map(|(device, _)| device);
 
     let content = match showing {
-        Some(device) if panels::is_focused(monitor) => popup(&t, device),
+        Some(device) if panels::is_focused(monitor) => popup(&t, device, &monitor.name),
         _ => Rectangle::new()
             .width(Parent)
             .height(Parent)
@@ -173,10 +215,18 @@ pub fn view(monitor: &Monitor) -> LayerWindow {
 }
 
 // [icon] ━━━━━━━━──── 45%
-fn popup(t: &Theme, device: Device) -> Rectangle {
+fn popup(t: &Theme, device: Device, monitor: &str) -> Rectangle {
     let audio = Audio::read();
 
     let (icon, volume, muted) = match device {
+        Device::Brightness => {
+            let percent = match brightness::level(monitor) {
+                Level::Percent(percent) => percent,
+                _ => 0,
+            };
+
+            (brightness_icon(percent), percent, false)
+        }
         Device::Output => (
             volume_icon(audio.volume(), audio.muted()),
             audio.volume(),

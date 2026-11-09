@@ -46,7 +46,7 @@ Settled earlier, no need to revisit:
   instead.
 - **To settle:** which keys (several `SUPER+letter` are taken: h j k l t b q
   r f g i o v c s n p m, plus `=`, `-`, `0`, `[`, `]` and `\` for volume and
-  playback; `SUPER+w` is free, a fit for the wallpaper picker).
+  playback, `SHIFT+=` and `SHIFT+-` for brightness; `SUPER+w` is free, a fit for the wallpaper picker).
 
 ## Polish on what exists
 
@@ -69,19 +69,6 @@ Settled earlier, no need to revisit:
   bars only decorate grouped windows.
 - **To settle:** whether `allow_csd` and the border/shadow options are enough,
   after checking mango's docs.
-
-### 19. Brightness popup and shortcuts
-- **Status:** open
-- **Why:** brightness is only in the system panel (a slider over DDC/CI,
-  `src/brightness.rs`); volume has shortcuts and a popup (item 2 in DONE.md).
-- **Hooks in:** a brightness version of the volume popup in `src/osd.rs`,
-  shown when it changes; `amane ipc call brightness up|down` going through
-  `brightness::set` (newest value only, one ddcutil call at a time), with mango
-  binds like `SUPER+SHIFT+=` / `SUPER+SHIFT+-` and `XF86MonBrightnessUp/Down`
-  for keyboards that send them.
-- **To settle:** the step size, and whether the popup should also show for
-  changes made with the monitor's own buttons, which can only be noticed by
-  polling DDC (about 0.4 s per read).
 
 ## Outside the shell
 
