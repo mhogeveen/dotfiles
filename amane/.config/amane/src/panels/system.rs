@@ -369,6 +369,6 @@ fn interface_with_shield(t: &Theme, interface: String) -> Rectangle {
     Rectangle::new()
         .width(INTERFACE)
         .height(BUTTON)
-        .align_child(End, Center)
+        .align_child(Start, Center)
         .child(Row::new(parts).gap(4.0).align(Center))
 }
