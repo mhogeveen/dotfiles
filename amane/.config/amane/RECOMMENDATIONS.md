@@ -35,18 +35,7 @@ Settled earlier, no need to revisit:
 
 ## Gaps worth closing first
 
-### 4. Missing keybinds
-- **Status:** open
-- **Why:** session, calendar, screenshot (has `SUPER+p`), network, Bluetooth,
-  audio and wallpaper panels have no mango bind, except the ones listed in
-  `config.conf`. `SUPER+m` runs mango's `quit` straight away, while the session
-  menu asks twice before logging out.
-- **Hooks in:** `mango/.config/mango/config.conf` only, using
-  `amane ipc call panel toggle <name>`; `SUPER+m` could open the session menu
-  instead.
-- **To settle:** which keys (several `SUPER+letter` are taken: h j k l t b q
-  r f g i o v c s n p m, plus `=`, `-`, `0`, `[`, `]` and `\` for volume and
-  playback, `SHIFT+=` and `SHIFT+-` for brightness; `SUPER+w` is free, a fit for the wallpaper picker).
+Nothing open here right now (item 4, the keybinds, is in DONE.md).
 
 ## Polish on what exists
 

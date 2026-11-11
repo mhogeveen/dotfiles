@@ -19,6 +19,7 @@ mod clock;
 mod command;
 mod covers;
 mod json;
+mod keybinds;
 mod layout;
 mod lock;
 mod network;
@@ -81,6 +82,7 @@ fn main() {
         .window_per_monitor(panels::system::view)
         .window_per_monitor(panels::calendar::view)
         .window_per_monitor(panels::wallpaper::view)
+        .window_per_monitor(panels::keybinds::view)
         .lock(lock::view)
         .run();
 }

@@ -26,6 +26,7 @@ pub mod bluetooth;
 pub mod calendar;
 pub mod clipboard;
 mod hints;
+pub mod keybinds;
 pub mod launcher;
 pub mod layout;
 mod list;
@@ -51,6 +52,7 @@ pub const LAYOUT: &str = "layout";
 pub const SYSTEM: &str = "system";
 pub const CALENDAR: &str = "calendar";
 pub const WALLPAPER: &str = "wallpaper";
+pub const KEYBINDS: &str = "keybinds";
 
 pub struct PanelDef {
     pub name: &'static str,
@@ -152,6 +154,12 @@ static REGISTRY: &[PanelDef] = &[
         name: WALLPAPER,
         groups: &[PANELS],
         on_close: Some(wallpaper::reset),
+        corner: false,
+    },
+    PanelDef {
+        name: KEYBINDS,
+        groups: &[PANELS],
+        on_close: Some(keybinds::reset),
         corner: false,
     },
 ];

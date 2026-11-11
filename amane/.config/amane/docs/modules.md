@@ -90,6 +90,9 @@ bar, backdrop, notification popups, osd, every panel, and the lock screen.
   (`w`), notifications (`n`), session (`s`).
 - `calendar.rs`: month + weather as two cards on one grid (see 5.5).
 - `wallpaper.rs`: the wallpaper strip along the bottom (see 5.6).
+- `keybinds.rs`: the keybind sheet (`SUPER+/`): a search box over mango's
+  binds in three columns (`layout`/`place` spread the sections evenly), the
+  config re-read when its mtime changes, plus the keys every panel shares.
 
 **Services and helpers**
 - `audio/mod.rs`: `Devices` from `wpctl status`/`inspect` (amane's `Audio`
@@ -120,6 +123,9 @@ bar, backdrop, notification popups, osd, every panel, and the lock screen.
   leave a busy flag set. Use it for new external calls.
   `feed(child, input)` writes a piped stdin, closes it and always waits (no
   zombies when the write fails).
+- `keybinds.rs`: mango's binds from `~/.config/mango/config.conf` as
+  sections of keys and actions in words (`parse`, folding, `matches` for
+  the search; see DONE.md item 23).
 - `state.rs`: `path(name)`/`save(name, text)` in the state folder, saved
   through `write_atomically` (temp file + rename, also used by the
   notification history); `runtime_dir()` and `runtime_path(name)` for

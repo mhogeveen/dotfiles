@@ -267,3 +267,36 @@ are kept, so references between the two files still work.
   `INDICATORS` in `src/bar.rs`, `animations_setting` in
   `src/panels/system.rs`, `ui::checkbox`. The system panel is split into
   cards like the network panel: diagnostics, then Settings under its heading.
+
+### 4. Missing keybinds
+- **Status:** done (2026-11-11). Every panel has a mango bind now:
+  `SUPER+w` wallpaper, `SUPER+d` calendar, `SUPER+u` notifications,
+  `SUPER+SHIFT+a` audio, `SUPER+SHIFT+n` network, `SUPER+SHIFT+b`
+  bluetooth, `SUPER+/` the keybind sheet (item 23). `SUPER+m` opens the
+  session menu instead of mango's `quit`, so logging out asks twice.
+- **Hooks in:** `mango/.config/mango/config.conf` only. The binds were
+  regrouped under short headings for the sheet (same binds, reordered):
+  shell panels, apps, mango, focus window (with `SUPER+Tab` jump), move
+  window, resize window, window state (with close), minimize and
+  scratchpad, switch workspace, move window to workspace (with
+  `CTRL+SUPER+←/→`), scroller layout, mouse, volume, brightness, playback;
+  a leftover empty `#dwindle layout` comment went.
+- **Note:** binds can't be tested with `wtype`: mango ignores its virtual
+  keyboard for binds (an existing `SUPER+c` didn't fire either).
+
+### 23. Keybind sheet
+- **Status:** done (2026-11-11). `SUPER+/` opens a centered panel listing
+  every mango bind in three columns, with a search box (every word must be
+  in the keys, the action or the section title). Under mango's sections
+  it adds the keys every panel shares (`?`, `Esc`).
+- **Hooks in:** `src/keybinds.rs` reads `~/.config/mango/config.conf`
+  (a link to the dotfiles, so edits show without a rebuild): binds go
+  under the first line of the comment block above them, cut at `, : ; (`;
+  an option line between binds ends a section; actions are put into words
+  (shell IPC, wpctl, mango dispatchers; anything unknown shows the
+  dispatcher), runs of non-spawn binds that differ in their last word fold
+  (`Super+H L K J`, `Super+1–9`); `XF86` keys are left out.
+  `src/panels/keybinds.rs` re-reads the config only when its mtime changes,
+  and spreads the sections over the columns as evenly as they go (a long
+  section carries on under its heading again; overflow says how many are
+  left). Tests for both.
