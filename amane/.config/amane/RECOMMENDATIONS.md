@@ -146,8 +146,11 @@ Settled earlier, no need to revisit:
   password), then round A, the smaller bugs (`%20` icon paths, a bare `<` in
   bodies, atomic state saves, lost launch counts, zombies on error paths,
   overflowing text, history save logging, reused PipeWire ids, `date`
-  replaced by `localtime_r`, nested service reads). Left: round B (UX gaps)
-  and round C + D (helpers, structure, tests), below.
+  replaced by `localtime_r`, nested service reads), then round B, the UX
+  gaps (pairing keys, keyboard in the network and Bluetooth lists, mic volume
+  keys, scrolling audio device lists, the network panel's reserved list
+  height, no rescan with Wi-Fi off, "No Wi-Fi adapter", errors cleared on
+  close, wording). Left: round C + D (helpers, structure, tests), below.
 - **Duplication worth a helper:** running a command and reading its output
   (~12 copies; `command::capture` exists now), the runtime folder path (three
   copies, three different fallbacks), muted note/card/list box/header/error
@@ -155,13 +158,6 @@ Settled earlier, no need to revisit:
   boilerplate (7 panels), `text_width` (`chars × size × 0.6`, 3 copies), the
   refresh glyph under 4 names, the bar height `32` in `bar.rs` and
   `backdrop.rs`, the top-right panel list in `popups.rs`.
-- **UX gaps:** Bluetooth pairing Confirm/Cancel have no keys; network rows
-  can't be reached by keyboard; no mic volume keys; a 5th audio device pushes
-  the Input section out (needs a ScrollArea like network/bluetooth); the
-  Tailscale card can squeeze the Wi-Fi list to under a row; network `r` scans
-  with Wi-Fi off; no "no Wi-Fi adapter" state; errors stay after closing a
-  panel (no `on_close` for bluetooth, audio, system); wording ("1 entries",
-  lowercase "scanning", "press ↻" instead of `r`, calendar's `'t'` hint style).
 - **Structure and rules:** split `panels/network.rs` (715 lines; the
   Tailscale card into its own file) and the long functions in
   `calendar.rs`, `audio.rs`, `bluetooth.rs`; module block comments missing in

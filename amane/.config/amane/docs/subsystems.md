@@ -19,7 +19,9 @@ writes. `Write` has `quiet()` for updates that shouldn't redraw.
 Every panel window always exists (amane can't open windows at runtime) and is
 shown or hidden through the `Panels` service. `panels::panel()` wraps each:
 overlay layer, `Keyboard::OnDemand` (a hidden exclusive window would keep
-focus), Escape closes, `?` shows key hints, content built only while shown.
+focus), Escape closes (after first closing anything open inside, see
+`backs_out`: the network password box), `?` shows key hints, content built only
+while shown.
 The registry (`REGISTRY` in `panels/mod.rs`) names each panel, its groups and
 an `on_close` hook (resets search, selection, previews). Opening a panel closes
 those sharing a group; the replacement shows after `SWAP_DELAY` (100 ms) so the

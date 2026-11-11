@@ -7,6 +7,7 @@
  */
 
 use std::sync::Mutex;
+use std::sync::atomic::{AtomicUsize, Ordering};
 
 use amane::{
     AccessPoint,
@@ -19,15 +20,51 @@ use amane::{
 };
 
 use super::ui::{self, BUTTON, PADDING, SIDES, button};
-use super::{NETWORK, panel};
+use super::{NETWORK, list, panel};
 use crate::network::{self, ICON_LOCK, ICON_RESCAN, NetworkPanel, Outcome, Status};
 use crate::theme::Theme;
 use crate::vpn::{self, Backend, Status as Tailscale, Suggestion, Vpn, tailscale};
 
-const HEIGHT: f32 = 560.0;
 const GAP: f32 = 8.0;
 const LINE: f32 = 20.0;
 const ROW: f32 = 40.0;
+
+// the password box under a network, a little taller than a row for its input
+const PASSWORD_ROW: f32 = ROW + 4.0;
+
+// the first row the list draws while the highlight is in use
+static FIRST_ROW: AtomicUsize = AtomicUsize::new(0);
+
+/*
+ * the panel has a fixed height (see panels/mod.rs), so it's the most the parts
+ * above the wi-fi list can take, plus room for three networks: then the list
+ * never shrinks under that, and with less above it simply shows more
+ */
+const HEIGHT: f32 = ABOVE_LIST_AT_MOST + LIST_AT_LEAST;
+
+const LIST_AT_LEAST: f32 = 3.0 * ROW + 2.0;
+
+// the frame, the header, then everything that can sit above the list at once
+const ABOVE_LIST_AT_MOST: f32 = PADDING * 2.0
+    + BUTTON
+    + CONNECTION_AT_MOST
+    + TAILSCALE_AT_MOST
+    + LINE // another tunnel
+    + BUTTON // a result line
+    + 5.0 * GAP;
+
+// the joined network with its details line and its buttons
+const CONNECTION_AT_MOST: f32 = PADDING * 2.0 + LINE + GAP + LINE + GAP + BUTTON;
+
+// title, address, an error, the actions, and three exit node buttons under their label
+const TAILSCALE_AT_MOST: f32 = PADDING * 2.0
+    + CARD_TITLE
+    + 2.0 * (GAP + CARD_LINE)
+    + GAP
+    + BUTTON
+    + GAP
+    + CARD_LINE
+    + 3.0 * (GAP + BUTTON);
 
 // the connection's state beside its name; the longest, "Wi-Fi is off", is 12 characters at 12 px
 const STATE_WIDTH: f32 = 88.0;
@@ -50,19 +87,113 @@ const KEY_WIFI: char = 'w';
 const KEY_RESCAN: char = 'r';
 const KEY_TAILSCALE: char = 'v';
 const KEY_LOG_IN: char = 'i';
+const KEY_DISCONNECT: char = 'd';
+const KEY_FORGET: char = 'f';
 
-// the header's buttons by their letters; a password being typed keeps the letters for itself
+/*
+ * which network in the list the keys act on, by its place; None until a key
+ * moves it, see list::step_highlight
+ */
+struct Highlight {
+    index: Option<usize>,
+}
+
+impl Service for Highlight {
+    fn new() -> Self {
+        Self { index: None }
+    }
+
+    // changes only through keys
+    fn listen() {}
+}
+
+/*
+ * the header's buttons by their letters, and the list: j/k or arrows move,
+ * Enter does what a click does, f forgets the highlighted network and d leaves
+ * the one you're on. a password being typed keeps letters and Enter for itself
+ */
 fn key_pressed(key: Key) {
-    let Key::Character(letter) = key else {
-        return;
-    };
+    if let Some(delta) = list::highlight_delta(&key) {
+        let count = listed(&Network::read()).len();
+        let mut highlight = Highlight::write();
 
-    match letter.to_ascii_lowercase() {
-        KEY_WIFI => toggle_wifi(),
-        KEY_RESCAN => Network::scan(),
-        KEY_TAILSCALE if tailscale().0 => Vpn::toggle_tailscale(),
-        KEY_LOG_IN if tailscale().1 => Vpn::log_in(),
+        highlight.index = list::step_highlight(highlight.index, delta, count);
+
+        return;
+    }
+
+    match key {
+        Key::Enter => {
+            if let Some(access_point) = highlighted() {
+                click(&access_point);
+            }
+        }
+        Key::Character(letter) => match letter.to_ascii_lowercase() {
+            KEY_WIFI => toggle_wifi(),
+            KEY_RESCAN => rescan(),
+            KEY_TAILSCALE if tailscale().0 => Vpn::toggle_tailscale(),
+            KEY_LOG_IN if tailscale().1 => Vpn::log_in(),
+            KEY_DISCONNECT if network::joined(&Network::read()).is_some() => {
+                NetworkPanel::disconnect()
+            }
+            // the highlighted network, or without a highlight the one you're on, like d
+            KEY_FORGET => {
+                if Highlight::read().index.is_some() {
+                    if let Some(access_point) = highlighted().filter(AccessPoint::saved) {
+                        NetworkPanel::forget(access_point.ssid());
+                    }
+                } else if let Some(ssid) = network::joined(&Network::read()) {
+                    NetworkPanel::forget(&ssid);
+                }
+            }
+            _ => {}
+        },
         _ => {}
+    }
+}
+
+// only while wi-fi is on, like the button
+fn rescan() {
+    if Network::read().wifi_enabled() {
+        Network::scan();
+    }
+}
+
+// the networks in the list, in the order shown: every one in range but the one you're on
+fn listed(network: &Network) -> Vec<&AccessPoint> {
+    if !network.wifi_enabled() {
+        return Vec::new();
+    }
+
+    network
+        .access_points()
+        .iter()
+        .filter(|access_point| !access_point.active())
+        .collect()
+}
+
+// the highlighted network, if the keys moved to one; the list may have shrunk since
+fn highlighted() -> Option<AccessPoint> {
+    let index = Highlight::read().index?;
+
+    let network = Network::read();
+    let shown = listed(&network);
+
+    shown
+        .get(index.min(shown.len().saturating_sub(1)))
+        .map(|access_point| (*access_point).clone())
+}
+
+// saved and open networks join right away, a new secured one asks for its password first
+fn click(access_point: &AccessPoint) {
+    let ssid = access_point.ssid();
+
+    if access_point.secured() && !access_point.saved() {
+        clear_password();
+
+        NetworkPanel::toggle_expanded(ssid);
+    } else {
+        NetworkPanel::connect(ssid, None);
     }
 }
 
@@ -85,28 +216,61 @@ fn content(t: &Theme) -> Rectangle {
     let network = Network::read();
     let panel = NetworkPanel::read();
 
-    let mut parts: Vec<Box<dyn Widget>> = vec![
-        Box::new(header(t, &network)),
-        Box::new(connection(t, &network, &panel)),
-    ];
+    let (card, card_height) = connection(t, &network, &panel);
+
+    let mut parts: Vec<Box<dyn Widget>> = vec![Box::new(header(t, &network)), Box::new(card)];
+
+    // what's above the list, so it knows how much of itself shows
+    let mut above = BUTTON + GAP + card_height + GAP;
 
     // tailscale, and any other vpn there is
-    parts.extend(vpn_parts(t));
+    let (vpn, vpn_height) = vpn_parts(t);
+
+    above += vpn_height;
+    parts.extend(vpn);
 
     if let Some(result) = panel.result() {
+        above += BUTTON + GAP;
+
         parts.push(Box::new(result_line(t, result)));
     }
 
-    parts.push(Box::new(networks(t, &network, &panel)));
+    let visible = HEIGHT - PADDING * 2.0 - above - ui::LIST_BORDER * 2.0;
+
+    parts.push(Box::new(networks(t, &network, &panel, visible)));
 
     ui::frame(t, GAP, parts)
 }
 
-// closes the password box and forgets what was typed in it
+/*
+ * Escape while the password box is open closes just the box and forgets what
+ * was typed; the highlight stays, so the keys move through the list again.
+ * false when there was no box, so Escape closes the panel
+ */
+pub fn back_out() -> bool {
+    if NetworkPanel::read().expanded().is_none() {
+        return false;
+    }
+
+    clear_password();
+
+    NetworkPanel::close_password();
+
+    true
+}
+
+/*
+ * on close: the password box closes and forgets what was typed, and the
+ * highlight and old errors don't come back on the next open
+ */
 pub fn reset() {
     clear_password();
 
-    NetworkPanel::collapse();
+    NetworkPanel::reset();
+    Vpn::dismiss_error();
+
+    Highlight::write().index = None;
+    FIRST_ROW.store(0, Ordering::Relaxed);
 }
 
 fn clear_password() {
@@ -120,22 +284,32 @@ fn clear_password() {
 
 // "Network", rescan, and the wi-fi switch
 fn header(t: &Theme, network: &Network) -> Row {
-    let title = ui::title(t, "Network");
-
-    let rescan = ui::key_button(t, ICON_RESCAN, KEY_RESCAN, |_| Network::scan());
-
     let enabled = network.wifi_enabled();
 
-    let switch = ui::switch(t, "Wi-Fi", 92.0, enabled, KEY_WIFI, |_| toggle_wifi());
+    let mut parts: Vec<Box<dyn Widget>> = vec![Box::new(ui::title(t, "Network"))];
 
-    Row::new(children![title, rescan, switch])
-        .gap(GAP)
-        .align(Center)
-        .height(BUTTON)
+    // nothing to scan with wi-fi off, like bluetooth's rescan while it's off
+    if enabled {
+        parts.push(Box::new(ui::key_button(t, ICON_RESCAN, KEY_RESCAN, |_| {
+            rescan()
+        })));
+    }
+
+    parts.push(Box::new(ui::switch(
+        t,
+        "Wi-Fi",
+        92.0,
+        enabled,
+        KEY_WIFI,
+        |_| toggle_wifi(),
+    )));
+
+    Row::new(parts).gap(GAP).align(Center).height(BUTTON)
 }
 
 // the current connection: what it is, how it's doing, its address, and buttons
-fn connection(t: &Theme, network: &Network, panel: &NetworkPanel) -> Rectangle {
+// the card and its height
+fn connection(t: &Theme, network: &Network, panel: &NetworkPanel) -> (Rectangle, f32) {
     let status = network::status(network);
     let joined = network::joined(network);
 
@@ -228,24 +402,36 @@ fn connection(t: &Theme, network: &Network, panel: &NetworkPanel) -> Rectangle {
         height += GAP + BUTTON;
 
         let forgotten = ssid.clone();
+        let forget = move |_| NetworkPanel::forget(&forgotten);
+
+        // f forgets this one until a highlight in the list takes the key over
+        let forget = if Highlight::read().index.is_none() {
+            ui::key_text_button(t, "Forget", 80.0, KEY_FORGET, forget)
+        } else {
+            button(t, "Forget", 80.0, forget)
+        };
 
         parts.push(Box::new(
             Row::new(children![
-                button(t, "Disconnect", 100.0, |_| NetworkPanel::disconnect()),
-                button(t, "Forget", 80.0, move |_| NetworkPanel::forget(&forgotten)),
+                ui::key_text_button(t, "Disconnect", 100.0, KEY_DISCONNECT, |_| {
+                    NetworkPanel::disconnect()
+                }),
+                forget,
             ])
             .gap(GAP)
             .height(BUTTON),
         ));
     }
 
-    Rectangle::new()
+    let card = Rectangle::new()
         .width(Parent)
         .height(height)
         .fill(t.bg0)
         .border(1.0, t.bg3)
         .padding(PADDING)
-        .child(Column::new(parts).gap(GAP))
+        .child(Column::new(parts).gap(GAP));
+
+    (card, height)
 }
 
 // what went wrong last, with a way out when there is one
@@ -274,12 +460,29 @@ fn result_line(t: &Theme, result: &Outcome) -> Row {
 }
 
 // every network in range except the one you're on
-fn networks(t: &Theme, network: &Network, panel: &NetworkPanel) -> Rectangle {
+fn networks(t: &Theme, network: &Network, panel: &NetworkPanel, visible: f32) -> Rectangle {
     let mut rows: Vec<Box<dyn Widget>> = Vec::new();
 
-    let message = if !network.wifi_enabled() {
+    // each row's height, to know which ones fit
+    let mut heights: Vec<f32> = Vec::new();
+
+    let shown = listed(network);
+
+    let highlighted = Highlight::read()
+        .index
+        .map(|index| index.min(shown.len().saturating_sub(1)));
+
+    // where the highlighted network's row is among all the rows, password box included
+    let mut highlighted_row = None;
+
+    // the last row to keep in view with it: its password box, when that's open
+    let mut last_in_view = None;
+
+    let message = if !network::has_wifi_adapter() {
+        Some("No Wi-Fi adapter")
+    } else if !network.wifi_enabled() {
         Some("Wi-Fi is off")
-    } else if network.access_points().iter().all(AccessPoint::active) {
+    } else if shown.is_empty() {
         Some("No networks found")
     } else {
         None
@@ -294,30 +497,67 @@ fn networks(t: &Theme, network: &Network, panel: &NetworkPanel) -> Rectangle {
                 .align_child(Start, Center)
                 .child(Text::new(message).size(13.0).color(t.comment)),
         ));
+        heights.push(ROW);
     }
 
-    for access_point in network.access_points() {
-        if access_point.active() || !network.wifi_enabled() {
-            continue;
+    for (index, access_point) in shown.iter().enumerate() {
+        let lit = highlighted == Some(index);
+
+        if lit {
+            highlighted_row = Some(rows.len());
         }
 
-        rows.push(Box::new(network_row(t, access_point, panel)));
+        rows.push(Box::new(network_row(t, access_point, panel, lit)));
+        heights.push(ROW);
 
         if panel.expanded() == Some(access_point.ssid()) {
+            // the highlighted network's password box stays in view with it
+            if lit {
+                last_in_view = Some(rows.len());
+            }
+
             rows.push(Box::new(password_row(t, access_point.ssid())));
+            heights.push(PASSWORD_ROW);
         }
     }
 
-    Rectangle::new()
-        .width(Parent)
-        .height(Parent)
-        .fill(t.bg0)
-        .border(1.0, t.bg3)
-        .clip()
-        .child(ScrollArea::new("network-list", Column::new(rows)))
+    /*
+     * with the keys in use, drawn from a first row that keeps the highlight in
+     * sight (a ScrollArea can't be scrolled from code), and the wheel moves it
+     */
+    match highlighted_row {
+        Some(row) => {
+            let first = list::follow_window(
+                FIRST_ROW.load(Ordering::Relaxed),
+                row,
+                last_in_view.unwrap_or(row),
+                &heights,
+                visible,
+            );
+
+            // remembered for the next draw; a static, as a view can't write a service
+            FIRST_ROW.store(first, Ordering::Relaxed);
+
+            let rows: Vec<Box<dyn Widget>> = rows.into_iter().skip(first).collect();
+
+            ui::list_box(t, Column::new(rows)).on_scroll(|scroll| {
+                let count = listed(&Network::read()).len();
+                let mut highlight = Highlight::write();
+
+                highlight.index =
+                    list::step_highlight(highlight.index, list::scroll_delta(scroll), count);
+            })
+        }
+        None => ui::list_box(t, ScrollArea::new("network-list", Column::new(rows))),
+    }
 }
 
-fn network_row(t: &Theme, access_point: &AccessPoint, panel: &NetworkPanel) -> Rectangle {
+fn network_row(
+    t: &Theme,
+    access_point: &AccessPoint,
+    panel: &NetworkPanel,
+    highlighted: bool,
+) -> Rectangle {
     let ssid = String::from(access_point.ssid());
 
     let joining = panel.connecting_to() == Some(access_point.ssid());
@@ -363,30 +603,33 @@ fn network_row(t: &Theme, access_point: &AccessPoint, panel: &NetworkPanel) -> R
 
     if access_point.saved() {
         let forgotten = ssid.clone();
+        let forget = move |_| NetworkPanel::forget(&forgotten);
 
-        parts.push(Box::new(button(t, "Forget", 64.0, move |_| {
-            NetworkPanel::forget(&forgotten)
-        })));
+        // the keys act on the highlighted row, so only its button shows f under ?
+        parts.push(Box::new(if highlighted {
+            ui::key_text_button(t, "Forget", 64.0, KEY_FORGET, forget)
+        } else {
+            button(t, "Forget", 64.0, forget)
+        }));
     }
 
-    // saved and open networks join right away, a new secured one asks first
-    let needs_password = access_point.secured() && !access_point.saved();
+    let fill = if highlighted {
+        t.bg3
+    } else if expanded {
+        t.bg2
+    } else {
+        t.bg0
+    };
+
+    let clicked = access_point.clone();
 
     Rectangle::new()
         .width(Parent)
         .height(ROW)
-        .fill(if expanded { t.bg2 } else { t.bg0 })
+        .fill(fill)
         .padding(SIDES)
         .cursor(Pointer)
-        .on_click(move |_| {
-            if needs_password {
-                clear_password();
-
-                NetworkPanel::toggle_expanded(&ssid);
-            } else {
-                NetworkPanel::connect(&ssid, None);
-            }
-        })
+        .on_click(move |_| click(&clicked))
         .child(Row::new(parts).gap(GAP).align(Center).height(ROW))
 }
 
@@ -429,7 +672,7 @@ fn password_row(t: &Theme, ssid: &str) -> Rectangle {
 
     Rectangle::new()
         .width(Parent)
-        .height(ROW + 4.0)
+        .height(PASSWORD_ROW)
         .fill(t.bg2)
         .padding(SIDES)
         .align_child(Start, Center)
@@ -455,17 +698,27 @@ const CARD_TITLE: f32 = 20.0;
 const CARD_LINE: f32 = 16.0;
 const ACTION_WIDTH: f32 = 100.0;
 
-// the tailscale card, then a line for every other tunnel
-fn vpn_parts(t: &Theme) -> Vec<Box<dyn Widget>> {
+/*
+ * the tailscale card, then a line for every other tunnel; with their height,
+ * the gap after each included
+ */
+fn vpn_parts(t: &Theme) -> (Vec<Box<dyn Widget>>, f32) {
     let vpn = Vpn::read();
 
     let mut parts: Vec<Box<dyn Widget>> = Vec::new();
+    let mut height = 0.0;
 
     if let Some(status) = vpn.tailscale() {
-        parts.push(Box::new(tailscale_card(t, &vpn, status)));
+        let (card, card_height) = tailscale_card(t, &vpn, status);
+
+        height += card_height + GAP;
+
+        parts.push(Box::new(card));
     }
 
     for tunnel in vpn.others() {
+        height += LINE + GAP;
+
         let all = vpn.all_traffic() == Some(tunnel);
 
         let mut line = format!("VPN {} · {}", tunnel.interface, tunnel.kind.name());
@@ -491,7 +744,7 @@ fn vpn_parts(t: &Theme) -> Vec<Box<dyn Widget>> {
         ));
     }
 
-    parts
+    (parts, height)
 }
 
 /*
@@ -501,7 +754,8 @@ fn vpn_parts(t: &Theme) -> Vec<Box<dyn Widget>> {
  *  [ Disconnect ]  [ Log in ]
  *  Exit node   [ none ] [ nas ] [ vps-ams ]
  */
-fn tailscale_card(t: &Theme, vpn: &Vpn, status: &Tailscale) -> Rectangle {
+// the card and its height
+fn tailscale_card(t: &Theme, vpn: &Vpn, status: &Tailscale) -> (Rectangle, f32) {
     let connected = status.connected();
 
     let state = if vpn.busy() {
@@ -597,13 +851,15 @@ fn tailscale_card(t: &Theme, vpn: &Vpn, status: &Tailscale) -> Rectangle {
         parts.push(Box::new(column));
     }
 
-    Rectangle::new()
+    let card = Rectangle::new()
         .width(Parent)
         .height(height)
         .fill(t.bg0)
         .border(1.0, t.bg3)
         .padding(PADDING)
-        .child(Column::new(parts).gap(GAP))
+        .child(Column::new(parts).gap(GAP));
+
+    (card, height)
 }
 
 fn needs_login(status: &Tailscale) -> bool {

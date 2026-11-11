@@ -281,11 +281,7 @@ impl Picker for Clipboard {
             .width(Parent)
             .height(ui::BUTTON)
             .align_child(Start, Center)
-            .child(
-                Text::new(format!("{count} entries"))
-                    .size(13.0)
-                    .color(t.comment),
-            );
+            .child(Text::new(entries(count)).size(13.0).color(t.comment));
 
         let button = if Armed::read().clear {
             Rectangle::new()
@@ -296,7 +292,7 @@ impl Picker for Clipboard {
                 .cursor(Pointer)
                 .on_click(|_| clear_clicked())
                 .child(
-                    Text::new(format!("Click again to clear {count} entries"))
+                    Text::new(format!("Click again to clear {}", entries(count)))
                         .size(13.0)
                         .color(t.on_accent),
                 )
@@ -407,4 +403,25 @@ fn decode_and_copy(line: &str) -> std::io::Result<()> {
     let copy = Command::new("wl-copy").stdin(Stdio::piped()).spawn()?;
 
     command::feed(copy, &decoded.stdout).map(drop)
+}
+
+// "1 entry", "3 entries"
+fn entries(count: usize) -> String {
+    if count == 1 {
+        String::from("1 entry")
+    } else {
+        format!("{count} entries")
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::entries;
+
+    #[test]
+    fn one_entry_is_singular() {
+        assert_eq!(entries(0), "0 entries");
+        assert_eq!(entries(1), "1 entry");
+        assert_eq!(entries(12), "12 entries");
+    }
 }

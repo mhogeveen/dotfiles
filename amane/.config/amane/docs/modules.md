@@ -51,11 +51,27 @@ bar, backdrop, notification popups, osd, every panel, and the lock screen.
 - `screenshot.rs` (Menu): fullscreen/region × copy/save (`../screenshot.rs`).
 - `session.rs` (Menu): lock, suspend, logout, reboot, shutdown.
 - `notifications.rs`: the notification center (live, then "Earlier").
-- `network.rs`: Wi-Fi (`w` toggles, `r` rescans, password box), the
-  Tailscale card (`v` connect, `i` log in, exit nodes), other VPN tunnels.
-- `bluetooth.rs`: power `b`, rescan `r`, devices, pairing requests.
+- `network.rs`: Wi-Fi (`w` toggles, `r` rescans while on), the list (j/k or
+  arrows highlight, Enter clicks), `d` and `f` leave and forget the joined
+  network, or `f` the highlighted one once there is a highlight; the
+  password box (Escape closes just the box, `back_out`), "No Wi-Fi adapter",
+  the Tailscale card (`v` connect, `i` log in, exit nodes), other VPN
+  tunnels. Its fixed height is the most the cards above can take plus three
+  list rows (`ABOVE_LIST_AT_MOST`).
+- `bluetooth.rs`: power `b`, rescan `r`, devices (j/k or arrows, Enter
+  clicks, `d` disconnects, `f` forgets), pairing requests (Enter confirms,
+  `c` cancels, `x` dismisses a notice or failure).
 - `audio.rs`: "Now playing" (`h` `p` `l`), output and input levels (`j`/`k`
-  volume, `m` mute, `n` mic mute), device lists; `volume_icon`, mic icons.
+  output volume, `J`/`K` (Shift) mic volume, `m` mute, `n` mic mute), device
+  lists (4 outputs, 2 inputs, then they scroll); `volume_icon`, mic icons.
+- The network and Bluetooth highlight (`list::step_highlight`,
+  `follow_window`): None until a key moves it, then the list is drawn from a
+  first row (a `FIRST_ROW` static per panel) instead of through its
+  ScrollArea (which can't scroll from code). The window only moves when the
+  highlight would leave it, so each panel adds up the heights above its
+  list to know how much shows; the wheel moves the highlight. Cleared on
+  close. Lists sit in `ui::list_box`, which clips the rows inside its border
+  (amane clips at the outer edge, border included), so rows can't cover it.
 - `system.rs`: user@host, OS/kernel/uptime, CPU/memory/disk meters,
   network speed, battery on laptops, settings: accent swatches and the
   brightness slider; buttons for wallpaper (`w`), notifications (`n`),

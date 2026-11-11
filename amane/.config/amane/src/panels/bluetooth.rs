@@ -6,6 +6,8 @@
  * the state behind it (scanning, results, the pairing agent) is in src/bluetooth
  */
 
+use std::sync::atomic::{AtomicUsize, Ordering};
+
 use amane::{
     Align::{Center, Start},
     Bluetooth, BluetoothDevice, Column,
@@ -16,7 +18,7 @@ use amane::{
 };
 
 use super::ui::{self, BUTTON, PADDING, SIDES, button};
-use super::{BLUETOOTH, panel};
+use super::{BLUETOOTH, list, panel};
 use crate::bluetooth::agent::{self, Agent, Kind, Request};
 use crate::bluetooth::{self, BluetoothPanel, ICON_RESCAN, Job};
 use crate::theme::Theme;
@@ -35,18 +37,116 @@ pub fn view(monitor: &Monitor) -> LayerWindow {
 
 const KEY_POWER: char = 'b';
 const KEY_RESCAN: char = 'r';
+const KEY_CANCEL: char = 'c';
+const KEY_DISMISS: char = 'x';
+const KEY_DISCONNECT: char = 'd';
+const KEY_FORGET: char = 'f';
 
-// the header's buttons by their letters
+// Enter as the ? hints name it
+const HINT_ENTER: &str = "Enter";
+
+/*
+ * which device the keys act on, by its place in the list (connected, paired,
+ * then available); None until a key moves it, see list::step_highlight
+ */
+struct Highlight {
+    index: Option<usize>,
+}
+
+impl Service for Highlight {
+    fn new() -> Self {
+        Self { index: None }
+    }
+
+    // changes only through keys
+    fn listen() {}
+}
+
+/*
+ * the header's buttons by their letters, the pairing question, and the list:
+ * j/k or arrows move, Enter does what a click does, d disconnects, f forgets
+ */
 fn key_pressed(key: Key) {
-    let Key::Character(letter) = key else {
+    if let Some(delta) = list::highlight_delta(&key) {
+        let count = listed(&Bluetooth::read()).len();
+        let mut highlight = Highlight::write();
+
+        highlight.index = list::step_highlight(highlight.index, delta, count);
+
+        return;
+    }
+
+    let answerable = Agent::read().request().map(Request::answerable);
+
+    match key {
+        // a pairing question comes first: Enter answers it before the list
+        Key::Enter if answerable == Some(true) => agent::confirm(),
+        Key::Enter => act_on_highlighted(Action::Click),
+        Key::Character(letter) => match letter.to_ascii_lowercase() {
+            KEY_POWER => toggle_power(),
+            KEY_RESCAN => rescan(),
+            KEY_CANCEL if answerable == Some(true) => agent::cancel(),
+            KEY_DISMISS if answerable == Some(false) => agent::clear(),
+            KEY_DISMISS => BluetoothPanel::dismiss_failure(),
+            KEY_DISCONNECT => act_on_highlighted(Action::Disconnect),
+            KEY_FORGET => act_on_highlighted(Action::Forget),
+            _ => {}
+        },
+        _ => {}
+    }
+}
+
+enum Action {
+    Click,
+    Disconnect,
+    Forget,
+}
+
+fn act_on_highlighted(action: Action) {
+    let Some(index) = Highlight::read().index else {
         return;
     };
 
-    match letter.to_ascii_lowercase() {
-        KEY_POWER => toggle_power(),
-        KEY_RESCAN => rescan(),
+    let device = {
+        let bluetooth = Bluetooth::read();
+        let devices = listed(&bluetooth);
+
+        // the list may have shrunk since the highlight moved
+        let Some(device) = devices.get(index.min(devices.len().saturating_sub(1))) else {
+            return;
+        };
+
+        (*device).clone()
+    };
+
+    match action {
+        Action::Click => click(&device),
+        Action::Disconnect if device.connected() => BluetoothPanel::disconnect(&device),
+        Action::Forget if device.paired() => BluetoothPanel::forget(&device),
         _ => {}
     }
+}
+
+// a connected device disconnects, a paired one connects, a new one pairs
+fn click(device: &BluetoothDevice) {
+    if device.connected() {
+        BluetoothPanel::disconnect(device);
+    } else if device.paired() {
+        BluetoothPanel::connect(device);
+    } else {
+        BluetoothPanel::pair(device);
+    }
+}
+
+// the first row the list draws while the highlight is in use
+static FIRST_ROW: AtomicUsize = AtomicUsize::new(0);
+
+// on close: the highlight and an old failure don't come back on the next open
+pub fn reset() {
+    Highlight::write().index = None;
+    FIRST_ROW.store(0, Ordering::Relaxed);
+
+    BluetoothPanel::dismiss_failure();
 }
 
 // only with an adapter, like the switch
@@ -76,15 +176,26 @@ fn content(t: &Theme) -> Rectangle {
 
     let mut parts: Vec<Box<dyn Widget>> = vec![Box::new(header(t, &bluetooth))];
 
+    // what's above the list, so it knows how much of itself shows
+    let mut above = BUTTON + GAP;
+
     if let Some(request) = agent.request() {
-        parts.push(Box::new(pairing(t, request)));
+        let (card, height) = pairing(t, request);
+
+        above += height + GAP;
+
+        parts.push(Box::new(card));
     }
 
     if let Some(failure) = panel.failure() {
+        above += BUTTON + GAP;
+
         parts.push(Box::new(failure_line(t, failure)));
     }
 
-    parts.push(Box::new(devices(t, &bluetooth, &panel)));
+    let visible = HEIGHT - PADDING * 2.0 - above - ui::LIST_BORDER * 2.0;
+
+    parts.push(Box::new(devices(t, &bluetooth, &panel, visible)));
 
     ui::frame(t, GAP, parts)
 }
@@ -95,7 +206,7 @@ fn header(t: &Theme, bluetooth: &Bluetooth) -> Row {
 
     if bluetooth.powered() {
         if bluetooth.scanning() {
-            parts.push(Box::new(Text::new("scanning").size(12.0).color(t.comment)));
+            parts.push(Box::new(Text::new("Scanning…").size(12.0).color(t.comment)));
         }
 
         parts.push(Box::new(ui::key_button(t, ICON_RESCAN, KEY_RESCAN, |_| {
@@ -117,8 +228,8 @@ fn header(t: &Theme, bluetooth: &Bluetooth) -> Row {
     Row::new(parts).gap(GAP).align(Center).height(BUTTON)
 }
 
-// the pairing agent's question, or the code to type on the device
-fn pairing(t: &Theme, request: &Request) -> Rectangle {
+// the pairing agent's question, or the code to type on the device; the card and its height
+fn pairing(t: &Theme, request: &Request) -> (Rectangle, f32) {
     let (title, detail) = match &request.kind {
         Kind::Confirm(code) => (
             format!("Pair with {}?", request.name),
@@ -156,27 +267,31 @@ fn pairing(t: &Theme, request: &Request) -> Rectangle {
     let buttons: Box<dyn Widget> = if request.answerable() {
         Box::new(
             Row::new(children![
-                button(t, "Confirm", 84.0, |_| agent::confirm()),
-                button(t, "Cancel", 84.0, |_| agent::cancel()),
+                ui::hint_text_button(t, "Confirm", 84.0, HINT_ENTER, |_| agent::confirm()),
+                ui::key_text_button(t, "Cancel", 84.0, KEY_CANCEL, |_| agent::cancel()),
             ])
             .gap(GAP)
             .height(BUTTON),
         )
     } else {
-        Box::new(button(t, "Dismiss", 84.0, |_| agent::clear()))
+        Box::new(ui::key_text_button(t, "Dismiss", 84.0, KEY_DISMISS, |_| {
+            agent::clear()
+        }))
     };
 
     height += GAP + BUTTON;
 
     parts.push(buttons);
 
-    Rectangle::new()
+    let card = Rectangle::new()
         .width(Parent)
         .height(height)
         .fill(t.bg1)
         .border(1.0, t.accent)
         .padding(PADDING)
-        .child(Column::new(parts).gap(GAP))
+        .child(Column::new(parts).gap(GAP));
+
+    (card, height)
 }
 
 fn failure_line(t: &Theme, failure: &str) -> Row {
@@ -186,16 +301,72 @@ fn failure_line(t: &Theme, failure: &str) -> Row {
             .height(BUTTON)
             .align_child(Start, Center)
             .child(Text::new(failure).size(13.0).color(t.accent).elide()),
-        button(t, "Dismiss", 72.0, |_| BluetoothPanel::dismiss_failure()),
+        ui::key_text_button(t, "Dismiss", 72.0, KEY_DISMISS, |_| {
+            BluetoothPanel::dismiss_failure()
+        }),
     ])
     .gap(GAP)
     .align(Center)
     .height(BUTTON)
 }
 
-// connected, then paired, then the ones found by scanning
-fn devices(t: &Theme, bluetooth: &Bluetooth, panel: &BluetoothPanel) -> Rectangle {
+const AVAILABLE: &str = "Available";
+
+// connected, then paired, then the ones found by scanning (unnamed new ones left out)
+fn groups(bluetooth: &Bluetooth) -> [(&'static str, Vec<&BluetoothDevice>); 3] {
+    let shown: Vec<&BluetoothDevice> = bluetooth
+        .devices()
+        .iter()
+        .filter(|device| device.paired() || !bluetooth::unnamed(device))
+        .collect();
+
+    let picked = |keep: fn(&BluetoothDevice) -> bool| {
+        shown
+            .iter()
+            .copied()
+            .filter(|device| keep(device))
+            .collect()
+    };
+
+    [
+        ("Connected", picked(|device| device.connected())),
+        (
+            "Paired",
+            picked(|device| device.paired() && !device.connected()),
+        ),
+        (AVAILABLE, picked(|device| !device.paired())),
+    ]
+}
+
+// the devices in the order they're shown, which is the order the highlight counts in
+fn listed(bluetooth: &Bluetooth) -> Vec<&BluetoothDevice> {
+    if !bluetooth.powered() {
+        return Vec::new();
+    }
+
+    groups(bluetooth)
+        .into_iter()
+        .flat_map(|(_, devices)| devices)
+        .collect()
+}
+
+fn devices(t: &Theme, bluetooth: &Bluetooth, panel: &BluetoothPanel, visible: f32) -> Rectangle {
     let mut rows: Vec<Box<dyn Widget>> = Vec::new();
+
+    // each row's height, to know which ones fit
+    let mut heights: Vec<f32> = Vec::new();
+
+    /*
+     * where the highlighted device's row is among all the rows, headings
+     * included, and the row to keep in sight with it: its group's heading
+     * when it's the group's first device
+     */
+    let mut highlighted_row = None;
+    let mut anchor = 0;
+
+    let highlighted = Highlight::read()
+        .index
+        .map(|index| index.min(listed(bluetooth).len().saturating_sub(1)));
 
     let message = if !bluetooth.available() {
         Some("No Bluetooth adapter")
@@ -207,71 +378,77 @@ fn devices(t: &Theme, bluetooth: &Bluetooth, panel: &BluetoothPanel) -> Rectangl
 
     if let Some(message) = message {
         rows.push(note(t, message));
+        heights.push(ROW);
     } else {
-        let shown: Vec<&BluetoothDevice> = bluetooth
-            .devices()
-            .iter()
-            .filter(|device| device.paired() || !bluetooth::unnamed(device))
-            .collect();
+        let mut index = 0;
 
-        let groups: [(&str, Vec<&BluetoothDevice>); 3] = [
-            (
-                "Connected",
-                shown
-                    .iter()
-                    .copied()
-                    .filter(|device| device.connected())
-                    .collect(),
-            ),
-            (
-                "Paired",
-                shown
-                    .iter()
-                    .copied()
-                    .filter(|device| device.paired() && !device.connected())
-                    .collect(),
-            ),
-            (
-                "Available",
-                shown
-                    .iter()
-                    .copied()
-                    .filter(|device| !device.paired())
-                    .collect(),
-            ),
-        ];
-
-        for (title, devices) in groups {
+        for (title, devices) in groups(bluetooth) {
             // the list of new devices says when it's still empty, the others just go
-            if devices.is_empty() && title != "Available" {
+            if devices.is_empty() && title != AVAILABLE {
                 continue;
             }
 
+            let heading = rows.len();
+
             rows.push(Box::new(ui::heading(t, title, SECTION).padding(SIDES)));
+            heights.push(SECTION);
 
             if devices.is_empty() {
                 let text = if bluetooth.scanning() {
                     "Looking for devices…"
                 } else {
-                    "No new devices, press ↻ to look again"
+                    "No new devices, press r to look again"
                 };
 
                 rows.push(note(t, text));
+                heights.push(ROW);
             }
 
-            for device in devices {
-                rows.push(Box::new(device_row(t, device, panel)));
+            for (place, device) in devices.into_iter().enumerate() {
+                let lit = highlighted == Some(index);
+
+                if lit {
+                    highlighted_row = Some(rows.len());
+                    anchor = if place == 0 { heading } else { rows.len() };
+                }
+
+                rows.push(Box::new(device_row(t, device, panel, lit)));
+                heights.push(ROW);
+
+                index += 1;
             }
         }
     }
 
-    Rectangle::new()
-        .width(Parent)
-        .height(Parent)
-        .fill(t.bg0)
-        .border(1.0, t.bg3)
-        .clip()
-        .child(ScrollArea::new("bluetooth-list", Column::new(rows)))
+    /*
+     * with the keys in use, drawn from a first row that keeps the highlight in
+     * sight (a ScrollArea can't be scrolled from code), and the wheel moves it
+     */
+    match highlighted_row {
+        Some(row) => {
+            let first = list::follow_window(
+                FIRST_ROW.load(Ordering::Relaxed),
+                anchor,
+                row,
+                &heights,
+                visible,
+            );
+
+            // remembered for the next draw; a static, as a view can't write a service
+            FIRST_ROW.store(first, Ordering::Relaxed);
+
+            let rows: Vec<Box<dyn Widget>> = rows.into_iter().skip(first).collect();
+
+            ui::list_box(t, Column::new(rows)).on_scroll(|scroll| {
+                let count = listed(&Bluetooth::read()).len();
+                let mut highlight = Highlight::write();
+
+                highlight.index =
+                    list::step_highlight(highlight.index, list::scroll_delta(scroll), count);
+            })
+        }
+        None => ui::list_box(t, ScrollArea::new("bluetooth-list", Column::new(rows))),
+    }
 }
 
 fn note(t: &Theme, text: &str) -> Box<dyn Widget> {
@@ -285,7 +462,12 @@ fn note(t: &Theme, text: &str) -> Box<dyn Widget> {
     )
 }
 
-fn device_row(t: &Theme, device: &BluetoothDevice, panel: &BluetoothPanel) -> Rectangle {
+fn device_row(
+    t: &Theme,
+    device: &BluetoothDevice,
+    panel: &BluetoothPanel,
+    highlighted: bool,
+) -> Rectangle {
     let mut parts: Vec<Box<dyn Widget>> = vec![
         Box::new(
             Rectangle::new()
@@ -325,18 +507,33 @@ fn device_row(t: &Theme, device: &BluetoothDevice, panel: &BluetoothPanel) -> Re
         ));
     }
 
+    // the keys act on the highlighted row, so only its buttons show them under ?
+    let row_button = |label: &str, width: f32, key: char, on_click: Box<dyn Fn()>| {
+        if highlighted {
+            ui::key_text_button(t, label, width, key, move |_| on_click())
+        } else {
+            button(t, label, width, move |_| on_click())
+        }
+    };
+
     if device.connected() {
         let disconnected = device.clone();
 
-        parts.push(Box::new(button(t, "Disconnect", 96.0, move |_| {
-            BluetoothPanel::disconnect(&disconnected)
-        })));
+        parts.push(Box::new(row_button(
+            "Disconnect",
+            96.0,
+            KEY_DISCONNECT,
+            Box::new(move || BluetoothPanel::disconnect(&disconnected)),
+        )));
     } else if device.paired() {
         let forgotten = device.clone();
 
-        parts.push(Box::new(button(t, "Forget", 64.0, move |_| {
-            BluetoothPanel::forget(&forgotten)
-        })));
+        parts.push(Box::new(row_button(
+            "Forget",
+            64.0,
+            KEY_FORGET,
+            Box::new(move || BluetoothPanel::forget(&forgotten)),
+        )));
     }
 
     // a connected device disconnects with its button, the row does the next step
@@ -345,16 +542,9 @@ fn device_row(t: &Theme, device: &BluetoothDevice, panel: &BluetoothPanel) -> Re
     Rectangle::new()
         .width(Parent)
         .height(ROW)
+        .fill(if highlighted { t.bg3 } else { t.bg0 })
         .padding(SIDES)
         .cursor(Pointer)
-        .on_click(move |_| {
-            if clicked.connected() {
-                BluetoothPanel::disconnect(&clicked);
-            } else if clicked.paired() {
-                BluetoothPanel::connect(&clicked);
-            } else {
-                BluetoothPanel::pair(&clicked);
-            }
-        })
+        .on_click(move |_| click(&clicked))
         .child(Row::new(parts).gap(GAP).align(Center).height(ROW))
 }

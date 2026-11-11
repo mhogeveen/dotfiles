@@ -224,17 +224,20 @@ fn cell(t: &Theme, height: f32, accent: bool) -> Rectangle {
 // the calendar card
 
 fn calendar_card(t: &Theme, today: Date, year: i32, month: u32) -> Rectangle {
-    // while ? hints show, the month name says what its key does: clicking it goes back to today
+    /*
+     * clicking the month name goes back to today, so while ? hints show it gives
+     * way to that key, in the accent like every button's key
+     */
     let title = if hints::shown() {
         Rectangle::new()
             .width(Parent)
             .height(BUTTON)
             .align_child(Start, Center)
             .child(
-                Text::new(format!("'{KEY_TODAY}' jump to today"))
+                Text::new(KEY_TODAY.to_string())
                     .size(15.0)
                     .weight(Weight::Bold)
-                    .color(t.fg_dim),
+                    .color(t.accent),
             )
     } else {
         ui::title(t, &format!("{} {year}", MONTHS[month as usize - 1]))

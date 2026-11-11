@@ -11,6 +11,7 @@
 mod details;
 mod profiles;
 
+use std::fs;
 use std::thread;
 use std::time::{Duration, Instant};
 
@@ -344,7 +345,31 @@ impl NetworkPanel {
         };
     }
 
-    pub fn collapse() {
+    // closes the password box, whichever network it's under
+    pub fn close_password() {
         NetworkPanel::write().expanded = None;
     }
+
+    // on close: no password box, and an old result doesn't come back on the next open
+    pub fn reset() {
+        let mut panel = NetworkPanel::write();
+
+        panel.expanded = None;
+        panel.result = None;
+    }
 }
+
+/*
+ * whether there's any wi-fi hardware: amane's Network doesn't say, and with none
+ * the list would claim "No networks found". the kernel marks wireless
+ * interfaces with a wireless folder; a few entries, so cheap to read on a redraw
+ */
+pub fn has_wifi_adapter() -> bool {
+    fs::read_dir(SYSFS_INTERFACES).is_ok_and(|interfaces| {
+        interfaces
+            .flatten()
+            .any(|interface| interface.path().join("wireless").is_dir())
+    })
+}
+
+const SYSFS_INTERFACES: &str = "/sys/class/net";

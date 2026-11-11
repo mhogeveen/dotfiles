@@ -221,12 +221,83 @@ each finished recommendation by number; `AGENTS.md` and `docs/` the current stat
    the audit) now default to haiku through `CLAUDE_CODE_SUBAGENT_MODEL` in
    `~/.claude/settings.json`.
 
+5. **Item 20, round B: the UX gaps.** Keys settled with the user: Enter
+   confirms a pairing and `c` cancels it; Shift+J/K for mic volume (amane
+   reports Shift+j as `J`); j/k or arrows plus Enter, `d`, `f` in the
+   network and Bluetooth lists.
+   - The list highlight: amane keeps a ScrollArea's offset private, so code
+     can't scroll it. The highlight is None until a key moves it; then the
+     list is drawn from a first row (`list::follow_window`, see below)
+     instead of through the ScrollArea, and the wheel moves it. Mouse-only use looks
+     as before. `list::Cursor` wasn't reused: it windows a fixed 8 rows, and
+     these lists mix headings and rows of other heights.
+   - `ui::hint_text_button` for keys with a name (Enter); `key_text` takes a
+     string now.
+   - Network: the panel's fixed height grew from 560 to 638, the worst case
+     above the list (worked out from the constants) plus three rows, so the
+     Tailscale card can't squeeze the list; rescan only with Wi-Fi on (button
+     hidden while off, like Bluetooth's); "No Wi-Fi adapter" from
+     `/sys/class/net/*/wireless`; `reset` also clears the result line and
+     Tailscale's error. Bluetooth got an `on_close` (highlight, failure).
+     Audio and system have no error state that outlives a close, so they
+     got none.
+   - Audio device lists keep their room (4 outputs, 2 inputs) and scroll
+     beyond it. Wording: "1 entry", "Scanning…", "press r", the calendar's
+     `t` hint in the accent like other keys.
+
+   Checked live: the network highlight moving and starting over on reopen,
+   the hints (`d` on Disconnect), Shift+J/K on the microphone (100% → 95% →
+   100%), the audio panel's layout unchanged, the calendar hint, the
+   clipboard count. Bluetooth was off, so its list and pairing keys weren't
+   exercised. A full-screen screenshot of the clipboard panel caught the
+   clipboard history and was deleted; crop to the part being checked.
+
+   Fixed after the user checked it:
+   - The window jumped as soon as the highlight passed the second row, even
+     with everything in view. Now `list::follow_window` keeps the first row
+     and moves it only as far as needed to keep the highlight (and, in
+     Bluetooth, its group's heading) in view, like a picker. That needs the
+     list's real height, so `connection`, `tailscale_card`, `vpn_parts` and
+     `pairing` return their heights and the panels add them up.
+   - Row fills covered the list box's 1 px border (network rows always had
+     a fill; Bluetooth rows got one with the highlight), and a row cut off at
+     the bottom covered it until scrolled to the end: amane clips at the
+     outer edge, border included. `ui::list_box(t, rows)` pads by the border
+     and clips the rows in an inner box.
+   - `f` didn't show on the connected network's Forget button: `f` now
+     forgets the joined network while there's no highlight, like `d`, and
+     the highlighted one after.
+
+   Checked live with Bluetooth on: the fourth device highlighted without the
+   list moving, the network list moving only once the highlight reached its
+   bottom and staying put going back up, borders intact, `f` under `?`.
+
+   Asked for after that:
+   - Escape in the network password box closed the whole panel (the input
+     passes Escape on). `panels::backs_out` lets a panel close something
+     inside first: the password box closes and forgets what was typed, the
+     highlight stays so j/k work again, and the next Escape closes the
+     panel. Checked live on an unsaved secured network (Enter only opens its
+     box there).
+   - Enter on the last network opened its password box below the list's
+     end, out of view. The window now keeps the highlighted network's open
+     box in view with it (`follow_window` up to the box's row). Checked live
+     on the last network (all listed networks are secured and unsaved, so
+     Enter only opened the box).
+   - Closing that box with Escape left its room empty at the bottom, since
+     the window kept its first row. `follow_window` now also moves back up
+     while the rows above would fit, so a list never leaves empty room under
+     its last row (also after a rescan finds fewer networks).
+
 ## Habits worth keeping
 
 - Verify before claiming: check the code, the running shell (`pgrep`, its
   start time vs. the binary's), and screenshots. A rebuilt binary isn't
   running until `amane restart`.
 - Screenshots: physical coordinates, fresh file names, wait before reading.
+  Crop to what is checked: a full screen can catch private things (the
+  clipboard history once). The read images are scaled 1.5×; divide by 1.5
+  for physical coordinates.
 - Put the machine back: volume, mute, brightness, wallpaper choice.
 - The user edits and commits between sessions; read `git log`/`git status`
   first, and fix warnings their changes leave (say so).

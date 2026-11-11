@@ -52,6 +52,17 @@ pub fn key_text_button(
     key: char,
     on_click: impl Fn(Button) + 'static,
 ) -> Rectangle {
+    hint_text_button(t, label, width, &key.to_string(), on_click)
+}
+
+// the same with a key that has a name rather than a letter, like Enter
+pub fn hint_text_button(
+    t: &Theme,
+    label: &str,
+    width: f32,
+    hint: &str,
+    on_click: impl Fn(Button) + 'static,
+) -> Rectangle {
     if !hints::shown() {
         return button(t, label, width, on_click);
     }
@@ -63,7 +74,7 @@ pub fn key_text_button(
         .align_child(Center, Center)
         .cursor(Pointer)
         .on_click(on_click)
-        .child(key_text(key, t.accent))
+        .child(key_text(hint, t.accent))
 }
 
 // a square button with a glyph in its own color, like a bell that lights up
@@ -140,7 +151,7 @@ pub fn switch(
         .on_click(on_click)
         .child(if hints::shown() {
             // the switch's own text color, the accent wouldn't show on an accent fill
-            key_text(key, color)
+            key_text(&key.to_string(), color)
         } else {
             Text::new(format!("{label} {state}"))
                 .size(13.0)
@@ -210,6 +221,31 @@ pub fn meter(t: &Theme, width: f32, percent: u8, dimmed: bool) -> Rectangle {
         )
 }
 
+// the line around a list box
+pub const LIST_BORDER: f32 = 1.0;
+
+/*
+ * the box a corner panel's list goes in, taking the room left. amane clips a
+ * rectangle at its outer edge, border included, so the rows are clipped by an
+ * inner box inside the border instead: a row cut off at the bottom, or one
+ * with a fill of its own (a highlight), can't paint over it
+ */
+pub fn list_box(t: &Theme, rows: impl Widget + 'static) -> Rectangle {
+    Rectangle::new()
+        .width(Parent)
+        .height(Parent)
+        .fill(t.bg0)
+        .border(LIST_BORDER, t.bg3)
+        .padding(LIST_BORDER)
+        .child(
+            Rectangle::new()
+                .width(Parent)
+                .height(Parent)
+                .clip()
+                .child(rows),
+        )
+}
+
 // how wide the top-right panels are
 pub const CORNER_WIDTH: f32 = 400.0;
 
@@ -270,13 +306,10 @@ pub fn key_button_colored(
         .align_child(Center, Center)
         .cursor(Pointer)
         .on_click(on_click)
-        .child(key_text(key, t.accent))
+        .child(key_text(&key.to_string(), t.accent))
 }
 
-// a key letter as the ? hints show it
-fn key_text(key: char, color: Color) -> Text {
-    Text::new(key.to_string())
-        .size(14.0)
-        .weight(Weight::Bold)
-        .color(color)
+// a key as the ? hints show it: a letter, or a name like Enter
+fn key_text(key: &str, color: Color) -> Text {
+    Text::new(key).size(14.0).weight(Weight::Bold).color(color)
 }

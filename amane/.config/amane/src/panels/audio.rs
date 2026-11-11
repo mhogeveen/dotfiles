@@ -14,7 +14,7 @@ use amane::{
     Align::{Center, Start},
     Audio, Column,
     Cursor::Pointer,
-    Image, Key, LayerWindow, Media, Monitor, Rectangle, Row, Service,
+    Image, Key, LayerWindow, Media, Monitor, Rectangle, Row, ScrollArea, Service,
     Size::Parent,
     Text, Weight, Widget, children,
 };
@@ -31,7 +31,7 @@ const ICON: f32 = 20.0;
 const PERCENT: f32 = 40.0;
 const MUTE: f32 = 64.0;
 
-// fits "Now playing", one device list of 4 and one of 2 without scrolling
+// fits "Now playing" and the device lists at their full room (OUTPUT_LIST, INPUT_LIST)
 const HEIGHT: f32 = 460.0 + PLAYING_SECTION + GAP * 2.0;
 
 // the slider takes what's left of the row
@@ -70,6 +70,10 @@ const KEY_PLAY: char = 'p';
 const KEY_PREVIOUS: char = 'h';
 const KEY_NEXT: char = 'l';
 
+// the microphone's: Shift with the output's keys, which amane reports as capitals
+const KEY_MIC_QUIETER: char = 'J';
+const KEY_MIC_LOUDER: char = 'K';
+
 // how far j and k move the volume
 const STEP: i32 = 5;
 
@@ -77,6 +81,13 @@ fn key_pressed(key: Key) {
     let Key::Character(letter) = key else {
         return;
     };
+
+    // before lowercasing, which would make them the output's keys
+    match letter {
+        KEY_MIC_QUIETER => return step_microphone(-STEP),
+        KEY_MIC_LOUDER => return step_microphone(STEP),
+        _ => {}
+    }
 
     match letter.to_ascii_lowercase() {
         KEY_MUTE => Audio::toggle_mute(),
@@ -95,6 +106,13 @@ fn step(by: i32) {
     let volume = i32::from(Audio::read().volume());
 
     Audio::set_volume((volume + by).clamp(0, 100) as u8);
+}
+
+// the microphone volume, the same way
+fn step_microphone(by: i32) {
+    let volume = i32::from(Audio::read().microphone_volume());
+
+    Audio::set_microphone_volume((volume + by).clamp(0, 100) as u8);
 }
 
 fn content(t: &Theme) -> Rectangle {
@@ -122,14 +140,28 @@ fn content(t: &Theme) -> Rectangle {
         set_volume: Audio::set_microphone_volume,
         toggle_mute: Audio::toggle_microphone_mute,
         mute_key: KEY_MIC_MUTE,
-        volume_keys: None,
+        volume_keys: Some((KEY_MIC_QUIETER, KEY_MIC_LOUDER)),
     };
 
     let parts = children![
         ui::title(t, "Audio"),
         now_playing(t),
-        section(t, "Output", &output, devices.outputs(), devices.state()),
-        section(t, "Input", &input, devices.inputs(), devices.state()),
+        section(
+            t,
+            "Output",
+            &output,
+            devices.outputs(),
+            devices.state(),
+            OUTPUT_LIST
+        ),
+        section(
+            t,
+            "Input",
+            &input,
+            devices.inputs(),
+            devices.state(),
+            INPUT_LIST
+        ),
     ];
 
     ui::frame(t, GAP * 2.0, parts)
@@ -148,7 +180,33 @@ struct Level {
     volume_keys: Option<(char, char)>,
 }
 
-fn section(t: &Theme, title: &str, level: &Level, devices: &[Device], state: &State) -> Column {
+/*
+ * a device list's room in the fixed-height panel (see HEIGHT); more devices
+ * than fit scroll instead of pushing the next section out of the panel
+ */
+struct DeviceList {
+    rows: usize,
+    scroll_id: &'static str,
+}
+
+const OUTPUT_LIST: DeviceList = DeviceList {
+    rows: 4,
+    scroll_id: "audio-outputs",
+};
+
+const INPUT_LIST: DeviceList = DeviceList {
+    rows: 2,
+    scroll_id: "audio-inputs",
+};
+
+fn section(
+    t: &Theme,
+    title: &str,
+    level: &Level,
+    devices: &[Device],
+    state: &State,
+    room: DeviceList,
+) -> Column {
     let mut parts: Vec<Box<dyn Widget>> = vec![
         Box::new(ui::heading(t, title, ui::HEADING)),
         Box::new(level_row(t, level)),
@@ -170,13 +228,16 @@ fn section(t: &Theme, title: &str, level: &Level, devices: &[Device], state: &St
         }
     }
 
+    let shown_rows = list.len().min(room.rows);
+
     parts.push(Box::new(
         Rectangle::new()
             .width(Parent)
-            .height(ROW * list.len() as f32)
+            .height(ROW * shown_rows as f32)
             .fill(t.bg0)
             .border(1.0, t.bg3)
-            .child(Column::new(list)),
+            .clip()
+            .child(ScrollArea::new(room.scroll_id, Column::new(list))),
     ));
 
     Column::new(parts).gap(GAP)

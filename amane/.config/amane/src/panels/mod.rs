@@ -111,7 +111,7 @@ static REGISTRY: &[PanelDef] = &[
     PanelDef {
         name: BLUETOOTH,
         groups: &[PANELS],
-        on_close: None,
+        on_close: Some(bluetooth::reset),
     },
     PanelDef {
         name: AUDIO,
@@ -390,6 +390,18 @@ pub fn ipc(arguments: &[String]) -> String {
  * mango still focuses an on-demand surface as soon as it shows, and the backdrop
  * covers everything else, so the panel keeps the keyboard while it's open
  */
+/*
+ * for Escape: whether the panel closed something inside it instead, like the
+ * network panel's password box (a text input lets go of Escape and passes it
+ * on, so it would close the whole panel and lose your place in the list)
+ */
+fn backs_out(name: &str) -> bool {
+    match name {
+        NETWORK => network::back_out(),
+        _ => false,
+    }
+}
+
 pub fn panel(
     monitor: &Monitor,
     name: &'static str,
@@ -411,6 +423,9 @@ pub fn panel(
         .keyboard(Keyboard::OnDemand)
         .on_key(move |key| {
             match key {
+                // something open inside the panel closes first, the panel on the next press
+                Key::Escape if backs_out(name) => {}
+
                 Key::Escape => {
                     let _ = Panels::close(name);
                 }

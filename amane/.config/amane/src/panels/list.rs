@@ -140,6 +140,68 @@ impl Cursor {
     }
 }
 
+/*
+ * a highlight for the lists in the corner panels (networks, bluetooth devices),
+ * which scroll with the mouse in a ScrollArea and have rows of more than one
+ * kind. None until a key moves it, so the mouse alone sees the list as before;
+ * once it's there, the list is drawn from a first row that follow_window keeps
+ * the highlight in sight with, instead of through the ScrollArea
+ */
+pub fn step_highlight(current: Option<usize>, delta: isize, count: usize) -> Option<usize> {
+    if count == 0 {
+        return None;
+    }
+
+    let last = count - 1;
+
+    Some(match current {
+        // the first press lands on the first row, whichever way it goes
+        None => 0,
+        Some(index) => index.min(last).saturating_add_signed(delta).min(last),
+    })
+}
+
+/*
+ * the first row to draw so rows anchor..=row are in a list this tall, moving
+ * the last first row only as far as needed: the list stays put while the
+ * highlight moves inside it, like a picker's. anchor is the highlighted row,
+ * or the heading right above it so its group's name shows too
+ */
+pub fn follow_window(
+    first: usize,
+    anchor: usize,
+    row: usize,
+    heights: &[f32],
+    visible: f32,
+) -> usize {
+    let row = row.min(heights.len().saturating_sub(1));
+
+    let mut first = first.min(anchor).min(row);
+
+    while first < row && heights[first..=row].iter().sum::<f32>() > visible {
+        first += 1;
+    }
+
+    /*
+     * no empty room under the last row while rows above the window would fit
+     * in it, like after a password box closes or the list gets shorter
+     */
+    while first > 0 && heights[first - 1..].iter().sum::<f32>() <= visible {
+        first -= 1;
+    }
+
+    first
+}
+
+// the movement keys of a highlight list: arrows and j/k
+pub fn highlight_delta(key: &Key) -> Option<isize> {
+    match key {
+        Key::Down | Key::Character('j') => Some(1),
+        Key::Up | Key::Character('k') => Some(-1),
+        _ => None,
+    }
+}
+
 // one wheel notch or touchpad flick moves one row
 pub fn scroll_delta(scroll: Scroll) -> isize {
     if scroll.y > 0.0 {
@@ -451,7 +513,59 @@ pub fn message(t: &Theme, text: &str) -> Box<dyn Widget> {
 
 #[cfg(test)]
 mod tests {
-    use super::{Cursor, Key, fuzzy, hotkey};
+    use super::{Cursor, Key, follow_window, fuzzy, hotkey, step_highlight};
+
+    #[test]
+    fn a_highlight_starts_at_the_top_and_stays_in_the_list() {
+        assert_eq!(step_highlight(None, 1, 3), Some(0));
+        assert_eq!(step_highlight(None, -1, 3), Some(0));
+        assert_eq!(step_highlight(Some(0), -1, 3), Some(0));
+        assert_eq!(step_highlight(Some(2), 1, 3), Some(2));
+
+        // the list shrank under it
+        assert_eq!(step_highlight(Some(7), -1, 3), Some(1));
+        assert_eq!(step_highlight(Some(1), 1, 0), None);
+    }
+
+    #[test]
+    fn the_window_only_moves_when_the_highlight_would_leave_it() {
+        // ten rows of 40 in room for four
+        let heights = [40.0; 10];
+
+        // everything up to row 3 fits, so nothing moves
+        assert_eq!(follow_window(0, 3, 3, &heights, 160.0), 0);
+
+        // row 4 needs the window one down, row 9 six down
+        assert_eq!(follow_window(0, 4, 4, &heights, 160.0), 1);
+        assert_eq!(follow_window(1, 9, 9, &heights, 160.0), 6);
+
+        // going back up inside the window leaves it where it is
+        assert_eq!(follow_window(6, 8, 8, &heights, 160.0), 6);
+
+        // above it, the window starts at the highlight, or its heading
+        assert_eq!(follow_window(6, 4, 5, &heights, 160.0), 4);
+    }
+
+    #[test]
+    fn a_shorter_list_leaves_no_room_at_the_bottom() {
+        // scrolled to the end with a password box open: six rows and a 44 row
+        let open = [40.0, 40.0, 40.0, 40.0, 40.0, 40.0, 44.0];
+
+        // rows 4 to 6 take 124, row 3 too would be 164, more than there's room for
+        assert_eq!(follow_window(0, 5, 6, &open, 160.0), 4);
+
+        // the box closed: starting at row 4 would leave 40 empty, rows 2 to 5 fill it
+        let closed = [40.0; 6];
+
+        assert_eq!(follow_window(4, 5, 5, &closed, 160.0), 2);
+    }
+
+    #[test]
+    fn a_list_that_fits_never_moves() {
+        let heights = [28.0, 40.0, 40.0, 28.0, 40.0];
+
+        assert_eq!(follow_window(0, 4, 4, &heights, 400.0), 0);
+    }
 
     #[test]
     fn digits_one_to_nine_are_hotkeys() {
