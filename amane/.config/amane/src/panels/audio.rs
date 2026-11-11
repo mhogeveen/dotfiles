@@ -14,7 +14,7 @@ use amane::{
     Align::{Center, Start},
     Audio, Column,
     Cursor::Pointer,
-    Image, Key, LayerWindow, Media, Monitor, Rectangle, Row, ScrollArea, Service,
+    Image, Key, LayerWindow, Media, MediaPlayer, Monitor, Rectangle, Row, ScrollArea, Service,
     Size::Parent,
     Text, Weight, Widget, children,
 };
@@ -29,7 +29,8 @@ const GAP: f32 = 8.0;
 const ROW: f32 = 36.0;
 const ICON: f32 = 20.0;
 const PERCENT: f32 = 40.0;
-const MUTE: f32 = 64.0;
+// sized for Unmute, the longer of its two labels
+const MUTE: f32 = ui::fit("Unmute");
 
 // fits "Now playing" and the device lists at their full room (OUTPUT_LIST, INPUT_LIST)
 const HEIGHT: f32 = 460.0 + PLAYING_SECTION + GAP * 2.0;
@@ -407,75 +408,83 @@ fn now_playing(t: &Theme) -> Column {
         .padding(CARD_PADDING);
 
     let card = match media.active() {
-        None => card.align_child(Start, Center).child(
-            Row::new(children![
-                art(t, None),
-                Text::new("Nothing playing")
-                    .size(ui::TEXT_NOTE)
-                    .color(t.comment),
-            ])
-            .gap(GAP * 1.5)
-            .align(Center),
-        ),
-
-        Some(player) => {
-            // a player with nothing loaded still has a name, like qutebrowser
-            let title = match player.title() {
-                "" => "Nothing playing",
-                title => title,
-            };
-
-            let source = match (player.artist(), player.identity()) {
-                ("", identity) => String::from(identity),
-                (artist, "") => String::from(artist),
-                (artist, identity) => format!("{artist} · {identity}"),
-            };
-
-            let play = if player.playing() {
-                ICON_PAUSE
-            } else {
-                ICON_PLAY
-            };
-
-            let buttons = Row::new(children![
-                ui::key_button(t, ICON_PREVIOUS, KEY_PREVIOUS, |_| Media::previous()),
-                ui::key_button(t, play, KEY_PLAY, |_| Media::play_pause()),
-                ui::key_button(t, ICON_NEXT, KEY_NEXT, |_| Media::next()),
-            ])
-            .gap(GAP)
-            .height(BUTTON);
-
-            let text = Column::new(children![
-                ui::line(
-                    TITLE_LINE,
-                    Text::new(title)
-                        .size(ui::TEXT_BODY)
-                        .weight(Weight::Bold)
-                        .color(t.fg)
-                        .elide()
-                ),
-                ui::line(
-                    ARTIST_LINE,
-                    Text::new(source)
-                        .size(ui::TEXT_SMALL)
-                        .color(t.fg_dim)
-                        .elide()
-                ),
-                progress(t, player.position(), player.length()),
-                buttons,
-            ])
-            .width(PLAYING_TEXT)
-            .gap(LINE_GAP);
-
-            card.child(
-                Row::new(children![art(t, covers::path(player.art_url())), text])
-                    .gap(GAP * 1.5)
-                    .align(Start),
-            )
-        }
+        None => idle_card(t, card),
+        Some(player) => playing_card(t, card, player),
     };
 
     Column::new(children![ui::heading(t, "Now playing", ui::HEADING), card]).gap(GAP)
+}
+
+fn idle_card(t: &Theme, card: Rectangle) -> Rectangle {
+    card.align_child(Start, Center).child(
+        Row::new(children![
+            art(t, None),
+            Text::new("Nothing playing")
+                .size(ui::TEXT_NOTE)
+                .color(t.comment),
+        ])
+        .gap(GAP * 1.5)
+        .align(Center),
+    )
+}
+
+// the cover, then the title, who and where, the progress and the buttons
+fn playing_card(t: &Theme, card: Rectangle, player: &MediaPlayer) -> Rectangle {
+    // a player with nothing loaded still has a name, like qutebrowser
+    let title = match player.title() {
+        "" => "Nothing playing",
+        title => title,
+    };
+
+    let text = Column::new(children![
+        ui::line(
+            TITLE_LINE,
+            Text::new(title)
+                .size(ui::TEXT_BODY)
+                .weight(Weight::Bold)
+                .color(t.fg)
+                .elide()
+        ),
+        ui::line(
+            ARTIST_LINE,
+            Text::new(source_text(player.artist(), player.identity()))
+                .size(ui::TEXT_SMALL)
+                .color(t.fg_dim)
+                .elide()
+        ),
+        progress(t, player.position(), player.length()),
+        media_buttons(t, player.playing()),
+    ])
+    .width(PLAYING_TEXT)
+    .gap(LINE_GAP);
+
+    card.child(
+        Row::new(children![art(t, covers::path(player.art_url())), text])
+            .gap(GAP * 1.5)
+            .align(Start),
+    )
+}
+
+// "artist · player", or whichever of the two there is
+fn source_text(artist: &str, identity: &str) -> String {
+    match (artist, identity) {
+        ("", identity) => String::from(identity),
+        (artist, "") => String::from(artist),
+        (artist, identity) => format!("{artist} · {identity}"),
+    }
+}
+
+// previous, play or pause, next
+fn media_buttons(t: &Theme, playing: bool) -> Row {
+    let play = if playing { ICON_PAUSE } else { ICON_PLAY };
+
+    Row::new(children![
+        ui::key_button(t, ICON_PREVIOUS, KEY_PREVIOUS, |_| Media::previous()),
+        ui::key_button(t, play, KEY_PLAY, |_| Media::play_pause()),
+        ui::key_button(t, ICON_NEXT, KEY_NEXT, |_| Media::next()),
+    ])
+    .gap(GAP)
+    .height(BUTTON)
 }
 
 // the cover, or a music glyph until there is one
@@ -533,6 +542,13 @@ fn clock(duration: Duration) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn the_source_names_artist_and_player_when_known() {
+        assert_eq!(source_text("Daft Punk", "Spotify"), "Daft Punk · Spotify");
+        assert_eq!(source_text("", "qutebrowser"), "qutebrowser");
+        assert_eq!(source_text("Daft Punk", ""), "Daft Punk");
+    }
 
     #[test]
     fn times_read_like_a_player() {

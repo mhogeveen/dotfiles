@@ -321,8 +321,9 @@ impl Picker for Clipboard {
 // a large picture is decoded at most this many pixels across, enough for the preview
 const THUMBNAIL: u32 = 720;
 
-const CLEAR: f32 = 120.0;
-const CLEAR_ARMED: f32 = 260.0;
+const CLEAR: f32 = ui::fit("Clear history");
+// the second click's text, sized for counts up to 999
+const CLEAR_ARMED: f32 = ui::fit("Click again to clear 999 entries");
 
 pub fn view(monitor: &Monitor) -> LayerWindow {
     picker::view::<Clipboard>(monitor)

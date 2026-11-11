@@ -104,17 +104,25 @@ impl Service for Toasts {
 
 impl Toasts {
     fn shows(&self, notification: &Notification, now: SystemTime) -> bool {
-        let id = notification.id();
+        self.shows_at(
+            notification.id(),
+            notification.received(),
+            notification.urgency() == Urgency::Critical,
+            now,
+        )
+    }
 
-        if self.hidden.contains(&(id, notification.received())) {
+    // the same from plain values, which tests can make (amane's Notification they can't)
+    fn shows_at(&self, id: u32, received: SystemTime, critical: bool, now: SystemTime) -> bool {
+        if self.hidden.contains(&(id, received)) {
             return false;
         }
 
-        if notification.urgency() == Urgency::Critical || self.hovered == Some(id) {
+        if critical || self.hovered == Some(id) {
             return true;
         }
 
-        let deadline = notification.received() + TIMEOUT;
+        let deadline = received + TIMEOUT;
 
         let deadline = match self.held_until.get(&id) {
             Some(held) => deadline.max(*held),
@@ -283,4 +291,59 @@ pub fn view(monitor: &Monitor) -> LayerWindow {
                 .clip()
                 .child(Column::new(cards).gap(GAP)),
         )
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    const SECOND: Duration = Duration::from_secs(1);
+
+    #[test]
+    fn a_popup_shows_until_its_time_runs_out() {
+        let toasts = Toasts::new();
+        let received = SystemTime::now();
+
+        assert!(toasts.shows_at(1, received, false, received + SECOND));
+        assert!(!toasts.shows_at(1, received, false, received + TIMEOUT + SECOND));
+    }
+
+    #[test]
+    fn critical_and_hovered_popups_stay() {
+        let mut toasts = Toasts::new();
+        let received = SystemTime::now();
+        let later = received + TIMEOUT * 10;
+
+        assert!(toasts.shows_at(1, received, true, later));
+
+        toasts.hovered = Some(2);
+
+        assert!(toasts.shows_at(2, received, false, later));
+        assert!(!toasts.shows_at(3, received, false, later));
+    }
+
+    #[test]
+    fn leaving_a_popup_gives_it_a_little_longer() {
+        let mut toasts = Toasts::new();
+        let received = SystemTime::now();
+        let left = received + TIMEOUT;
+
+        toasts.held_until.insert(1, left + HOVER_GRACE);
+
+        assert!(toasts.shows_at(1, received, false, left + SECOND));
+        assert!(!toasts.shows_at(1, received, false, left + HOVER_GRACE + SECOND));
+    }
+
+    #[test]
+    fn a_closed_popup_stays_closed_until_replaced() {
+        let mut toasts = Toasts::new();
+        let received = SystemTime::now();
+
+        toasts.hidden.insert((1, received));
+
+        assert!(!toasts.shows_at(1, received, true, received));
+
+        // the sender replaced it: same id, received again
+        assert!(toasts.shows_at(1, received + SECOND, false, received + SECOND));
+    }
 }

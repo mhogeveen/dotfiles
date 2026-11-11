@@ -292,14 +292,9 @@ fn header(t: &Theme, network: &Network) -> Row {
         )));
     }
 
-    parts.push(Box::new(ui::switch(
-        t,
-        "Wi-Fi",
-        92.0,
-        enabled,
-        KEY_WIFI,
-        |_| toggle_wifi(),
-    )));
+    parts.push(Box::new(ui::switch(t, "Wi-Fi", enabled, KEY_WIFI, |_| {
+        toggle_wifi()
+    })));
 
     ui::header(ui::title(t, "Network"), parts)
 }
@@ -417,15 +412,19 @@ fn leave_buttons(t: &Theme, ssid: String) -> Row {
 
     // f forgets this one until a highlight in the list takes the key over
     let forget = if Highlight::read().index.is_none() {
-        ui::key_text_button(t, "Forget", 80.0, KEY_FORGET, forget)
+        ui::key_text_button(t, "Forget", ui::fit("Forget"), KEY_FORGET, forget)
     } else {
-        button(t, "Forget", 80.0, forget)
+        button(t, "Forget", ui::fit("Forget"), forget)
     };
 
     Row::new(children![
-        ui::key_text_button(t, "Disconnect", 100.0, KEY_DISCONNECT, |_| {
-            NetworkPanel::disconnect()
-        }),
+        ui::key_text_button(
+            t,
+            "Disconnect",
+            ui::fit("Disconnect"),
+            KEY_DISCONNECT,
+            |_| { NetworkPanel::disconnect() }
+        ),
         forget,
     ])
     .gap(GAP)
@@ -440,7 +439,11 @@ fn result_line(t: &Theme, result: &Outcome) -> Row {
     };
 
     // forgetting a network saved with a mistyped password lets you type it again
-    let forget = forget.map(|ssid| button(t, "Forget", 80.0, move |_| NetworkPanel::forget(&ssid)));
+    let forget = forget.map(|ssid| {
+        button(t, "Forget", ui::fit("Forget"), move |_| {
+            NetworkPanel::forget(&ssid)
+        })
+    });
 
     ui::error_line(t, &text, forget)
 }
@@ -575,9 +578,9 @@ fn network_row(
 
         // the keys act on the highlighted row, so only its button shows f under ?
         parts.push(Box::new(if highlighted {
-            ui::key_text_button(t, "Forget", 64.0, KEY_FORGET, forget)
+            ui::key_text_button(t, "Forget", ui::fit("Forget"), KEY_FORGET, forget)
         } else {
-            button(t, "Forget", 64.0, forget)
+            button(t, "Forget", ui::fit("Forget"), forget)
         }));
     }
 
@@ -629,7 +632,7 @@ fn password_row(t: &Theme, ssid: &str) -> Rectangle {
                 .on_submit(move |password| join(&submitted, &password)),
         );
 
-    let connect = button(t, "Connect", 84.0, move |_| {
+    let connect = button(t, "Connect", ui::fit("Connect"), move |_| {
         let password = PASSWORD
             .lock()
             .unwrap_or_else(|error| error.into_inner())

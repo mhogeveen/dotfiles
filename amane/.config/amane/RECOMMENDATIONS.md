@@ -136,19 +136,6 @@ Settled earlier, no need to revisit:
 - **To settle:** whether it's wanted, how dim, and when (e.g. at 4.5 min,
   before the 5 min lock).
 
-## Code health
-
-### 21. Audit leftovers
-- **Status:** open, small. What item 20 (DONE.md) left on purpose:
-  - button widths differ for the same label (Forget 64 or 80, Dismiss 72
-    or 84, the Wi-Fi and Bluetooth switches 92 and 124); making them equal
-    changes how panels look, so it's a choice to make first
-  - `Toasts::shows` (popup timing) has no test: amane's `Notification`
-    can't be built outside the library
-  - `audio.rs` `now_playing` and `bluetooth.rs` `device_row` are still long
-  - `slurp` has no time limit: it waits for a region to be dragged
-- **To settle:** whether the button widths should match.
-
 ## Worth reporting to amane upstream
 
 Behavior the shell works around, better fixed in amane itself. Could be written

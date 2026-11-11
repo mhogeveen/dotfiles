@@ -9,12 +9,8 @@
 use std::sync::atomic::{AtomicUsize, Ordering};
 
 use amane::{
-    Align::{Center, Start},
-    Bluetooth, BluetoothDevice, Column,
-    Cursor::Pointer,
-    Key, LayerWindow, Monitor, Rectangle, Row, Service,
-    Size::Parent,
-    Text, Widget, children,
+    Align::Center, Bluetooth, BluetoothDevice, Column, Cursor::Pointer, Key, LayerWindow, Monitor,
+    Rectangle, Row, Service, Size::Parent, Text, Widget, children,
 };
 
 use super::ui::{self, BUTTON, PADDING, SIDES, button};
@@ -226,7 +222,6 @@ fn header(t: &Theme, bluetooth: &Bluetooth) -> Row {
         parts.push(Box::new(ui::switch(
             t,
             "Bluetooth",
-            124.0,
             bluetooth.powered(),
             KEY_POWER,
             |_| toggle_power(),
@@ -271,16 +266,24 @@ fn pairing(t: &Theme, request: &Request) -> (Rectangle, f32) {
     let buttons: Box<dyn Widget> = if request.answerable() {
         Box::new(
             Row::new(children![
-                ui::hint_text_button(t, "Confirm", 84.0, HINT_ENTER, |_| agent::confirm()),
-                ui::key_text_button(t, "Cancel", 84.0, KEY_CANCEL, |_| agent::cancel()),
+                ui::hint_text_button(t, "Confirm", ui::fit("Confirm"), HINT_ENTER, |_| {
+                    agent::confirm()
+                }),
+                ui::key_text_button(t, "Cancel", ui::fit("Cancel"), KEY_CANCEL, |_| {
+                    agent::cancel()
+                }),
             ])
             .gap(GAP)
             .height(BUTTON),
         )
     } else {
-        Box::new(ui::key_text_button(t, "Dismiss", 84.0, KEY_DISMISS, |_| {
-            agent::clear()
-        }))
+        Box::new(ui::key_text_button(
+            t,
+            "Dismiss",
+            ui::fit("Dismiss"),
+            KEY_DISMISS,
+            |_| agent::clear(),
+        ))
     };
 
     height += GAP + BUTTON;
@@ -302,9 +305,13 @@ fn failure_line(t: &Theme, failure: &str) -> Row {
     ui::error_line(
         t,
         failure,
-        Some(ui::key_text_button(t, "Dismiss", 72.0, KEY_DISMISS, |_| {
-            BluetoothPanel::dismiss_failure()
-        })),
+        Some(ui::key_text_button(
+            t,
+            "Dismiss",
+            ui::fit("Dismiss"),
+            KEY_DISMISS,
+            |_| BluetoothPanel::dismiss_failure(),
+        )),
     )
 }
 
@@ -454,31 +461,20 @@ fn device_row(
                         .color(if device.connected() { t.fg } else { t.fg_dim }),
                 ),
         ),
-        Box::new(
-            Rectangle::new()
-                .width(Parent)
-                .height(ROW)
-                .align_child(Start, Center)
-                .child(
-                    Text::new(device.name())
-                        .size(ui::TEXT_BODY)
-                        .color(t.fg)
-                        .elide(),
-                ),
-        ),
+        Box::new(ui::line(
+            ROW,
+            Text::new(device.name())
+                .size(ui::TEXT_BODY)
+                .color(t.fg)
+                .elide(),
+        )),
     ];
 
     if let Some(job) = panel.job_for(device.path()) {
-        let label = match job {
-            Job::Connecting => "Connecting…",
-            Job::Disconnecting => "Disconnecting…",
-            Job::Pairing => "Pairing…",
-            Job::Forgetting => "Forgetting…",
-            Job::PoweringOn | Job::PoweringOff => "",
-        };
-
         parts.push(Box::new(
-            Text::new(label).size(ui::TEXT_SMALL).color(t.fg_dim),
+            Text::new(job_label(job))
+                .size(ui::TEXT_SMALL)
+                .color(t.fg_dim),
         ));
     }
 
@@ -490,33 +486,8 @@ fn device_row(
         ));
     }
 
-    // the keys act on the highlighted row, so only its buttons show them under ?
-    let row_button = |label: &str, width: f32, key: char, on_click: Box<dyn Fn()>| {
-        if highlighted {
-            ui::key_text_button(t, label, width, key, move |_| on_click())
-        } else {
-            button(t, label, width, move |_| on_click())
-        }
-    };
-
-    if device.connected() {
-        let disconnected = device.clone();
-
-        parts.push(Box::new(row_button(
-            "Disconnect",
-            96.0,
-            KEY_DISCONNECT,
-            Box::new(move || BluetoothPanel::disconnect(&disconnected)),
-        )));
-    } else if device.paired() {
-        let forgotten = device.clone();
-
-        parts.push(Box::new(row_button(
-            "Forget",
-            64.0,
-            KEY_FORGET,
-            Box::new(move || BluetoothPanel::forget(&forgotten)),
-        )));
+    if let Some(button) = device_button(t, device, highlighted) {
+        parts.push(Box::new(button));
     }
 
     // a connected device disconnects with its button, the row does the next step
@@ -530,4 +501,49 @@ fn device_row(
         .cursor(Pointer)
         .on_click(move |_| click(&clicked))
         .child(Row::new(parts).gap(GAP).align(Center).height(ROW))
+}
+
+// what a device's job shows beside its name
+fn job_label(job: Job) -> &'static str {
+    match job {
+        Job::Connecting => "Connecting…",
+        Job::Disconnecting => "Disconnecting…",
+        Job::Pairing => "Pairing…",
+        Job::Forgetting => "Forgetting…",
+        Job::PoweringOn | Job::PoweringOff => "",
+    }
+}
+
+/*
+ * Disconnect for a connected device, Forget for a paired one; the keys act on
+ * the highlighted row, so only its button shows its key under ?
+ */
+fn device_button(t: &Theme, device: &BluetoothDevice, highlighted: bool) -> Option<Rectangle> {
+    let (label, key, action): (&str, char, Box<dyn Fn()>) = if device.connected() {
+        let device = device.clone();
+
+        (
+            "Disconnect",
+            KEY_DISCONNECT,
+            Box::new(move || BluetoothPanel::disconnect(&device)),
+        )
+    } else if device.paired() {
+        let device = device.clone();
+
+        (
+            "Forget",
+            KEY_FORGET,
+            Box::new(move || BluetoothPanel::forget(&device)),
+        )
+    } else {
+        return None;
+    };
+
+    let width = ui::fit(label);
+
+    Some(if highlighted {
+        ui::key_text_button(t, label, width, key, move |_| action())
+    } else {
+        button(t, label, width, move |_| action())
+    })
 }

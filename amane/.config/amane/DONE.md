@@ -246,3 +246,13 @@ are kept, so references between the two files still work.
     aliases, `was_open` kept in the poll loops, empty `listen()` for
     input-only services, tests (74 at the start, 107 after)
 - **Left on purpose:** see item 21.
+
+### 21. Audit leftovers
+- **Status:** done. Button widths now fit their label: `ui::fit(longest
+  label)` is the label's width plus the same room on each side
+  (`BUTTON_SIDES`, 12), so Forget, Dismiss and Disconnect look alike
+  everywhere; a button whose label changes is sized for the longest (Mute
+  for Unmute, Tailscale's actions for Disconnect), switches for their "off"
+  text. Popup timing became `Toasts::shows_at` on plain values, with tests.
+  `now_playing` (audio) and `device_row` (Bluetooth) were split. `slurp`
+  keeps no time limit on purpose: it waits for a region to be dragged.

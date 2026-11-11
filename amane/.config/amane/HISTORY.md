@@ -320,6 +320,16 @@ each finished recommendation by number; `AGENTS.md` and `docs/` the current stat
      calendar and audio panels. Removing imports once broke only the tests
      (`./test.sh`), not the build: run both after import changes.
 
+7. **Item 21, the audit's leftovers.** The user chose buttons that fit their
+   label over one fixed width per label or two sizes by place:
+   `ui::fit(longest label)` (a const fn, so layout constants like audio's
+   `MUTE` can use it; labels are ascii, so it counts bytes) adds 12 px on
+   each side. Widths that were 64, 72, 80, 84, 96 and 100 for the same
+   labels are now one per label; `switch` lost its width parameter. Popup
+   timing is testable through `Toasts::shows_at`; `now_playing` and
+   `device_row` were split; slurp's missing time limit is deliberate. Tests
+   107 → 112. RECOMMENDATIONS.md has no code-health items left.
+
 ## Habits worth keeping
 
 - Verify before claiming: check the code, the running shell (`pgrep`, its

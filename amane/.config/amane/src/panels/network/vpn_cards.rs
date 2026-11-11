@@ -21,7 +21,8 @@ use crate::vpn::{self, Backend, Status as Tailscale, Suggestion, Vpn, tailscale}
 
 const CARD_TITLE: f32 = 20.0;
 const CARD_LINE: f32 = 16.0;
-const ACTION_WIDTH: f32 = 100.0;
+// Connect, Disconnect and Log in side by side, all as wide as the longest
+const ACTION_WIDTH: f32 = ui::fit("Disconnect");
 
 // title, address, an error, the actions, and three exit node buttons under their label
 pub(super) const TAILSCALE_AT_MOST: f32 = PADDING * 2.0

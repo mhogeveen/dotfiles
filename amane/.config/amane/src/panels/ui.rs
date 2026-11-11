@@ -28,6 +28,19 @@ pub fn text_width(text: &str, size: f32) -> f32 {
     text.chars().count() as f32 * size * CHARACTER_WIDTH
 }
 
+// room on either side of a text button's label
+const BUTTON_SIDES: f32 = 12.0;
+
+/*
+ * how wide a text button is: its label plus the same room on either side, so
+ * every button has the same look whatever its label. a button whose label
+ * changes (Mute, Unmute) is sized for the longest, so it doesn't shift. labels
+ * are plain ascii, so bytes count as characters, which a const fn can count
+ */
+pub const fn fit(longest: &str) -> f32 {
+    longest.len() as f32 * TEXT_NOTE * CHARACTER_WIDTH + BUTTON_SIDES * 2.0
+}
+
 // the room every panel keeps inside its border and on either side of a row
 pub const PADDING: f32 = 12.0;
 
@@ -200,10 +213,10 @@ pub fn title(t: &Theme, text: &str) -> Rectangle {
 }
 
 // an on/off switch like "Wi-Fi on" with a key that flips it too; click flips it
+// sized for its "off" text, the longer, so flipping it doesn't move what's beside it
 pub fn switch(
     t: &Theme,
     label: &str,
-    width: f32,
     on: bool,
     key: char,
     on_click: impl Fn(Button) + 'static,
@@ -213,6 +226,8 @@ pub fn switch(
     } else {
         ("off", t.bg2, t.fg_dim)
     };
+
+    let width = text_width(&format!("{label} off"), TEXT_NOTE) + BUTTON_SIDES * 2.0;
 
     base(width, fill, on_click).child(if hints::shown() {
         // the switch's own text color, the accent wouldn't show on an accent fill

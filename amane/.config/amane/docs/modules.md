@@ -41,7 +41,8 @@ bar, backdrop, notification popups, osd, every panel, and the lock screen.
   `meter(t, width, percent, dimmed)`; and for building panels: `header(title,
   buttons)`, `note(t, text, height)`, `line(height, text)`, `card(t, height,
   parts)`, `error_line(t, text, button)`, `list_box(t, rows)`,
-  `text_width(text, size)`, text sizes `TEXT_SMALL`/`NOTE`/`BODY`/`TITLE`
+  `text_width(text, size)`, `fit(longest label)` for every text button's
+  width (switches size themselves), text sizes `TEXT_SMALL`/`NOTE`/`BODY`/`TITLE`
   (12/13/14/15), `ICON_SIZE` (16), `ICON_REFRESH`. Panels use these rather
   than their own copies.
 - `list.rs`: list rows and windowing for picker/menu panels (`Cursor`,

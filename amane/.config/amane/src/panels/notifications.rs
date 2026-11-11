@@ -107,7 +107,9 @@ fn content(t: &Theme) -> Rectangle {
 
     let header = Row::new(children![
         ui::title(t, "Notifications"),
-        ui::key_text_button(t, "Clear all", 80.0, KEY_CLEAR, |_| clear_all()),
+        ui::key_text_button(t, "Clear all", ui::fit("Clear all"), KEY_CLEAR, |_| {
+            clear_all()
+        }),
     ])
     .align(Center)
     .height(BUTTON);
