@@ -7,6 +7,7 @@
 
 use amane::App;
 
+mod animations;
 mod audio;
 mod bar;
 mod bluetooth;

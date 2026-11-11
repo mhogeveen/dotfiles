@@ -256,3 +256,14 @@ are kept, so references between the two files still work.
   text. Popup timing became `Toasts::shows_at` on plain values, with tests.
   `now_playing` (audio) and `device_row` (Bluetooth) were split. `slurp`
   keeps no time limit on purpose: it waits for a region to be dragged.
+
+### 22. Animated workspace indicator, animations checkbox
+- **Status:** done: switching workspace eases the indicator's width (dot ↔
+  wide block) and fill over 200 ms; the dots and `[S]` beside it slide
+  along, and focus moving between monitors or a new accent fades too. The
+  system panel's Settings has an Animations checkbox (`a`), kept in the state
+  file `animations`, that turns all shell motion off at once (see 5.11).
+- **Hooks in:** `src/animations.rs` (`Animations`, `follow`, `DURATION`),
+  `INDICATORS` in `src/bar.rs`, `animations_setting` in
+  `src/panels/system.rs`, `ui::checkbox`. The system panel is split into
+  cards like the network panel: diagnostics, then Settings under its heading.

@@ -12,7 +12,8 @@ bar, backdrop, notification popups, osd, every panel, and the lock screen.
 **Bar and always-there windows**
 - `bar.rs`: the top bar (`bar::HEIGHT`, 32 px, reserves its space; the
   backdrop starts below it). Workspaces of its own
-  monitor (wide accent block for the shown one, dots for urgent), the layout
+  monitor (wide accent block for the shown one, dots for urgent; width and
+  color animate on a switch, see 5.11), the layout
   symbol `[S]` (opens the layout picker), the clock (opens the calendar),
   and icons: audio, network with a VPN shield badge, bluetooth, and the NixOS
   snowflake (opens the system panel, accent while notifications are unread).
@@ -82,10 +83,11 @@ bar, backdrop, notification popups, osd, every panel, and the lock screen.
   list to know how much shows; the wheel moves the highlight. Cleared on
   close. Lists sit in `ui::list_box`, which clips the rows inside its border
   (amane clips at the outer edge, border included), so rows can't cover it.
-- `system.rs`: user@host, OS/kernel/uptime, CPU/memory/disk meters,
-  network speed, battery on laptops, settings: accent swatches and the
-  brightness slider; buttons for wallpaper (`w`), notifications (`n`),
-  session (`s`).
+- `system.rs`: user@host, OS/kernel/uptime, then two cards like the network
+  panel: CPU/memory/disk meters, network speed and battery on laptops; and
+  under a "Settings" heading the accent swatches, the brightness slider and
+  the animations checkbox (`a`, `ui::checkbox`). Buttons for wallpaper
+  (`w`), notifications (`n`), session (`s`).
 - `calendar.rs`: month + weather as two cards on one grid (see 5.5).
 - `wallpaper.rs`: the wallpaper strip along the bottom (see 5.6).
 
@@ -108,6 +110,8 @@ bar, backdrop, notification popups, osd, every panel, and the lock screen.
 - `screenshot.rs`: grim/slurp/wl-copy, notification after capture.
 - `system.rs`: `SystemInfo` (os, kernel, uptime, disk, network speed).
 - `theme.rs`: `Theme` colors, `Accent` service and the `accent` IPC.
+- `animations.rs`: the `Animations` on/off setting (state file
+  `animations`), `DURATION` and `follow()` (see 5.11).
 - `json.rs`: small JSON reader (`parse`, `Value` getters) and `quote()`.
 - `command.rs`: `capture(command, timeout)`, a program's output with a time
   limit (kills and waits on timeout), `read` (its output on success),

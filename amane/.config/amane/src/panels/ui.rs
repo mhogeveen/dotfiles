@@ -1,6 +1,6 @@
 /*
  * small pieces the panels share: sizes, the top-right window and frame,
- * buttons, switches, sliders and meters
+ * buttons, switches, checkboxes, sliders and meters
  */
 
 use amane::{
@@ -237,6 +237,37 @@ pub fn switch(
             .size(TEXT_NOTE)
             .color(color)
     })
+}
+
+// nerd font material design checkbox-marked and checkbox-blank-outline
+const ICON_CHECKED: &str = "\u{f0132}";
+const ICON_UNCHECKED: &str = "\u{f0131}";
+
+/*
+ * a checkbox for a setting that's on or off, filled in the accent when on,
+ * with a key that flips it too; while ? hints show, the key replaces the box
+ */
+pub fn checkbox(
+    t: &Theme,
+    checked: bool,
+    key: char,
+    on_click: impl Fn(Button) + 'static,
+) -> Rectangle {
+    let content = if hints::shown() {
+        key_text(&key.to_string(), t.accent)
+    } else if checked {
+        Text::new(ICON_CHECKED).size(ICON_SIZE).color(t.accent)
+    } else {
+        Text::new(ICON_UNCHECKED).size(ICON_SIZE).color(t.fg_dim)
+    };
+
+    Rectangle::new()
+        .width(BUTTON)
+        .height(BUTTON)
+        .align_child(Start, Center)
+        .cursor(Pointer)
+        .on_click(on_click)
+        .child(content)
 }
 
 const SLIDER_HEIGHT: f32 = 8.0;

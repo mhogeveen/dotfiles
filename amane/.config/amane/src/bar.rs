@@ -5,15 +5,19 @@
  * its panel. it reserves its height, so windows start below it
  */
 
+use std::collections::HashMap;
+use std::sync::{Mutex, PoisonError};
+
 use amane::{
     Align::{Center, End},
-    Audio, Bluetooth,
+    Animation, Audio, Bluetooth, Color,
     Cursor::Pointer,
     Full, Layer, LayerWindow, Monitor, Network, Padding, Rectangle, Row, Service,
     Size::Parent,
     Stack, Text, Vertical, Widget, Workspaces, Zone, children,
 };
 
+use crate::animations::{self, Animations};
 use crate::bluetooth::{
     self,
     agent::{Agent, Request},
@@ -38,6 +42,28 @@ const GAP: f32 = 8.0;
 const WORKSPACE_SHOWN: f32 = 20.0;
 const WORKSPACE_DOT: f32 = 8.0;
 const WORKSPACE_GAP: f32 = 4.0;
+
+/*
+ * each workspace's width and fill as drawn, moving towards what its state asks
+ * for; the view is built anew on every redraw, so they're kept here, by
+ * monitor and workspace id since every monitor has its own bar
+ */
+static INDICATORS: Mutex<Option<HashMap<(String, i64), Indicator>>> = Mutex::new(None);
+
+struct Indicator {
+    width: Animation<f32>,
+    fill: Animation<Color>,
+}
+
+impl Indicator {
+    // at rest where it should be, so the first bar and a new workspace don't animate in
+    fn new(width: f32, fill: Color) -> Self {
+        Self {
+            width: Animation::new(width).duration(animations::DURATION),
+            fill: Animation::new(fill).duration(animations::DURATION),
+        }
+    }
+}
 
 const LAYOUT_SIZE: f32 = 12.0;
 
@@ -95,6 +121,15 @@ pub fn view(monitor: &Monitor) -> LayerWindow {
 fn workspaces(t: &Theme, monitor: &Monitor) -> Rectangle {
     let workspaces = Workspaces::read();
 
+    let animate = Animations::read().enabled();
+
+    // a plain lock, not a service, so holding it in the view is fine
+    let mut indicators = INDICATORS.lock().unwrap_or_else(PoisonError::into_inner);
+    let indicators = indicators.get_or_insert_with(HashMap::new);
+
+    // this monitor's workspaces in this view; animations of ones gone are dropped after
+    let mut seen = Vec::new();
+
     let mut buttons: Vec<Box<dyn Widget>> = Vec::new();
 
     /*
@@ -130,6 +165,15 @@ fn workspaces(t: &Theme, monitor: &Monitor) -> Rectangle {
 
         let id = workspace.id();
 
+        seen.push(id);
+
+        let indicator = indicators
+            .entry((monitor.name.clone(), id))
+            .or_insert_with(|| Indicator::new(width, fill));
+
+        let width = animations::follow(&mut indicator.width, width, animate);
+        let fill = animations::follow(&mut indicator.fill, fill, animate);
+
         buttons.push(Box::new(
             Rectangle::new()
                 .width(width)
@@ -140,6 +184,8 @@ fn workspaces(t: &Theme, monitor: &Monitor) -> Rectangle {
                 .on_click(move |_| Workspaces::focus(id)),
         ));
     }
+
+    indicators.retain(|(name, id), _| *name != monitor.name || seen.contains(id));
 
     Rectangle::new().width(Parent).height(Parent).child(
         Row::new(children![

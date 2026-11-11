@@ -1,7 +1,8 @@
 /*
  * system panel, top-right: who and where you are, the os and kernel, uptime,
  * cpu, memory, disk and battery use, the ways into the notification center and
- * the session menu and the wallpaper picker, and the system settings as they're added
+ * the session menu and the wallpaper picker, and the system settings as they're added;
+ * the facts in one card, the settings in another under their heading
  *
  * the facts come from src/system.rs; cpu, memory and battery from amane
  */
@@ -17,24 +18,45 @@ use amane::{
 
 use super::ui::{self, BUTTON, CORNER_WIDTH, PADDING};
 use super::{NOTIFICATIONS, Panels, SESSION, SYSTEM, WALLPAPER, panel};
+use crate::animations::Animations;
 use crate::brightness::{self, Level};
 use crate::notifications::{self, ICON_BELL, ICON_BELL_OUTLINE};
 use crate::system::{self, NetworkSpeed, SystemInfo};
 use crate::theme::{ACCENTS, Accent, Theme};
 use crate::vpn::{self, Vpn};
 
-/*
- * header, details, five diagnostics rows (a laptop's battery included) and the
- * settings: the accent and the brightness
- */
-const HEIGHT: f32 = 324.0 + BUTTON + GAP;
 const GAP: f32 = 8.0;
 const LINE: f32 = 20.0;
 
-// a meter row: name, bar, then the numbers taking the rest
+// the diagnostics rows at most: cpu, memory, disk, network and a laptop's battery
+const DIAGNOSTICS_MOST: f32 = 5.0;
+
+// the settings card: accent, brightness and animations
+const SETTINGS_ROWS: f32 = 3.0;
+
+/*
+ * the header and the details line, the diagnostics card, and the settings
+ * card under its heading; fixed, so room is kept for a battery row on a
+ * desktop too
+ */
+const HEIGHT: f32 = PADDING * 2.0
+    + BUTTON
+    + GAP
+    + LINE
+    + GAP
+    + card_height(DIAGNOSTICS_MOST)
+    + GAP
+    + LINE
+    + GAP
+    + card_height(SETTINGS_ROWS);
+
+/*
+ * a meter row: name, bar, then the numbers taking the rest of a card's
+ * inside (the panel's padding and the card's own)
+ */
 const NAME: f32 = 96.0;
-const METER: f32 = 128.0;
-const NUMBERS: f32 = CORNER_WIDTH - PADDING * 2.0 - NAME - METER - GAP * 2.0;
+const METER: f32 = 104.0;
+const NUMBERS: f32 = CORNER_WIDTH - PADDING * 4.0 - NAME - METER - GAP * 2.0;
 
 // the interface name at the end of the network row
 const INTERFACE: f32 = 72.0;
@@ -54,6 +76,7 @@ const ICON_WALLPAPER: &str = "\u{f0e09}";
 const KEY_NOTIFICATIONS: char = 'n';
 const KEY_SESSION: char = 's';
 const KEY_WALLPAPER: char = 'w';
+const KEY_ANIMATIONS: char = 'a';
 
 pub fn view(monitor: &Monitor) -> LayerWindow {
     let base = ui::corner(HEIGHT, "amane-system");
@@ -68,24 +91,47 @@ pub fn view(monitor: &Monitor) -> LayerWindow {
 fn content(t: &Theme, monitor: &str) -> Rectangle {
     let info = SystemInfo::read();
 
-    let mut parts: Vec<Box<dyn Widget>> =
-        vec![Box::new(header(t, &info)), Box::new(details(t, &info))];
+    let diagnostics = meters(t, &info);
+    let diagnostics_height = card_height(diagnostics.len() as f32);
 
-    parts.extend(meters(t, &info));
+    let settings: Vec<Box<dyn Widget>> = vec![
+        Box::new(accent_setting(t)),
+        Box::new(brightness_setting(t, monitor)),
+        Box::new(animations_setting(t)),
+    ];
 
-    parts.push(Box::new(ui::heading(t, "Settings", LINE)));
-    parts.push(Box::new(accent_setting(t)));
-    parts.push(Box::new(brightness_setting(t, monitor)));
-
-    ui::frame(t, GAP, parts)
+    /*
+     * the details line stays outside the cards, where it has the panel's
+     * full width and isn't cut short
+     */
+    ui::frame(
+        t,
+        GAP,
+        children![
+            header(t, &info),
+            details(t, &info),
+            ui::card(t, diagnostics_height, diagnostics),
+            ui::heading(t, "Settings", LINE),
+            ui::card(t, card_height(SETTINGS_ROWS), settings),
+        ],
+    )
 }
 
-// the header buttons by their letters, uppercase too; escape is handled by the panel manager
+// a card of this many button-tall rows: its padding, the rows and the gaps between them
+const fn card_height(rows: f32) -> f32 {
+    PADDING * 2.0 + BUTTON * rows + GAP * (rows - 1.0)
+}
+
+/*
+ * the header buttons and the animations switch by their letters, uppercase
+ * too; escape is handled by the panel manager
+ */
 fn key_pressed(key: Key) {
     match super::letter(&key) {
         Some(KEY_NOTIFICATIONS) => open_notifications(),
         Some(KEY_SESSION) => open_session(),
         Some(KEY_WALLPAPER) => open_wallpaper(),
+        Some(KEY_ANIMATIONS) => Animations::toggle(),
         _ => {}
     }
 }
@@ -358,6 +404,28 @@ fn brightness_setting(t: &Theme, monitor: &str) -> Row {
     };
 
     Row::new(row).gap(GAP).align(Center).height(BUTTON)
+}
+
+/*
+ * whether the shell animates (src/animations.rs), for every window at once;
+ * the name flips it too, like a checkbox's label
+ */
+fn animations_setting(t: &Theme) -> Row {
+    let enabled = Animations::read().enabled();
+
+    Row::new(children![
+        Rectangle::new()
+            .width(NAME)
+            .height(BUTTON)
+            .align_child(Start, Center)
+            .cursor(Pointer)
+            .on_click(|_| Animations::toggle())
+            .child(Text::new("Animations").size(ui::TEXT_NOTE).color(t.fg)),
+        ui::checkbox(t, enabled, KEY_ANIMATIONS, |_| Animations::toggle()),
+    ])
+    .gap(GAP)
+    .align(Center)
+    .height(BUTTON)
 }
 
 /*

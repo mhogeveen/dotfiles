@@ -123,3 +123,14 @@ when all traffic goes through the VPN. Every tailscale call has a time limit
 login and has a login page, `v` opens that page instead of running `up`
 (which would only wait for the login).
 
+
+## 5.11 Animations
+amane's `Animation<T>` (`f32`, `Color`) eases from where it is to a target
+and, while it hasn't arrived, makes the window ask for another frame; once
+it arrives the window rests, so there's no idle cost. Views are rebuilt on
+every redraw, so animations live in a static `Mutex` outside the view (the
+bar's `INDICATORS`, keyed by monitor and workspace id, created at rest on
+their first target so nothing animates in). Every animated value goes
+through `animations::follow(animation, target, enabled)`, which gives the
+target at once while the system panel's Animations checkbox is off; read
+`Animations::read().enabled()` once per view. One `DURATION` (200 ms) for all.
