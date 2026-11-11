@@ -124,7 +124,7 @@ fn days_from_civil(year: i32, month: u32, day: u32) -> i64 {
     era * 146_097 + day_of_era - 719_468
 }
 
-fn civil_from_days(days: i64) -> Date {
+pub fn civil_from_days(days: i64) -> Date {
     let days = days + 719_468;
     let era = days.div_euclid(146_097);
     let day_of_era = days - era * 146_097;

@@ -2,10 +2,11 @@
  * the time and date in the bar, and today's date for the calendar; click the
  * clock to open the calendar
  *
- * `date` gives the local time, timezone and daylight saving included. it runs
- * once a minute, right after the minute turns, instead of every second: the
- * thread sleeps until the next whole minute by the wall clock, so it stays in
- * step after a suspend or when the time is set (see sleep_until_next_minute)
+ * the C library's localtime_r gives the local time, timezone and daylight
+ * saving included (no `date` to start, which could fail). it's read once a
+ * minute, right after the minute turns, instead of every second: the thread
+ * sleeps until the next whole minute by the wall clock, so it stays in step
+ * after a suspend or when the time is set (see sleep_until_next_minute)
  */
 
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
@@ -14,7 +15,7 @@ use amane::{
     Align::Center, Cursor::Pointer, Rectangle, Row, Service, Size::Parent, Text, children,
 };
 
-use crate::calendar::Date;
+use crate::calendar::{self, Date};
 use crate::panels::{CALENDAR, Panels};
 use crate::theme::Theme;
 
@@ -26,22 +27,66 @@ pub struct Clock {
     today: Date,
 }
 
+// in english, like the calendar panel, whatever LC_TIME says
+const DAY_NAMES: [&str; 7] = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+
+// how many letters of a month's name the bar shows: Nov
+const MONTH_LETTERS: usize = 3;
+
+// the local time, timezone and daylight saving included, read from the C library
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct LocalTime {
+    pub date: Date,
+    pub hour: u32,
+    pub minute: u32,
+    pub second: u32,
+}
+
+impl LocalTime {
+    // like 17:05
+    pub fn time(&self) -> String {
+        format!("{:02}:{:02}", self.hour, self.minute)
+    }
+
+    // like Wed 11 Nov
+    fn short_date(&self) -> String {
+        let month: String = calendar::MONTHS[self.date.month as usize - 1]
+            .chars()
+            .take(MONTH_LETTERS)
+            .collect();
+
+        format!(
+            "{} {:02} {month}",
+            DAY_NAMES[self.date.weekday() as usize],
+            self.date.day
+        )
+    }
+
+    // like 20261111171503, for file names that sort by time
+    pub fn stamp(&self) -> String {
+        format!(
+            "{:04}{:02}{:02}{:02}{:02}{:02}",
+            self.date.year, self.date.month, self.date.day, self.hour, self.minute, self.second
+        )
+    }
+}
+
+pub fn local_now() -> LocalTime {
+    let since_epoch = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap_or_default();
+
+    wall::local(since_epoch.as_secs() as i64)
+}
+
 fn now() -> Clock {
-    let line = amane::output("date '+%H:%M|%a %d %b|%Y %m %d'");
+    let local = local_now();
 
-    let mut parts = line.trim().split('|');
-    let time = parts.next().unwrap_or("").to_string();
-    let date = parts.next().unwrap_or("").to_string();
-
-    let mut numbers = parts.next().unwrap_or("").split_whitespace();
-    let mut number = || numbers.next().and_then(|number| number.parse().ok());
-
-    let today = match (number(), number(), number()) {
-        (Some(year), Some(month), Some(day)) => Date::new(year as i32, month, day),
-        _ => Date::new(1970, 1, 1),
-    };
-
-    Clock { time, date, today }
+    Clock {
+        time: local.time(),
+        date: local.short_date(),
+        today: local.date,
+    }
 }
 
 impl Clock {
@@ -101,7 +146,7 @@ pub fn view(t: &Theme) -> Rectangle {
         )
 }
 
-// a little past the minute, so `date` surely reads the new one
+// a little past the minute, so the new one is surely read
 const MARGIN: Duration = Duration::from_millis(20);
 
 /*
@@ -124,10 +169,27 @@ fn sleep_until_next_minute() {
     wall::sleep_until(wake);
 }
 
+// without the C library's answer: the time in UTC, still a valid time
+fn utc(since_epoch: i64) -> LocalTime {
+    let seconds_of_day = since_epoch.rem_euclid(SECONDS_PER_DAY) as u32;
+
+    LocalTime {
+        date: calendar::civil_from_days(since_epoch.div_euclid(SECONDS_PER_DAY)),
+        hour: seconds_of_day / 3600,
+        minute: seconds_of_day / 60 % 60,
+        second: seconds_of_day % 60,
+    }
+}
+
+const SECONDS_PER_DAY: i64 = 24 * 60 * 60;
+
 #[cfg(all(target_os = "linux", target_pointer_width = "64"))]
 mod wall {
-    use std::ffi::c_int;
+    use std::ffi::{c_char, c_int, c_long};
     use std::time::Duration;
+
+    use super::LocalTime;
+    use crate::calendar::Date;
 
     // glibc's struct timespec on 64-bit linux
     #[repr(C)]
@@ -139,6 +201,26 @@ mod wall {
     const CLOCK_REALTIME: c_int = 0;
     const TIMER_ABSTIME: c_int = 1;
 
+    // glibc's struct tm on 64-bit linux
+    #[repr(C)]
+    struct Tm {
+        second: c_int,
+        minute: c_int,
+        hour: c_int,
+        day: c_int,
+
+        // 0 to 11
+        month: c_int,
+
+        // since 1900
+        year: c_int,
+        weekday: c_int,
+        yearday: c_int,
+        daylight_saving: c_int,
+        offset: c_long,
+        zone: *const c_char,
+    }
+
     // the C library's own, which the config may call since it can't add crates
     unsafe extern "C" {
         fn clock_nanosleep(
@@ -147,6 +229,49 @@ mod wall {
             request: *const Timespec,
             remain: *mut Timespec,
         ) -> c_int;
+
+        fn tzset();
+
+        fn localtime_r(time: *const i64, result: *mut Tm) -> *mut Tm;
+    }
+
+    // this many seconds after 1970 in the local timezone
+    pub fn local(since_epoch: i64) -> LocalTime {
+        let mut tm = Tm {
+            second: 0,
+            minute: 0,
+            hour: 0,
+            day: 1,
+            month: 0,
+            year: 70,
+            weekday: 0,
+            yearday: 0,
+            daylight_saving: 0,
+            offset: 0,
+            zone: std::ptr::null(),
+        };
+
+        /*
+         * SAFETY: tzset only reads TZ and /etc/localtime; it's asked each time so
+         * a changed timezone is followed, like `date` did. localtime_r gets a valid
+         * time and a struct tm to fill, and touches nothing else
+         */
+        let filled = unsafe {
+            tzset();
+
+            !localtime_r(&since_epoch, &mut tm).is_null()
+        };
+
+        if !filled {
+            return super::utc(since_epoch);
+        }
+
+        LocalTime {
+            date: Date::new(1900 + tm.year, (tm.month + 1) as u32, tm.day as u32),
+            hour: tm.hour as u32,
+            minute: tm.minute as u32,
+            second: tm.second as u32,
+        }
     }
 
     // until this long after 1970 by the wall clock
@@ -181,14 +306,70 @@ mod wall {
 mod wall {
     use std::time::Duration;
 
+    use super::LocalTime;
+
     pub fn sleep_until(_: Duration) {
         std::thread::sleep(Duration::from_secs(1));
+    }
+
+    pub fn local(since_epoch: i64) -> LocalTime {
+        super::utc(since_epoch)
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn times_are_written_for_the_bar_and_file_names() {
+        let local = LocalTime {
+            date: Date::new(2026, 11, 11),
+            hour: 9,
+            minute: 5,
+            second: 3,
+        };
+
+        assert_eq!(local.time(), "09:05");
+        assert_eq!(local.short_date(), "Wed 11 Nov");
+        assert_eq!(local.stamp(), "20261111090503");
+    }
+
+    #[test]
+    fn utc_is_counted_from_1970() {
+        // 2026-11-11 08:05:03 UTC
+        let utc = utc(1_794_384_303);
+
+        assert_eq!(utc.date, Date::new(2026, 11, 11));
+        assert_eq!((utc.hour, utc.minute, utc.second), (8, 5, 3));
+    }
+
+    #[test]
+    fn the_local_time_matches_date() {
+        let date = || {
+            let output = std::process::Command::new("date")
+                .arg("+%Y %m %d %H %M")
+                .output()
+                .expect("date runs");
+
+            String::from_utf8_lossy(&output.stdout).trim().to_string()
+        };
+
+        // asked before and after, so a minute turning in between can't fail it
+        let before = date();
+        let local = local_now();
+        let after = date();
+
+        let ours = format!(
+            "{:04} {:02} {:02} {:02} {:02}",
+            local.date.year, local.date.month, local.date.day, local.hour, local.minute
+        );
+
+        assert!(
+            ours == before || ours == after,
+            "{ours} is neither {before} nor {after}"
+        );
+    }
 
     #[test]
     fn sleeps_until_the_wall_clock_time() {

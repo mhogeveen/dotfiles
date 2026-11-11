@@ -213,16 +213,17 @@ fn shown_ids(toasts: &Toasts, list: &[Notification]) -> Vec<u32> {
 pub fn view(monitor: &Monitor) -> LayerWindow {
     let t = theme();
 
-    // Toasts first, see the lock order at the top
+    /*
+     * none while a panel holds the same corner (the center lists them anyway),
+     * and only the focused monitor gets popups; asked before the reads below,
+     * so Panels and the display aren't read while those are held
+     */
+    let hidden = corner_taken() || !panels::is_focused(monitor);
+
+    // Toasts first, see the lock order at the top; the cards need all three at once
     let toasts = Toasts::read();
     let notifications = Notifications::read();
     let apps = Apps::read();
-
-    /*
-     * none while a panel holds the same corner (the center lists them anyway),
-     * and only the focused monitor gets popups
-     */
-    let hidden = corner_taken() || !panels::is_focused(monitor);
 
     let mut cards: Vec<Box<dyn Widget>> = Vec::new();
     let mut areas = Vec::new();

@@ -12,6 +12,7 @@
  */
 
 use std::fs;
+use std::sync::{Mutex, PoisonError};
 use std::thread;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
@@ -20,6 +21,9 @@ use amane::Service;
 use crate::state;
 
 const STATE: &str = "launches";
+
+// held while saving, so saves can't overlap
+static SAVING: Mutex<()> = Mutex::new(());
 
 // a score halves after this many seconds without a launch
 const HALF_LIFE: f64 = 7.0 * 24.0 * 60.0 * 60.0;
@@ -71,15 +75,18 @@ impl Usage {
 
     // counts a launch, and saves on a thread so starting the app never waits on the disk
     pub fn record(name: &str) {
-        let text = {
-            let mut usage = Usage::write();
+        record(&mut Usage::write().apps, name, now());
 
-            record(&mut usage.apps, name, now());
+        /*
+         * one save at a time, each writing the list as it is by then: with
+         * the text taken before the thread, two quick launches could finish
+         * out of order and the older list be written last, losing a count
+         */
+        thread::spawn(|| {
+            let _saving = SAVING.lock().unwrap_or_else(PoisonError::into_inner);
 
-            serialize(&usage.apps)
-        };
+            let text = serialize(&Usage::read().apps);
 
-        thread::spawn(move || {
             if let Err(error) = state::save(STATE, &text) {
                 eprintln!("usage: couldn't save launches: {error}");
             }

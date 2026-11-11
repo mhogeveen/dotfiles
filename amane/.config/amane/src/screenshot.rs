@@ -9,13 +9,12 @@
 
 use std::env;
 use std::fs;
-use std::io::Write;
 use std::path::PathBuf;
 use std::process::{Command, Stdio};
 
-use amane::{Urgency, output};
+use amane::Urgency;
 
-use crate::notifications;
+use crate::{clock, command, notifications};
 
 const APP_NAME: &str = "Screenshots";
 
@@ -141,25 +140,16 @@ fn run(command: &mut Command) -> Result<Vec<u8>, String> {
 }
 
 fn copy(png: &[u8]) -> Result<(), String> {
-    let mut wl_copy = Command::new("wl-copy")
+    let wl_copy = Command::new("wl-copy")
         .args(["--type", "image/png"])
         .stdin(Stdio::piped())
         .spawn()
         .map_err(|error| format!("couldn't start wl-copy: {error}"))?;
 
-    wl_copy
-        .stdin
-        .take()
-        .expect("stdin is piped")
-        .write_all(png)
-        .map_err(|error| format!("wl-copy: {error}"))?;
-
     // wl-copy forks to keep serving the clipboard, so this only waits for the handover
-    let status = wl_copy
-        .wait()
-        .map_err(|error| format!("wl-copy: {error}"))?;
+    let output = command::feed(wl_copy, png).map_err(|error| format!("wl-copy: {error}"))?;
 
-    if !status.success() {
+    if !output.status.success() {
         return Err(String::from("wl-copy failed"));
     }
 
@@ -175,7 +165,7 @@ fn new_file() -> Result<PathBuf, String> {
     fs::create_dir_all(&folder)
         .map_err(|error| format!("couldn't create {}: {error}", folder.display()))?;
 
-    let stamp = output("date +%Y%m%d%H%M%S");
+    let stamp = clock::local_now().stamp();
 
     Ok(folder.join(format!("{stamp}.png")))
 }

@@ -8,7 +8,6 @@
  * for as long as it runs, so nothing has to be added to the compositor's autostart
  */
 
-use std::io::Write;
 use std::process::{Command, Stdio};
 use std::sync::Arc;
 use std::thread;
@@ -26,6 +25,7 @@ use amane::{
 use super::picker::{self, Picker};
 use super::{CLIPBOARD, list, ui};
 use crate::clipboard_preview::{self, Preview, Previews};
+use crate::command;
 use crate::theme::Theme;
 
 // stores every new selection, then prints a line so the history knows to reload
@@ -373,21 +373,13 @@ fn delete(entry: &Entry) {
     });
 }
 
-fn cliphist_with_input(command: &str, input: &str) -> std::io::Result<()> {
-    let mut cliphist = Command::new("cliphist")
-        .arg(command)
+fn cliphist_with_input(subcommand: &str, input: &str) -> std::io::Result<()> {
+    let cliphist = Command::new("cliphist")
+        .arg(subcommand)
         .stdin(Stdio::piped())
         .spawn()?;
 
-    cliphist
-        .stdin
-        .take()
-        .expect("stdin is piped")
-        .write_all(input.as_bytes())?;
-
-    cliphist.wait()?;
-
-    Ok(())
+    command::feed(cliphist, input.as_bytes()).map(drop)
 }
 
 /*
@@ -404,28 +396,15 @@ fn copy(line: String) {
 }
 
 fn decode_and_copy(line: &str) -> std::io::Result<()> {
-    let mut decode = Command::new("cliphist")
+    let decode = Command::new("cliphist")
         .arg("decode")
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
         .spawn()?;
 
-    decode
-        .stdin
-        .take()
-        .expect("stdin is piped")
-        .write_all(line.as_bytes())?;
+    let decoded = command::feed(decode, line.as_bytes())?;
 
-    let decoded = decode.wait_with_output()?;
+    let copy = Command::new("wl-copy").stdin(Stdio::piped()).spawn()?;
 
-    let mut copy = Command::new("wl-copy").stdin(Stdio::piped()).spawn()?;
-
-    copy.stdin
-        .take()
-        .expect("stdin is piped")
-        .write_all(&decoded.stdout)?;
-
-    copy.wait()?;
-
-    Ok(())
+    command::feed(copy, &decoded.stdout).map(drop)
 }

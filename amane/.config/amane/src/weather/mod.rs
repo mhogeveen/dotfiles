@@ -17,7 +17,7 @@ use std::time::{Duration, Instant};
 
 use amane::Service;
 
-use crate::state;
+use crate::{clock, state};
 
 pub use forecast::Forecast;
 
@@ -226,7 +226,7 @@ fn curl_error(error: &str) -> String {
 
 // like 19:15
 fn wall_clock() -> String {
-    amane::output("date +%H:%M")
+    clock::local_now().time()
 }
 
 // latitude<TAB>longitude<TAB>name

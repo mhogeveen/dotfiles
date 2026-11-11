@@ -12,13 +12,14 @@
 use std::collections::{HashMap, HashSet};
 use std::env;
 use std::fs;
-use std::io::Write;
 use std::path::PathBuf;
 use std::process::{Command, Stdio};
 use std::sync::{Mutex, PoisonError};
 use std::thread;
 
 use amane::Service;
+
+use crate::command;
 
 // a huge paste is cut off here, the preview has no room for more anyway
 const MAX_TEXT: usize = 16 * 1024;
@@ -91,16 +92,14 @@ pub fn request(id: &str, line: &str, image: bool) {
 }
 
 fn decode(id: &str, line: &str, image: bool) -> Option<Preview> {
-    let mut decode = Command::new("cliphist")
+    let decode = Command::new("cliphist")
         .arg("decode")
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
         .spawn()
         .ok()?;
 
-    decode.stdin.take()?.write_all(line.as_bytes()).ok()?;
-
-    let decoded = decode.wait_with_output().ok()?;
+    let decoded = command::feed(decode, line.as_bytes()).ok()?;
 
     if !decoded.status.success() {
         return None;

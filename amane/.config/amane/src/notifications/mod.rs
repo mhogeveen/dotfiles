@@ -10,6 +10,7 @@ use std::time::{Duration, SystemTime};
 
 use amane::{Apps, Argument, Bus, Notifications, Service, Urgency};
 
+use crate::covers;
 use crate::panels::{NOTIFICATIONS, Panels};
 
 pub mod card;
@@ -35,14 +36,6 @@ impl Service for Seen {
 }
 
 impl Seen {
-    pub fn unread(&self, notifications: &Notifications) -> usize {
-        notifications
-            .list()
-            .iter()
-            .filter(|notification| notification.received() > self.until)
-            .count()
-    }
-
     pub fn mark_all() {
         Seen::write().until = SystemTime::now();
     }
@@ -53,14 +46,18 @@ impl Seen {
  * nothing counts while it's open. reads Notifications, so a view that asks
  * redraws when one arrives or goes away
  */
+// one service read at a time, each let go before the next
 pub fn has_unread() -> bool {
-    let notifications = Notifications::read();
-
     if Panels::read().is_open(NOTIFICATIONS) {
         return false;
     }
 
-    Seen::read().unread(&notifications) > 0
+    let until = Seen::read().until;
+
+    Notifications::read()
+        .list()
+        .iter()
+        .any(|notification| notification.received() > until)
 }
 
 // nerd font material design glyphs
@@ -122,8 +119,9 @@ pub fn send(app_name: &str, summary: &str, body: &str, urgency: Urgency, image: 
  * then the icon of the installed app it names (icon) or comes from (sender)
  */
 pub fn icon_path(image: &str, icon: &str, sender: &str, apps: &Apps) -> Option<PathBuf> {
+    // a file:// link is decoded (%20 is a space), a plain path is used as it is
     let file = |value: &str| {
-        let path = PathBuf::from(value.strip_prefix("file://").unwrap_or(value));
+        let path = covers::file_path(value).unwrap_or_else(|| PathBuf::from(value));
 
         (path.is_absolute() && path.exists()).then_some(path)
     };
@@ -150,10 +148,21 @@ pub fn icon_path(image: &str, icon: &str, sender: &str, apps: &Apps) -> Option<P
 pub fn plain(body: &str) -> String {
     let mut text = String::new();
     let mut in_tag = false;
+    let mut characters = body.chars().peekable();
 
-    for character in body.chars() {
+    while let Some(character) = characters.next() {
         match character {
-            '<' => in_tag = true,
+            /*
+             * only a < followed by a tag's start opens one, so "x < y" keeps
+             * its < instead of losing everything after it
+             */
+            '<' if !in_tag
+                && characters.peek().is_some_and(|next| {
+                    next.is_ascii_alphabetic() || matches!(next, '/' | '!')
+                }) =>
+            {
+                in_tag = true;
+            }
             '>' if in_tag => in_tag = false,
             _ if !in_tag => text.push(character),
             _ => {}
@@ -188,6 +197,9 @@ mod tests {
         assert_eq!(plain("<b>bold</b> &amp; <i>more</i>"), "bold & more");
         assert_eq!(plain("a &lt;tag&gt;"), "a <tag>");
         assert_eq!(plain("&amp;lt;"), "&lt;");
+        assert_eq!(plain("x < y and more"), "x < y and more");
+        assert_eq!(plain("a<br/>b"), "ab");
+        assert_eq!(plain("1 <3"), "1 <3");
     }
 
     #[test]

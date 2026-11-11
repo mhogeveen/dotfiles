@@ -139,32 +139,15 @@ Settled earlier, no need to revisit:
 ## Code health
 
 ### 20. Audit findings (2026-11-11)
-- **Status:** open. The most important bugs were fixed in the same session
-  (see HISTORY.md): Tailscale `up` hanging on a needed login, no time limit on
-  tailscale/ddcutil (`src/command.rs`), weather not retrying after a failure,
-  covers never retried, popups held forever after a hover, the wallpaper
-  picker applying None on Enter, an empty lock-screen password.
-- **Smaller bugs left:**
-  - notification icons with `%20` in a `file://` path don't show
-    (`notifications/mod.rs` `icon_path`; reuse `covers::file_path`)
-  - `notifications::plain` drops everything after a bare `<` ("x < y")
-  - `state::save` isn't atomic (temp file + rename, like
-    `notifications/history.rs`); a crash mid-write empties the state file
-  - `usage.rs` saves on one thread per launch; two quick launches can save
-    out of order and lose a count
-  - zombies on error paths: `screenshot.rs` (wl-copy stdin write fails) and
-    `clipboard_preview.rs` (decode stdin) return before `wait()`
-  - text overflowing its space: the network panel's status line with a long
-    SSID, `ui::title` with a long weather place, interface names in the
-    system panel (72 px)
-  - `notifications/history.rs` logs a failed save every second
-  - the audio device-name cache is keyed by PipeWire id (ids get reused) and
-    never refreshed
-  - `amane::output` panics if the program can't start (`clock.rs`,
-    `weather/mod.rs`, `screenshot.rs` use it to run `date`); `localtime_r`
-    through libc would remove all three
-  - a few nested service reads (`osd.rs` `popup()`, `notifications::has_unread`,
-    `popups.rs` view) work by consistent order only
+- **Status:** open, worked through in three rounds (see HISTORY.md). Done:
+  the most important bugs (Tailscale `up` hanging on a needed login, time
+  limits for tailscale/ddcutil, weather and cover retries, popups held after
+  a hover, the wallpaper picker applying None, an empty lock-screen
+  password), then round A, the smaller bugs (`%20` icon paths, a bare `<` in
+  bodies, atomic state saves, lost launch counts, zombies on error paths,
+  overflowing text, history save logging, reused PipeWire ids, `date`
+  replaced by `localtime_r`, nested service reads). Left: round B (UX gaps)
+  and round C + D (helpers, structure, tests), below.
 - **Duplication worth a helper:** running a command and reading its output
   (~12 copies; `command::capture` exists now), the runtime folder path (three
   copies, three different fallbacks), muted note/card/list box/header/error

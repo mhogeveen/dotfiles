@@ -216,8 +216,7 @@ pub fn view(monitor: &Monitor) -> LayerWindow {
 
 // [icon] ━━━━━━━━──── 45%
 fn popup(t: &Theme, device: Device, monitor: &str) -> Rectangle {
-    let audio = Audio::read();
-
+    // Audio is only read for the audio popups, so brightness's reads never nest inside it
     let (icon, volume, muted) = match device {
         Device::Brightness => {
             let percent = match brightness::level(monitor) {
@@ -227,12 +226,18 @@ fn popup(t: &Theme, device: Device, monitor: &str) -> Rectangle {
 
             (brightness_icon(percent), percent, false)
         }
-        Device::Output => (
-            volume_icon(audio.volume(), audio.muted()),
-            audio.volume(),
-            audio.muted(),
-        ),
+        Device::Output => {
+            let audio = Audio::read();
+
+            (
+                volume_icon(audio.volume(), audio.muted()),
+                audio.volume(),
+                audio.muted(),
+            )
+        }
         Device::Microphone => {
+            let audio = Audio::read();
+
             let icon = if audio.microphone_muted() {
                 ICON_MIC_MUTED
             } else {

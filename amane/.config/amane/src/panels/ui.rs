@@ -106,7 +106,14 @@ pub fn title(t: &Theme, text: &str) -> Rectangle {
         .width(Parent)
         .height(BUTTON)
         .align_child(Start, Center)
-        .child(Text::new(text).size(15.0).weight(Weight::Bold).color(t.fg))
+        .child(
+            // shortened rather than running under the buttons beside it (a long weather place)
+            Text::new(text)
+                .size(15.0)
+                .weight(Weight::Bold)
+                .color(t.fg)
+                .elide(),
+        )
 }
 
 // an on/off switch like "Wi-Fi on" with a key that flips it too; click flips it

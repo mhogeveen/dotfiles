@@ -1,0 +1,95 @@
+# amane shell: module map
+
+What each file in `src/` does. Section numbers like "see 5.6" refer to
+`subsystems.md`.
+
+`src/main.rs` declares the modules, starts the background pieces
+(`session::watch_logind`, the bluetooth agent, clipboard recording, notification
+history, the osd watcher) and registers the IPC handlers and windows. Windows
+are made per monitor; the order matters for stacking: wallpaper first, then the
+bar, backdrop, notification popups, osd, every panel, and the lock screen.
+
+**Bar and always-there windows**
+- `bar.rs`: the top bar (32 px, reserves its space). Workspaces of its own
+  monitor (wide accent block for the shown one, dots for urgent), the layout
+  symbol `[S]` (opens the layout picker), the clock (opens the calendar),
+  and icons: audio, network with a VPN shield badge, bluetooth, and the NixOS
+  snowflake (opens the system panel, accent while notifications are unread).
+- `clock.rs`: the `Clock` service, waking at each minute with
+  `clock_nanosleep` on `CLOCK_REALTIME`; the bar's clock text ("17:05 Wed 11
+  Nov", English whatever `LC_TIME` says, like the calendar). `local_now()`
+  reads the local time through libc `localtime_r` (`time()`, `stamp()` for
+  file names); use it instead of running `date`.
+- `lock.rs`: the lock screen (amane's session lock + PAM): clock, date, user,
+  password box; the wallpaper blurred and darkened behind it.
+- `wallpaper.rs`: the `Wallpaper` service and the background-layer window per
+  monitor (see 5.6).
+- `osd.rs`: the volume/brightness popup and the `media` IPC (see 5.8).
+- `notifications/popups.rs`: notification popups, top-right.
+
+**Panels** (`src/panels/`)
+- `mod.rs`: the panel registry, `Panels` service, `panel()` wrapper for every
+  panel window, the `panel` IPC, `is_focused`/`focused_output`.
+- `backdrop.rs`: the transparent click-outside-to-close window.
+- `hints.rs`: `?` shows each button's key for 2 s.
+- `ui.rs`: shared pieces: `BUTTON` (28), `PADDING` (12), `SIDES`,
+  `CORNER_WIDTH` (400), `corner()` (top-right panel window), `frame()`,
+  `title()`, `heading(t, text, height)`, `button`, `key_button`,
+  `key_button_colored`, `key_text_button`, `icon_button_colored`, `switch`,
+  `slider(t, width, value, dimmed, on_change)`,
+  `meter(t, width, percent, dimmed)`.
+- `list.rs`: list rows and windowing for picker/menu panels (`Cursor`,
+  `ROWS` = 8, rows, footers, `help_row`, `hotkey` for 1–9, `scroll_delta`).
+- `picker.rs`: the `Picker` trait for search panels (search box, list,
+  optional preview and footer, `?` in an empty search shows a help screen).
+- `menu.rs`: the `Menu` trait for numbered menus with confirm-twice rows.
+- `launcher.rs` (Picker): apps by frecency (`usage.rs`), `=sum` calculator
+  (`calculator.rs`, Enter copies), `>cmd` runs, `>>cmd` runs in foot.
+- `clipboard.rs` (Picker): cliphist history, × deletes, "Clear history"
+  clicked twice, preview pane (`clipboard_preview.rs`).
+- `layout.rs` (Picker): mango layouts, the one in use striped.
+- `screenshot.rs` (Menu): fullscreen/region × copy/save (`../screenshot.rs`).
+- `session.rs` (Menu): lock, suspend, logout, reboot, shutdown.
+- `notifications.rs`: the notification center (live, then "Earlier").
+- `network.rs`: Wi-Fi (`w` toggles, `r` rescans, password box), the
+  Tailscale card (`v` connect, `i` log in, exit nodes), other VPN tunnels.
+- `bluetooth.rs`: power `b`, rescan `r`, devices, pairing requests.
+- `audio.rs`: "Now playing" (`h` `p` `l`), output and input levels (`j`/`k`
+  volume, `m` mute, `n` mic mute), device lists; `volume_icon`, mic icons.
+- `system.rs`: user@host, OS/kernel/uptime, CPU/memory/disk meters,
+  network speed, battery on laptops, settings: accent swatches and the
+  brightness slider; buttons for wallpaper (`w`), notifications (`n`),
+  session (`s`).
+- `calendar.rs`: month + weather as two cards on one grid (see 5.5).
+- `wallpaper.rs`: the wallpaper strip along the bottom (see 5.6).
+
+**Services and helpers**
+- `audio/mod.rs`: `Devices` from `wpctl status`/`inspect` (amane's `Audio`
+  only knows the defaults).
+- `bluetooth/mod.rs`, `bluetooth/agent.rs`: BlueZ jobs and failures; the
+  pairing agent (exports `org.bluez.Agent1`).
+- `network/mod.rs`, `details.rs`, `profiles.rs`: NetworkManager over D-Bus on
+  top of amane's `Network` (connect attempts, details, forgetting).
+- `vpn/mod.rs`, `tunnels.rs`, `tailscale.rs`: tunnels in `/sys/class/net`,
+  `ip route get`, `tailscale status --peers=false`, exit nodes.
+- `weather/mod.rs`, `forecast.rs`: Open-Meteo CSV via curl.
+- `notifications/mod.rs`, `card.rs`, `history.rs`: shared card, unread
+  tracking (`Seen`), `send()` for the shell's own notifications, history.
+- `brightness.rs`: brightness over DDC/CI or a laptop backlight (see 5.9).
+- `covers.rs`: cover art paths/downloads for "Now playing".
+- `layout.rs`: mango's layout per monitor (own `watch all-monitors` socket).
+- `session.rs`: session actions, the `lock` IPC, logind watcher.
+- `screenshot.rs`: grim/slurp/wl-copy, notification after capture.
+- `system.rs`: `SystemInfo` (os, kernel, uptime, disk, network speed).
+- `theme.rs`: `Theme` colors, `Accent` service and the `accent` IPC.
+- `json.rs`: small JSON reader (`parse`, `Value` getters) and `quote()`.
+- `command.rs`: `capture(command, timeout)`, a program's output with a time
+  limit (kills and waits on timeout); for tailscale and ddcutil, so a hung
+  call can't leave a busy flag set. Use it for new external calls.
+  `feed(child, input)` writes a piped stdin, closes it and always waits (no
+  zombies when the write fails).
+- `state.rs`: `path(name)`/`save(name, text)` in the state folder; saves go
+  through `write_atomically` (temp file + rename), also used by the
+  notification history.
+- `calendar.rs`, `calculator.rs`, `usage.rs`, `clipboard_preview.rs`, `clock.rs`.
+

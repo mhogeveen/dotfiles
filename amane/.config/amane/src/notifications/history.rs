@@ -18,6 +18,7 @@ use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use amane::{Notification, Notifications, Service, Urgency};
 
 use crate::json::{self, Value};
+use crate::state;
 
 // the newest ones kept, live and restored together
 const KEEP: usize = 50;
@@ -81,6 +82,9 @@ impl Service for History {
 
         let mut saved: Option<Vec<Kept>> = None;
 
+        // a failing save is told once, not every second, until one works again
+        let mut told = false;
+
         loop {
             // one lock at a time, never both
             let live: Vec<Kept> = Notifications::read()
@@ -97,8 +101,15 @@ impl Service for History {
 
             if saved.as_ref() != Some(&all) {
                 match save(&path, &all) {
-                    Ok(()) => saved = Some(all),
-                    Err(error) => eprintln!("notifications: couldn't save the history: {error}"),
+                    Ok(()) => {
+                        saved = Some(all);
+                        told = false;
+                    }
+                    Err(error) if !told => {
+                        eprintln!("notifications: couldn't save the history: {error}");
+                        told = true;
+                    }
+                    Err(_) => {}
                 }
             }
 
@@ -172,16 +183,8 @@ fn newest(mut all: Vec<Kept>) -> Vec<Kept> {
     all
 }
 
-// written beside the file and moved over it, so a shell stopped halfway leaves the old one
 fn save(path: &Path, all: &[Kept]) -> std::io::Result<()> {
-    if let Some(folder) = path.parent() {
-        fs::create_dir_all(folder)?;
-    }
-
-    let temporary = path.with_extension("json.new");
-
-    fs::write(&temporary, write(all))?;
-    fs::rename(&temporary, path)
+    state::write_atomically(path, &write(all))
 }
 
 // a json list, one object per line

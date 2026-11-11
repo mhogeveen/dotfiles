@@ -187,7 +187,7 @@ fn file_name(url: &str) -> String {
 }
 
 // file:///home/me/My%20Music/cover.jpg is /home/me/My Music/cover.jpg; None for any other link
-fn file_path(url: &str) -> Option<PathBuf> {
+pub fn file_path(url: &str) -> Option<PathBuf> {
     let rest = url.strip_prefix("file://")?;
 
     let bytes = rest.as_bytes();

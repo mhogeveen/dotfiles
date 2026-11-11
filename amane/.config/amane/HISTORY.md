@@ -2,7 +2,7 @@
 
 How the shell came to be the way it is: what was built, what was decided, and
 what was tried and dropped. Newest session last. `DONE.md` has the details of
-each finished recommendation by number; `AGENTS.md` the current state.
+each finished recommendation by number; `AGENTS.md` and `docs/` the current state.
 
 ## Earlier sessions (summarized)
 
@@ -179,6 +179,47 @@ each finished recommendation by number; `AGENTS.md` the current state.
    between, the picker opening on the picture in use. The hover itself, the
    Tailscale login case and the lock screen weren't exercised (no pointer
    control, Tailscale in use, locking needs asking).
+
+3. **Item 20, round A: the smaller bugs.** The user chose to do the rest of
+   the audit in three rounds (A smaller bugs, B UX gaps, C + D refactor and
+   tests), stopping after each.
+   - `file://` icon paths decoded (`covers::file_path`, now public), so
+     `%20` works; `plain()` only opens a tag on `<` followed by a letter,
+     `/` or `!`, so "x < y" keeps its text.
+   - `state::write_atomically` (temp file + rename) for every state file and
+     the notification history; launch counts saved one at a time from the
+     newest list (a `SAVING` mutex).
+   - `command::feed`: write a child's stdin, close it, always wait; used by
+     the screenshot copy, clipboard previews and the clipboard panel's
+     three cliphist/wl-copy calls (no zombies when writing fails).
+   - Overflow: while joining, the network row's name is the network being
+     joined and its state just "Connecting…", in a fixed `STATE_WIDTH` box
+     (`.elide()` there made the text fill the box and broke the right
+     alignment, so it was left off); `ui::title` elides; the system panel's
+     interface name elides beside the shield.
+   - The history saver logs a failed save once per streak. Audio device
+     names cached by (id, name), since PipeWire reuses ids.
+   - `date` replaced by `clock::local_now()` on libc `localtime_r` (with
+     `tzset` each time, so a timezone change is followed). The bar's date is
+     now English ("Wed 11 Nov"); `LC_TIME=nl_NL` had made it Dutch, and the
+     user chose English to match the calendar.
+   - Nested reads: `osd` `popup()` reads Audio only for audio popups,
+     `has_unread` reads one service at a time (`Seen::unread` removed), the
+     popups view asks Panels and the display before its three reads.
+
+   Checked live: the bar's time against `date`, a popup with `x < y`, an
+   icon at a path with spaces, the network, system and calendar panels.
+   84 tests (5 new: `feed`, atomic writes, local time formatting, UTC
+   fallback, local time against `date`).
+
+4. **`AGENTS.md` shortened** (381 → 77 lines) after /usage showed context
+   cost: it keeps the rules most tasks need (where things live, workflow,
+   working agreements, the rules that break things), and the reference parts
+   moved word for word to `docs/modules.md`, `docs/subsystems.md`,
+   `docs/amane.md` and `docs/machine.md`. "Where to pick up" was dropped, as
+   it repeated `RECOMMENDATIONS.md`. Explore subagents (26% of usage, from
+   the audit) now default to haiku through `CLAUDE_CODE_SUBAGENT_MODEL` in
+   `~/.claude/settings.json`.
 
 ## Habits worth keeping
 

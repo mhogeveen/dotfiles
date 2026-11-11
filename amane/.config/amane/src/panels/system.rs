@@ -37,6 +37,13 @@ const NUMBERS: f32 = CORNER_WIDTH - PADDING * 2.0 - NAME - METER - GAP * 2.0;
 // the interface name at the end of the network row
 const INTERFACE: f32 = 72.0;
 
+/*
+ * the vpn shield after it; a box wider than the glyph measures, since nerd
+ * font glyphs draw wider than their size says
+ */
+const SHIELD_WIDTH: f32 = 12.0;
+const SHIELD_GAP: f32 = 4.0;
+
 // nerd font material design power and wallpaper glyphs
 const ICON_SESSION: &str = "\u{f0425}";
 const ICON_WALLPAPER: &str = "\u{f0e09}";
@@ -355,14 +362,31 @@ fn brightness_setting(t: &Theme, monitor: &str) -> Row {
  * through it (the speed is still measured on the interface underneath)
  */
 fn interface_with_shield(t: &Theme, interface: String) -> Rectangle {
-    let mut parts: Vec<Box<dyn Widget>> =
-        vec![Box::new(Text::new(interface).size(12.0).color(t.comment))];
+    let shield = Vpn::read().shield();
 
-    if let Some(all_traffic) = Vpn::read().shield() {
+    // a long name (wlp0s20f3, tailscale0) is shortened to leave the shield its room
+    let name_width = match shield {
+        Some(_) => INTERFACE - SHIELD_WIDTH - SHIELD_GAP,
+        None => INTERFACE,
+    };
+
+    let mut parts: Vec<Box<dyn Widget>> = vec![Box::new(
+        Rectangle::new()
+            .width(name_width)
+            .height(BUTTON)
+            .align_child(Start, Center)
+            .child(Text::new(interface).size(12.0).color(t.comment).elide()),
+    )];
+
+    if let Some(all_traffic) = shield {
         let color = if all_traffic { t.accent } else { t.fg_dim };
 
         parts.push(Box::new(
-            Text::new(vpn::ICON_SHIELD).size(11.0).color(color),
+            Rectangle::new()
+                .width(SHIELD_WIDTH)
+                .height(BUTTON)
+                .align_child(Start, Center)
+                .child(Text::new(vpn::ICON_SHIELD).size(11.0).color(color)),
         ));
     }
 
@@ -370,5 +394,5 @@ fn interface_with_shield(t: &Theme, interface: String) -> Rectangle {
         .width(INTERFACE)
         .height(BUTTON)
         .align_child(Start, Center)
-        .child(Row::new(parts).gap(4.0).align(Center))
+        .child(Row::new(parts).gap(SHIELD_GAP).align(Center))
 }

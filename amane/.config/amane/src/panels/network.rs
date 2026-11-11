@@ -10,7 +10,7 @@ use std::sync::Mutex;
 
 use amane::{
     AccessPoint,
-    Align::{Center, Start},
+    Align::{Center, End, Start},
     Column,
     Cursor::Pointer,
     Key, LayerWindow, Monitor, Network, Padding, Rectangle, Row, ScrollArea, Service,
@@ -28,6 +28,9 @@ const HEIGHT: f32 = 560.0;
 const GAP: f32 = 8.0;
 const LINE: f32 = 20.0;
 const ROW: f32 = 40.0;
+
+// the connection's state beside its name; the longest, "Wi-Fi is off", is 12 characters at 12 px
+const STATE_WIDTH: f32 = 88.0;
 
 const PASSWORD_INPUT: &str = "network-password";
 
@@ -136,15 +139,20 @@ fn connection(t: &Theme, network: &Network, panel: &NetworkPanel) -> Rectangle {
     let status = network::status(network);
     let joined = network::joined(network);
 
-    let name = match (&status, &joined) {
-        (Status::Wired, _) => String::from("Ethernet"),
-        (_, Some(ssid)) => ssid.clone(),
-        (Status::Other, None) => String::from("Connected"),
+    /*
+     * while joining, the name is the network being joined, so the state on the
+     * right stays short and can't push the name out of the row
+     */
+    let name = match (panel.connecting_to(), &status, &joined) {
+        (Some(ssid), _, _) => String::from(ssid),
+        (None, Status::Wired, _) => String::from("Ethernet"),
+        (None, _, Some(ssid)) => ssid.clone(),
+        (None, Status::Other, None) => String::from("Connected"),
         _ => String::from("Not connected"),
     };
 
     let state = match (panel.connecting_to(), &status) {
-        (Some(ssid), _) => format!("Connecting to {ssid}…"),
+        (Some(_), _) => String::from("Connecting…"),
         (None, Status::Wifi(_) | Status::Wired | Status::Other) => String::from("Connected"),
         (None, Status::NoInternet) => String::from("No internet"),
         (None, Status::WifiOff) => String::from("Wi-Fi is off"),
@@ -174,7 +182,11 @@ fn connection(t: &Theme, network: &Network, panel: &NetworkPanel) -> Rectangle {
                     .color(t.fg)
                     .elide()
             ),
-        Text::new(state).size(12.0).color(state_color),
+        Rectangle::new()
+            .width(STATE_WIDTH)
+            .height(LINE)
+            .align_child(End, Center)
+            .child(Text::new(state).size(12.0).color(state_color)),
     ])
     .gap(GAP)
     .align(Center)

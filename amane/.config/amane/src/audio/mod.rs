@@ -279,8 +279,12 @@ fn parse(status: &str) -> Option<(Vec<Listed>, Vec<Listed>)> {
     in_audio.then_some((sinks, sources))
 }
 
-// what wpctl inspect said about each id, asked once per id
-static NAMES: Mutex<Option<HashMap<u32, (String, Kind)>>> = Mutex::new(None);
+/*
+ * what wpctl inspect said about each device, asked once per device. pipewire
+ * hands out ids again after a device goes, so the key is the id with the name
+ * wpctl status lists: a new device under an old id is asked about anew
+ */
+static NAMES: Mutex<Option<HashMap<(u32, String), (String, Kind)>>> = Mutex::new(None);
 
 fn describe(listed: Vec<Listed>, fallback: Kind) -> Vec<Device> {
     listed
@@ -291,7 +295,7 @@ fn describe(listed: Vec<Listed>, fallback: Kind) -> Vec<Device> {
 
                 names
                     .get_or_insert_with(HashMap::new)
-                    .entry(listed.id)
+                    .entry((listed.id, listed.name.clone()))
                     .or_insert_with(|| inspect(listed.id, &listed.name, fallback))
                     .clone()
             };

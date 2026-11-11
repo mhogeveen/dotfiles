@@ -11,7 +11,7 @@
  * that start something in the background that outlives them
  */
 
-use std::io::Read;
+use std::io::{self, Read, Write};
 use std::process::{Child, Command, ExitStatus, Output, Stdio};
 use std::thread::{self, JoinHandle};
 use std::time::{Duration, Instant};
@@ -68,6 +68,23 @@ fn wait(child: &mut Child, timeout: Duration) -> Option<ExitStatus> {
     None
 }
 
+/*
+ * hands input to a program started with a piped stdin and waits for it: stdin
+ * is closed after writing so the program sees the end, and the program is
+ * waited for even when writing failed, or it would stay behind as a zombie.
+ * stdout is collected only when the caller piped it
+ */
+pub fn feed(mut child: Child, input: &[u8]) -> io::Result<Output> {
+    let written = match child.stdin.take() {
+        Some(mut stdin) => stdin.write_all(input),
+        None => Err(io::Error::other("stdin isn't piped")),
+    };
+
+    let output = child.wait_with_output()?;
+
+    written.map(|()| output)
+}
+
 // reads a pipe to its end on a thread; the end comes when the program exits or is killed
 fn drain(pipe: Option<impl Read + Send + 'static>) -> JoinHandle<Vec<u8>> {
     thread::spawn(move || {
@@ -102,6 +119,20 @@ mod tests {
 
         assert!(matches!(result, Err(Failure::Timeout)));
         assert!(started.elapsed() < Duration::from_secs(2));
+    }
+
+    #[test]
+    fn input_is_handed_over_and_the_program_waited_for() {
+        let child = Command::new("cat")
+            .stdin(Stdio::piped())
+            .stdout(Stdio::piped())
+            .spawn()
+            .expect("cat runs");
+
+        let output = feed(child, b"handed over").expect("fed");
+
+        assert!(output.status.success());
+        assert_eq!(output.stdout, b"handed over");
     }
 
     #[test]
