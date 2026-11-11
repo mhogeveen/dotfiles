@@ -128,9 +128,13 @@ Settled earlier, no need to revisit:
 - **Why:** the old Hyprland setup dimmed the monitor with `ddcutil` before
   locking; hypridle (item 1 in DONE.md) only locks, turns the screen off and
   suspends.
-- **Hooks in:** a listener in `~/.nixos/home/hypridle.nix`; NixOS needs
-  `hardware.i2c.enable = true`, the `i2c` group and `ddcutil`.
-- **To settle:** whether it's wanted, and whether the monitor supports DDC/CI.
+- **Hooks in:** a listener in `~/.nixos/home/hypridle.nix`. DDC/CI works now
+  (`hardware.i2c.enable` and `ddcutil` are in the host config, the monitor
+  answers on `/dev/i2c-5`, no `i2c` group needed), so the listener could call
+  `ddcutil --bus 5 setvcp 10 <low>` and restore on resume, or go through the
+  shell (`src/brightness.rs`) so the slider stays in step.
+- **To settle:** whether it's wanted, how dim, and when (e.g. at 4.5 min,
+  before the 5 min lock).
 
 ## Worth reporting to amane upstream
 
