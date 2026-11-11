@@ -141,12 +141,47 @@ Settled earlier, no need to revisit:
 Behavior the shell works around, better fixed in amane itself. Could be written
 up as issue texts.
 
-- **Hide/show crash.** Hiding a layer window attaches a null buffer; a
-  configure already on its way then gets acked after wlroots dropped it,
-  killing the shell with `Protocol error 0 on zwlr_layer_surface_v1`. Also, a
-  configure arriving while hidden makes `OpenWindow::resize` draw and attach a
-  buffer, showing the window again. Worked around by keeping windows mapped and
-  delaying panel swaps (`SWAP_DELAY` in `src/panels/mod.rs`).
+- **Hide/show crash** (confirmed 2026-11-11 with `WAYLAND_DEBUG=1`).
+  - **Mechanism:** hiding a layer window attaches a null buffer
+    (`hide()` in `wayland/update.rs`), which unmaps it; per the layer-shell
+    protocol it returns to its just-created state and wlroots discards every
+    configure it sent that surface. mango re-arranges the monitor on any
+    map, unmap or resize and sends a configure to *every* layer surface on
+    it, size changed or not. If a surface unmaps while such a configure is
+    in flight, smithay-client-toolkit acks it anyway (it acks every
+    configure unconditionally before amane sees it,
+    `shell/wlr_layer/dispatch.rs:69`), and wlroots answers with
+    `wrong configure serial` (error 0), dropping the connection.
+  - **Log** (network panel and screenshot menu closed by one close-all):
+    ```
+    -> wl_surface#62.attach(nil, 0, 0); commit()    panel A hides
+    -> wl_surface#78.attach(nil, 0, 0); commit()    panel B hides, same pass
+    <- zwlr_layer_surface_v1#79.configure(25617, 400, 630)  sent before B's unmap
+    -> zwlr_layer_surface_v1#79.ack_configure(25617)
+    <- wl_display.error(zwlr_layer_surface_v1#79, 0, "wrong configure serial: 25617")
+    ```
+  - **Triggers:** any unmap while another layer surface maps, unmaps or
+    resizes: a panel hiding while another shows (why `SWAP_DELAY` exists),
+    or two panels hiding together. The latter still breaks today: close-all
+    with the screenshot menu open on top of a panel.
+  - **Symptoms:** the process keeps running (IPC still answers) but every
+    window is gone; amane doesn't exit or log on a lost connection, and
+    `amane run` sends the shell's stderr to `/dev/null`, so nothing records
+    the error.
+  - **Upstream fix:** after a null-buffer commit, don't ack that surface's
+    configures until a `wl_display.sync` sent after the commit returns
+    (events arrive in order, so stale configures come first). This needs
+    amane's own handling of `zwlr_layer_surface_v1` events instead of
+    sctk's automatic ack. Also: exit (or log) on a protocol error, and keep
+    the shell's stderr somewhere.
+  - **Related:** a configure arriving while hidden makes
+    `OpenWindow::resize` draw and attach a buffer, showing the window again.
+  - **Worked around** by keeping popups mapped and delaying panel swaps
+    (`SWAP_DELAY` in `src/panels/mod.rs`). A shell-side alternative: never
+    unmap panels, hide them like the popups (transparent, click-through, no
+    keyboard).
+  - **Testing it:** a live process proves nothing. Check that
+    `mmsg get all-layers` still lists the bar's `"name":"amane"`.
 - **Keyboard mode of hidden windows.** Settings aren't sent while hidden, so a
   hidden window keeps `Exclusive` in the compositor, and mango then gives it
   focus. Worked around with `Keyboard::OnDemand` for every panel.

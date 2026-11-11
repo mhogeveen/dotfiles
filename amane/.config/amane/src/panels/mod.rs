@@ -7,11 +7,17 @@
  * from a keybind: `amane ipc call panel toggle launcher`
  */
 
+use std::collections::HashMap;
+use std::sync::{Mutex, PoisonError};
 use std::thread;
 use std::time::Duration;
 
-use amane::{Key, Keyboard, Layer, LayerWindow, Monitor, Rectangle, Service, Workspaces};
+use amane::{
+    Animation, Key, Keyboard, Layer, LayerWindow, Monitor, Rectangle, Service, Size::Parent,
+    Workspaces,
+};
 
+use crate::animations::{self, Animations};
 use crate::theme::{Theme, theme};
 
 pub mod audio;
@@ -169,6 +175,12 @@ pub struct Panels {
     // oldest first
     open: Vec<OpenPanel>,
 
+    /*
+     * closed but still shown while they fade out, each with the generation it
+     * closed in, so its own hide finds it; only while animations are on
+     */
+    closing: Vec<(OpenPanel, u64)>,
+
     // bumped on every change, so a delayed open can tell it was overtaken
     generation: u64,
 }
@@ -181,10 +193,18 @@ pub struct Panels {
  */
 const SWAP_DELAY: Duration = Duration::from_millis(100);
 
+/*
+ * how long a panel fades in as it opens and out as it closes; a closing panel
+ * hides once its fade is done, and any panel opening meanwhile waits for that
+ * plus SWAP_DELAY, so a show never crosses a hide (the crash above)
+ */
+const FADE: Duration = Duration::from_millis(100);
+
 impl Service for Panels {
     fn new() -> Self {
         Self {
             open: Vec::new(),
+            closing: Vec::new(),
             generation: 0,
         }
     }
@@ -213,13 +233,29 @@ impl Panels {
     }
 
     pub fn shown_on(&self, name: &str, monitor: &Monitor) -> bool {
-        self.open.iter().any(|panel| {
-            panel.def.name == name
-                && panel
-                    .output
-                    .as_deref()
-                    .is_none_or(|output| output == monitor.name)
-        })
+        self.open.iter().any(|panel| panel.is_on(name, monitor))
+    }
+
+    // closed, but still fading out on this monitor
+    pub fn closing_on(&self, name: &str, monitor: &Monitor) -> bool {
+        self.closing
+            .iter()
+            .any(|(panel, _)| panel.is_on(name, monitor))
+    }
+
+    // a panel other than this one is fading out, so showing this one must wait
+    fn others_closing(&self, name: &str) -> bool {
+        self.closing.iter().any(|(panel, _)| panel.def.name != name)
+    }
+}
+
+impl OpenPanel {
+    fn is_on(&self, name: &str, monitor: &Monitor) -> bool {
+        self.def.name == name
+            && self
+                .output
+                .as_deref()
+                .is_none_or(|output| output == monitor.name)
     }
 }
 
@@ -231,28 +267,34 @@ impl Panels {
     pub fn open(name: &str) -> Result<(), String> {
         let def = find(name).ok_or_else(|| unknown(name))?;
         let output = focused_output();
+        let fade = Animations::read().enabled();
 
         let mut panels = Panels::write();
 
-        let replaced = panels.remove(|other| conflicts(def, other));
+        let replaced = panels.remove(|other| conflicts(def, other), fade);
 
         panels.generation += 1;
 
-        if replaced.is_empty() {
+        // reopening one that's still fading out keeps it mapped, so it can show at once
+        let waits = !replaced.is_empty() || panels.others_closing(def.name);
+
+        if !waits {
             panels.show(def, output);
 
             return Ok(());
         }
 
-        // the replaced panels hide now, this one shows once they are gone
+        // the replaced panels hide now (or after fading), this one shows once they are gone
         let generation = panels.generation;
 
         drop(panels);
 
         run_close_hooks(&replaced);
 
+        let delay = if fade { FADE + SWAP_DELAY } else { SWAP_DELAY };
+
         thread::spawn(move || {
-            thread::sleep(SWAP_DELAY);
+            thread::sleep(delay);
 
             let mut panels = Panels::write();
 
@@ -268,7 +310,9 @@ impl Panels {
     pub fn close(name: &str) -> Result<(), String> {
         find(name).ok_or_else(|| unknown(name))?;
 
-        let closed = Panels::write().remove(|other| other.name == name);
+        let fade = Animations::read().enabled();
+
+        let closed = Panels::write().remove(|other| other.name == name, fade);
 
         run_close_hooks(&closed);
 
@@ -289,28 +333,46 @@ impl Panels {
     }
 
     pub fn close_all() {
-        let closed = Panels::write().remove(|_| true);
+        let fade = Animations::read().enabled();
+
+        let closed = Panels::write().remove(|_| true, fade);
 
         run_close_hooks(&closed);
     }
 
-    // takes out the open panels that match, and bumps the generation
-    fn remove(&mut self, matches: impl Fn(&PanelDef) -> bool) -> Vec<&'static PanelDef> {
-        let mut removed = Vec::new();
+    /*
+     * takes out the open panels that match, and bumps the generation; with
+     * fade they stay shown while fading out, and a thread hides them after
+     */
+    fn remove(
+        &mut self,
+        matches: impl Fn(&PanelDef) -> bool,
+        fade: bool,
+    ) -> Vec<&'static PanelDef> {
+        let (removed, kept): (Vec<OpenPanel>, Vec<OpenPanel>) =
+            self.open.drain(..).partition(|panel| matches(panel.def));
 
-        self.open.retain(|panel| {
-            if matches(panel.def) {
-                removed.push(panel.def);
-
-                false
-            } else {
-                true
-            }
-        });
-
+        self.open = kept;
         self.generation += 1;
 
-        removed
+        let names = removed.iter().map(|panel| panel.def).collect();
+
+        if fade && !removed.is_empty() {
+            let generation = self.generation;
+
+            self.closing
+                .extend(removed.into_iter().map(|panel| (panel, generation)));
+
+            thread::spawn(move || {
+                thread::sleep(FADE);
+
+                Panels::write()
+                    .closing
+                    .retain(|(_, closed_in)| *closed_in != generation);
+            });
+        }
+
+        names
     }
 
     fn show(&mut self, def: &'static PanelDef, output: Option<String>) {
@@ -428,6 +490,33 @@ fn backs_out(name: &str) -> bool {
     }
 }
 
+/*
+ * each panel's opacity by panel and monitor: towards 1 while open, towards 0
+ * while closing (see Panels::closing). the view is built anew on every
+ * redraw, so the animations are kept here
+ */
+static FADES: Mutex<Option<HashMap<(&'static str, String), Animation<f32>>>> = Mutex::new(None);
+
+// a hidden panel goes back to 0, so it fades in again the next time it opens
+fn opacity(name: &'static str, monitor: &str, open: bool, visible: bool) -> f32 {
+    let mut fades = FADES.lock().unwrap_or_else(PoisonError::into_inner);
+    let fades = fades.get_or_insert_with(HashMap::new);
+
+    let animation = fades
+        .entry((name, monitor.to_string()))
+        .or_insert_with(|| Animation::new(0.0).duration(FADE));
+
+    if !visible {
+        *animation = Animation::new(0.0).duration(FADE);
+
+        return 0.0;
+    }
+
+    let target = if open { 1.0 } else { 0.0 };
+
+    animations::follow(animation, target, Animations::read().enabled())
+}
+
 pub fn panel(
     monitor: &Monitor,
     name: &'static str,
@@ -435,19 +524,35 @@ pub fn panel(
     on_key: fn(Key),
     content: impl FnOnce(&Theme) -> Rectangle,
 ) -> LayerWindow {
-    let shown = Panels::read().shown_on(name, monitor);
+    let (open, visible) = {
+        let panels = Panels::read();
+        let open = panels.shown_on(name, monitor);
+
+        (open, open || panels.closing_on(name, monitor))
+    };
+
+    let opacity = opacity(name, &monitor.name, open, visible);
 
     // a window needs a child even while hidden, though nothing draws it
-    let child = if shown {
-        content(&theme())
+    let child = if visible {
+        Rectangle::new()
+            .width(Parent)
+            .height(Parent)
+            .opacity(opacity)
+            .child(content(&theme()))
     } else {
         Rectangle::new().width(1.0).height(1.0)
     };
 
     base.layer(Layer::Overlay)
-        .visible(shown)
+        .visible(visible)
         .keyboard(Keyboard::OnDemand)
         .on_key(move |key| {
+            // a panel fading out takes no more keys
+            if !Panels::read().is_open(name) {
+                return;
+            }
+
             match key {
                 // something open inside the panel closes first, the panel on the next press
                 Key::Escape if backs_out(name) => {}
