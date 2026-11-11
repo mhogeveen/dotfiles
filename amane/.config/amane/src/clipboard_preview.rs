@@ -19,7 +19,7 @@ use std::thread;
 
 use amane::Service;
 
-use crate::command;
+use crate::{command, state};
 
 // a huge paste is cut off here, the preview has no room for more anyway
 const MAX_TEXT: usize = 16 * 1024;
@@ -143,13 +143,12 @@ pub fn forget_all() {
     let _ = fs::remove_dir_all(folder());
 }
 
+// the system's temporary folder stands in without a runtime folder, as previews always need a place
 fn folder() -> PathBuf {
-    let runtime = env::var_os("XDG_RUNTIME_DIR")
-        .map(PathBuf::from)
-        .unwrap_or_else(env::temp_dir);
-
-    runtime.join("amane-shell").join("clipboard")
+    state::runtime_path(FOLDER).unwrap_or_else(|| env::temp_dir().join("amane-shell").join(FOLDER))
 }
+
+const FOLDER: &str = "clipboard";
 
 /*
  * what cliphist's label says about an image: [[ binary data 259 KiB png 1771x1408 ]]

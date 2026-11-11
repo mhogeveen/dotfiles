@@ -188,3 +188,31 @@ pub fn accent_ipc(arguments: &[String]) -> String {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn accents_are_found_by_name_however_written() {
+        let first = ACCENTS[0];
+
+        assert_eq!(AccentColor::from_name(first.name()), Some(first));
+        assert_eq!(
+            AccentColor::from_name(&format!("  {}  ", first.name().to_uppercase())),
+            Some(first)
+        );
+        assert_eq!(AccentColor::from_name("no such accent"), None);
+    }
+
+    #[test]
+    fn next_goes_round_every_accent() {
+        let mut accent = ACCENTS[0];
+
+        for expected in ACCENTS.iter().skip(1).chain(ACCENTS.iter().take(1)) {
+            accent = accent.next();
+
+            assert_eq!(accent, *expected);
+        }
+    }
+}

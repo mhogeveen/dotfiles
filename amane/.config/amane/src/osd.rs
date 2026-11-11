@@ -56,6 +56,7 @@ const HEIGHT: f32 = 48.0;
 const BOTTOM: i32 = 32;
 
 const ICON: f32 = 24.0;
+const ICON_SIZE: f32 = 18.0;
 const PERCENT: f32 = 56.0;
 const GAP: f32 = 12.0;
 const PADDING: f32 = 12.0;
@@ -266,13 +267,13 @@ fn popup(t: &Theme, device: Device, monitor: &str) -> Rectangle {
                     .width(ICON)
                     .height(Parent)
                     .align_child(Center, Center)
-                    .child(Text::new(icon).size(18.0).color(color)),
+                    .child(Text::new(icon).size(ICON_SIZE).color(color)),
                 ui::meter(t, BAR, volume, muted),
                 Rectangle::new()
                     .width(PERCENT)
                     .height(Parent)
                     .align_child(Start, Center)
-                    .child(Text::new(percent).size(13.0).color(color)),
+                    .child(Text::new(percent).size(ui::TEXT_NOTE).color(color)),
             ])
             .gap(GAP)
             .align(Center)

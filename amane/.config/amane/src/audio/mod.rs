@@ -18,10 +18,14 @@ use std::time::Duration;
 
 use amane::Service;
 
+use crate::command;
 use crate::panels::{AUDIO, Panels};
 
 // how many one-second ticks between reads while the panel is open
 const POLL_EVERY: u32 = 2;
+
+// wpctl answers at once; past this the sound server is stuck, and the panel shows what it had
+const WPCTL_TIMEOUT: Duration = Duration::from_secs(3);
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Kind {
@@ -32,12 +36,16 @@ pub enum Kind {
     Microphone,
 }
 
+// nerd font material design speaker and headphones, shared with the bluetooth list
+pub const ICON_SPEAKER: &str = "\u{f04c3}";
+pub const ICON_HEADPHONES: &str = "\u{f02cb}";
+
 impl Kind {
     // nerd font material design glyphs
     pub fn icon(self) -> &'static str {
         match self {
-            Kind::Speaker => "\u{f04c3}",
-            Kind::Headphones | Kind::Bluetooth => "\u{f02cb}",
+            Kind::Speaker => ICON_SPEAKER,
+            Kind::Headphones | Kind::Bluetooth => ICON_HEADPHONES,
             Kind::Display => "\u{f0379}",
             Kind::Microphone => "\u{f036c}",
         }
@@ -64,7 +72,6 @@ pub struct Devices {
     outputs: Vec<Device>,
     inputs: Vec<Device>,
     state: State,
-    was_open: bool,
 }
 
 impl Service for Devices {
@@ -73,7 +80,6 @@ impl Service for Devices {
             outputs: Vec::new(),
             inputs: Vec::new(),
             state: State::Loading,
-            was_open: false,
         }
     }
 
@@ -81,8 +87,10 @@ impl Service for Devices {
         Duration::from_secs(1)
     }
 
+    // was_open is kept here, not in the service, so opening the panel redraws nothing by itself
     fn listen() {
         let mut ticks: u32 = 0;
+        let mut was_open = false;
 
         loop {
             thread::sleep(Self::interval());
@@ -90,15 +98,12 @@ impl Service for Devices {
             ticks = ticks.wrapping_add(1);
 
             let open = Panels::read().is_open(AUDIO);
-            let was_open = Devices::read().was_open;
 
             if open && (!was_open || ticks % POLL_EVERY == 0) {
                 refresh();
             }
 
-            if open != was_open {
-                Devices::write().was_open = open;
-            }
+            was_open = open;
         }
     }
 }
@@ -141,9 +146,10 @@ impl Devices {
         }
 
         thread::spawn(move || {
-            let _ = Command::new("wpctl")
-                .args(["set-default", &id.to_string()])
-                .status();
+            let _ = command::capture(
+                Command::new("wpctl").args(["set-default", &id.to_string()]),
+                WPCTL_TIMEOUT,
+            );
 
             refresh();
         });
@@ -152,12 +158,7 @@ impl Devices {
 
 // asks wpctl, waits on it, so only from a thread
 fn refresh() {
-    let read = Command::new("wpctl")
-        .arg("status")
-        .output()
-        .ok()
-        .filter(|output| output.status.success())
-        .map(|output| String::from_utf8_lossy(&output.stdout).into_owned())
+    let read = command::read(Command::new("wpctl").arg("status"), WPCTL_TIMEOUT)
         .and_then(|status| parse(&status));
 
     let (state, outputs, inputs) = match read {
@@ -315,12 +316,17 @@ fn describe(listed: Vec<Listed>, fallback: Kind) -> Vec<Device> {
  * name, bluetooth by the device's; falls back to wpctl status's name
  */
 fn inspect(id: u32, name: &str, fallback: Kind) -> (String, Kind) {
-    let output = Command::new("wpctl")
-        .args(["inspect", &id.to_string()])
-        .output()
-        .map(|output| String::from_utf8_lossy(&output.stdout).into_owned())
-        .unwrap_or_default();
+    let output = command::read(
+        Command::new("wpctl").args(["inspect", &id.to_string()]),
+        WPCTL_TIMEOUT,
+    )
+    .unwrap_or_default();
 
+    describe_inspected(&output, name, fallback)
+}
+
+// the name and kind from what `wpctl inspect` printed, see inspect
+fn describe_inspected(output: &str, name: &str, fallback: Kind) -> (String, Kind) {
     let properties: HashMap<&str, &str> = output
         .lines()
         .filter_map(|line| {
@@ -384,6 +390,54 @@ fn inspect(id: u32, name: &str, fallback: Kind) -> (String, Kind) {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    // trimmed from `wpctl inspect` on this machine
+    const HDMI: &str = "id 53, type PipeWire:Interface:Node
+    api.alsa.path = \"hdmi:0,1\"
+  * node.description = \"Built-in Audio Digital Stereo (HDMI)\"
+    node.nick = \"U27B3AF\"
+  * node.name = \"alsa_output.pci-0000_00_1f.3.hdmi-stereo\"";
+
+    const HEADSET: &str = "id 61, type PipeWire:Interface:Node
+  * node.description = \"WH-1000XM4\"
+  * node.name = \"bluez_output.88_C9_E8.1\"";
+
+    const HEADPHONES: &str = "id 54, type PipeWire:Interface:Node
+    device.form-factor = \"headphone\"
+  * node.description = \"USB Headphones\"
+  * node.name = \"alsa_output.usb\"";
+
+    #[test]
+    fn a_monitor_goes_by_its_name_and_connector() {
+        assert_eq!(
+            describe_inspected(HDMI, "fallback", Kind::Speaker),
+            (String::from("U27B3AF (HDMI)"), Kind::Display)
+        );
+    }
+
+    #[test]
+    fn bluetooth_and_headphones_are_told_apart() {
+        assert_eq!(
+            describe_inspected(HEADSET, "fallback", Kind::Speaker),
+            (String::from("WH-1000XM4"), Kind::Bluetooth)
+        );
+        assert_eq!(
+            describe_inspected(HEADPHONES, "fallback", Kind::Speaker).1,
+            Kind::Headphones
+        );
+    }
+
+    #[test]
+    fn nothing_inspected_keeps_the_listed_name() {
+        assert_eq!(
+            describe_inspected("", "Built-in Audio", Kind::Speaker),
+            (String::from("Built-in Audio"), Kind::Speaker)
+        );
+        assert_eq!(
+            describe_inspected(HEADSET, "fallback", Kind::Microphone).1,
+            Kind::Microphone
+        );
+    }
 
     const STATUS: &str = "PipeWire 'pipewire-0' [1.6.6, maarten@prometheus, cookie:1]
  └─ Clients:

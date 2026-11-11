@@ -11,7 +11,6 @@
 
 use std::collections::hash_map::DefaultHasher;
 use std::collections::{HashMap, HashSet};
-use std::env;
 use std::fs;
 use std::hash::{Hash, Hasher};
 use std::path::PathBuf;
@@ -22,13 +21,10 @@ use std::time::{Duration, Instant};
 
 use amane::Service;
 
-use crate::wallpaper;
+use crate::{command, state, wallpaper};
 
 // a cover bigger than this isn't a cover
 const MAX_SIZE: &str = "5M";
-
-// curl's --max-time, in seconds
-const TIMEOUT: &str = "10";
 
 // a link that failed (offline, say) is fetched again after this, not never
 const RETRY: Duration = Duration::from_secs(60);
@@ -140,9 +136,7 @@ fn fetch(url: &str) {
 }
 
 fn download(url: &str) -> Option<PathBuf> {
-    let folder = PathBuf::from(env::var_os("XDG_RUNTIME_DIR")?)
-        .join("amane-shell")
-        .join("covers");
+    let folder = state::runtime_path("covers")?;
 
     fs::create_dir_all(&folder).ok()?;
 
@@ -151,14 +145,17 @@ fn download(url: &str) -> Option<PathBuf> {
     if !path.is_file() {
         let partial = path.with_extension(PARTIAL);
 
-        let fetched = Command::new("curl")
-            .args(["--silent", "--fail", "--location"])
-            .args(["--max-time", TIMEOUT, "--max-filesize", MAX_SIZE])
-            .arg("--output")
-            .arg(&partial)
-            .arg(url)
-            .status()
-            .is_ok_and(|status| status.success());
+        let fetched = command::capture(
+            Command::new("curl")
+                .args(["--silent", "--fail", "--location"])
+                .args(["--max-time", command::CURL_MAX_TIME])
+                .args(["--max-filesize", MAX_SIZE])
+                .arg("--output")
+                .arg(&partial)
+                .arg(url),
+            command::CURL_TIMEOUT,
+        )
+        .is_ok_and(|output| output.status.success());
 
         if !fetched || fs::rename(&partial, &path).is_err() {
             let _ = fs::remove_file(&partial);

@@ -1,3 +1,10 @@
+/*
+ * the top bar, one per monitor: that monitor's workspaces and mango layout on
+ * the left, the clock in the middle, and status icons on the right (audio,
+ * network with a vpn badge, bluetooth, the nixos snowflake); each icon opens
+ * its panel. it reserves its height, so windows start below it
+ */
+
 use amane::{
     Align::{Center, End},
     Audio, Bluetooth,
@@ -7,25 +14,53 @@ use amane::{
     Stack, Text, Vertical, Widget, Workspaces, Zone, children,
 };
 
-use crate::{
-    bluetooth::{
-        self as bt,
-        agent::{Agent, Request},
-    },
-    clock,
-    layout::MangoLayout,
-    network as net, notifications,
-    panels::{AUDIO, BLUETOOTH, NETWORK, Panels, SYSTEM, audio::volume_icon, layout},
-    theme::{Theme, theme},
-    vpn::{self, Vpn},
+use crate::bluetooth::{
+    self,
+    agent::{Agent, Request},
 };
+use crate::layout::MangoLayout;
+use crate::network::{self, Status};
+use crate::panels::{AUDIO, BLUETOOTH, NETWORK, Panels, SYSTEM, audio::volume_icon, layout, ui};
+use crate::theme::{Theme, theme};
+use crate::vpn::{self, Vpn};
+use crate::{clock, notifications};
+
+// the bar's height; the backdrop starts below it so the bar stays clickable
+pub const HEIGHT: f32 = 32.0;
+
+// room at the bar's left and right ends
+const END_PADDING: f32 = 8.0;
+
+// between the bar's groups, and between its status icons
+const GAP: f32 = 8.0;
+
+// workspaces: the shown one a wide block, the others dots
+const WORKSPACE_SHOWN: f32 = 20.0;
+const WORKSPACE_DOT: f32 = 8.0;
+const WORKSPACE_GAP: f32 = 4.0;
+
+const LAYOUT_SIZE: f32 = 12.0;
+
+// the box every status icon sits in, and its glyph's size
+const ICON_WIDTH: f32 = 24.0;
+const ICON_SIZE: f32 = 14.0;
+
+// the network glyph's box, and the vpn badge on its top-right corner
+const GLYPH: f32 = 16.0;
+const BADGE: f32 = 10.0;
+const BADGE_GLYPH: f32 = 9.0;
+const BADGE_X: f32 = 10.0;
+const BADGE_Y: f32 = -4.0;
+
+// nerd font linux-nixos
+const ICON_NIXOS: &str = "\u{f313}";
 
 pub fn view(monitor: &Monitor) -> LayerWindow {
     let t = theme();
 
     LayerWindow::new()
         .width(Full)
-        .height(32.0)
+        .height(HEIGHT)
         .anchor_vertical(Vertical::Top)
         .layer(Layer::Top)
         .space(Zone::Reserve)
@@ -36,19 +71,23 @@ pub fn view(monitor: &Monitor) -> LayerWindow {
                 .fill(t.bg_deep)
                 .padding(Padding {
                     top: 0.0,
-                    right: 8.0,
+                    right: END_PADDING,
                     bottom: 0.0,
-                    left: 8.0,
+                    left: END_PADDING,
                 })
-                .on_click(|_| {
-                    let _ = Panels::close_all();
-                })
+                .on_click(|_| Panels::close_all())
                 .child(
-                    // the two Parent-sized sides split the leftover space evenly,
-                    // which keeps the fixed-width clock exactly centered
-                    Row::new(children![workspaces(&t, monitor), clock(&t), status(&t)])
-                        .height(Parent)
-                        .align(Center),
+                    /*
+                     * the two Parent-sized sides split the leftover space evenly,
+                     * which keeps the fixed-width clock exactly centered
+                     */
+                    Row::new(children![
+                        workspaces(&t, monitor),
+                        clock::view(&t),
+                        status(&t)
+                    ])
+                    .height(Parent)
+                    .align(Center),
                 ),
         )
 }
@@ -80,13 +119,13 @@ fn workspaces(t: &Theme, monitor: &Monitor) -> Rectangle {
                 t.fg_dim
             };
 
-            (20.0, fill)
+            (WORKSPACE_SHOWN, fill)
         } else if workspace.urgent() {
-            (8.0, t.accent)
+            (WORKSPACE_DOT, t.accent)
         } else if workspace.windows() > 0 {
-            (8.0, t.bg4)
+            (WORKSPACE_DOT, t.bg4)
         } else {
-            (8.0, t.bg1)
+            (WORKSPACE_DOT, t.bg1)
         };
 
         let id = workspace.id();
@@ -94,7 +133,7 @@ fn workspaces(t: &Theme, monitor: &Monitor) -> Rectangle {
         buttons.push(Box::new(
             Rectangle::new()
                 .width(width)
-                .height(8.0)
+                .height(WORKSPACE_DOT)
                 .align_child(Center, Center)
                 .fill(fill)
                 .cursor(Pointer)
@@ -104,10 +143,13 @@ fn workspaces(t: &Theme, monitor: &Monitor) -> Rectangle {
 
     Rectangle::new().width(Parent).height(Parent).child(
         Row::new(children![
-            Row::new(buttons).gap(4.0).align(Center).height(Parent),
+            Row::new(buttons)
+                .gap(WORKSPACE_GAP)
+                .align(Center)
+                .height(Parent),
             layout(t, monitor),
         ])
-        .gap(8.0)
+        .gap(GAP)
         .align(Center)
         .height(Parent),
     )
@@ -122,22 +164,13 @@ fn layout(t: &Theme, monitor: &Monitor) -> Rectangle {
         .map(|symbol| format!("[{symbol}]"))
         .unwrap_or_default();
 
-    // BlexMono is monospaced, so the width follows from the number of characters
-    let width = text.chars().count() as f32 * LAYOUT_SIZE * 0.6;
-
     Rectangle::new()
-        .width(width)
+        .width(ui::text_width(&text, LAYOUT_SIZE))
         .height(Parent)
         .align_child(Center, Center)
         .cursor(Pointer)
         .on_click(move |_| layout::toggle_from(symbol.as_deref()))
         .child(Text::new(text).size(LAYOUT_SIZE).color(t.fg_dim))
-}
-
-const LAYOUT_SIZE: f32 = 12.0;
-
-fn clock(t: &Theme) -> Rectangle {
-    clock::view(t)
 }
 
 // the right side; Parent-wide like the workspaces, so the clock stays centered
@@ -146,14 +179,14 @@ fn status(t: &Theme) -> Rectangle {
         .width(Parent)
         .height(Parent)
         .align_child(End, Center)
-        .child(Row::new(status_icons(t)).gap(8.0).align(Center))
+        .child(Row::new(status_icons(t)).gap(GAP).align(Center))
 }
 
 // left to right: audio, network, bluetooth (only on machines that have it), system
 fn status_icons(t: &Theme) -> Vec<Box<dyn Widget>> {
     let mut icons: Vec<Box<dyn Widget>> = vec![Box::new(audio(t)), Box::new(network(t))];
 
-    if let Some(bluetooth) = bluetooth(t) {
+    if let Some(bluetooth) = bluetooth_icon(t) {
         icons.push(Box::new(bluetooth));
     }
 
@@ -162,12 +195,23 @@ fn status_icons(t: &Theme) -> Vec<Box<dyn Widget>> {
     icons
 }
 
-// the box every status icon sits in
-const ICON_WIDTH: f32 = 24.0;
+// a status icon's box, opening its panel when clicked
+fn status_button(panel: &'static str, icon: impl Widget + 'static) -> Rectangle {
+    Rectangle::new()
+        .width(ICON_WIDTH)
+        .height(Parent)
+        .align_child(Center, Center)
+        .cursor(Pointer)
+        .on_click(move |_| {
+            let _ = Panels::toggle(panel);
+        })
+        .child(icon)
+}
 
 /*
- * the nixos snowflake, in the accent while notifications wait unread; opens the system
- * panel, which has the way into the notification center and the session menu
+ * the nixos snowflake, in the accent while notifications wait unread; opens the
+ * system panel, which has the ways into the wallpaper picker, the notification
+ * center and the session menu
  */
 fn system(t: &Theme) -> Rectangle {
     let color = if notifications::has_unread() {
@@ -176,26 +220,16 @@ fn system(t: &Theme) -> Rectangle {
         t.fg_dim
     };
 
-    Rectangle::new()
-        .width(ICON_WIDTH)
-        .height(Parent)
-        .align_child(Center, Center)
-        .cursor(Pointer)
-        .on_click(|_| {
-            let _ = Panels::toggle(SYSTEM);
-        })
-        .child(Text::new("\u{f313}").size(14.0).color(color))
+    status_button(SYSTEM, Text::new(ICON_NIXOS).size(ICON_SIZE).color(color))
 }
 
 // wi-fi strength, ethernet, no internet, wi-fi off or offline; opens the network panel
 fn network(t: &Theme) -> Rectangle {
-    let network = Network::read();
-
-    let status = net::status(&network);
+    let status = network::status(&Network::read());
 
     let color = match status {
-        net::Status::NoInternet => t.accent,
-        net::Status::Offline | net::Status::WifiOff | net::Status::Connecting => t.comment,
+        Status::NoInternet => t.accent,
+        Status::Offline | Status::WifiOff | Status::Connecting => t.comment,
         _ => t.fg_dim,
     };
 
@@ -203,7 +237,7 @@ fn network(t: &Theme) -> Rectangle {
         .width(GLYPH)
         .height(GLYPH)
         .align_child(Center, Center)
-        .child(Text::new(status.icon()).size(14.0).color(color));
+        .child(Text::new(status.icon()).size(ICON_SIZE).color(color));
 
     let mut layers: Vec<Box<dyn Widget>> = vec![Box::new(icon)];
 
@@ -228,76 +262,57 @@ fn network(t: &Theme) -> Rectangle {
         ));
     }
 
-    Rectangle::new()
-        .width(ICON_WIDTH)
-        .height(Parent)
-        .align_child(Center, Center)
-        .cursor(Pointer)
-        .on_click(|_| {
-            let _ = Panels::toggle(NETWORK);
-        })
-        .child(Stack::new(layers))
+    status_button(NETWORK, Stack::new(layers))
 }
 
-// the network glyph's box, and the vpn badge on its top-right corner
-const GLYPH: f32 = 16.0;
-const BADGE: f32 = 10.0;
-const BADGE_GLYPH: f32 = 9.0;
-const BADGE_X: f32 = 10.0;
-const BADGE_Y: f32 = -4.0;
-
 // off, on, or a device connected; the accent while a pairing code waits for an answer
-fn bluetooth(t: &Theme) -> Option<Rectangle> {
-    let bluetooth = Bluetooth::read();
+fn bluetooth_icon(t: &Theme) -> Option<Rectangle> {
+    let (available, powered, connected) = {
+        let bluetooth = Bluetooth::read();
 
-    if !bluetooth.available() {
+        (
+            bluetooth.available(),
+            bluetooth.powered(),
+            bluetooth.devices().iter().any(|device| device.connected()),
+        )
+    };
+
+    if !available {
         return None;
     }
 
     let waiting = Agent::read().request().is_some_and(Request::answerable);
 
-    let connected = bluetooth.devices().iter().any(|device| device.connected());
-
     let (icon, color) = if waiting {
-        (bt::ICON_ON, t.accent)
-    } else if !bluetooth.powered() {
-        (bt::ICON_OFF, t.comment)
+        (bluetooth::ICON_ON, t.accent)
+    } else if !powered {
+        (bluetooth::ICON_OFF, t.comment)
     } else if connected {
-        (bt::ICON_CONNECTED, t.fg_dim)
+        (bluetooth::ICON_CONNECTED, t.fg_dim)
     } else {
-        (bt::ICON_ON, t.fg_dim)
+        (bluetooth::ICON_ON, t.fg_dim)
     };
 
-    Some(
-        Rectangle::new()
-            .width(ICON_WIDTH)
-            .height(Parent)
-            .align_child(Center, Center)
-            .cursor(Pointer)
-            .on_click(|_| {
-                let _ = Panels::toggle(BLUETOOTH);
-            })
-            .child(Text::new(icon).size(14.0).color(color)),
-    )
+    Some(status_button(
+        BLUETOOTH,
+        Text::new(icon).size(ICON_SIZE).color(color),
+    ))
 }
 
 // the speaker by volume, dimmed while muted; opens the audio panel
 fn audio(t: &Theme) -> Rectangle {
-    let audio = Audio::read();
+    let (volume, muted) = {
+        let audio = Audio::read();
 
-    let muted = audio.muted() || audio.volume() == 0;
+        (audio.volume(), audio.muted())
+    };
 
-    Rectangle::new()
-        .width(ICON_WIDTH)
-        .height(Parent)
-        .align_child(Center, Center)
-        .cursor(Pointer)
-        .on_click(|_| {
-            let _ = Panels::toggle(AUDIO);
-        })
-        .child(
-            Text::new(volume_icon(audio.volume(), audio.muted()))
-                .size(14.0)
-                .color(if muted { t.comment } else { t.fg_dim }),
-        )
+    let dimmed = muted || volume == 0;
+
+    status_button(
+        AUDIO,
+        Text::new(volume_icon(volume, muted))
+            .size(ICON_SIZE)
+            .color(if dimmed { t.comment } else { t.fg_dim }),
+    )
 }

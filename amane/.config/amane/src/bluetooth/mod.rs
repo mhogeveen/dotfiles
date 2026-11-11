@@ -19,6 +19,7 @@ use std::time::Duration;
 
 use amane::{Argument, Bluetooth, BluetoothDevice, Bus, Service, Value};
 
+use crate::audio::{ICON_HEADPHONES, ICON_SPEAKER};
 use crate::panels::{BLUETOOTH, Panels};
 
 const BLUEZ: &str = "org.bluez";
@@ -32,16 +33,15 @@ const UNBLOCK_SETTLE: Duration = Duration::from_millis(300);
 pub const ICON_ON: &str = "\u{f00af}";
 pub const ICON_CONNECTED: &str = "\u{f00b1}";
 pub const ICON_OFF: &str = "\u{f00b2}";
-pub const ICON_RESCAN: &str = "\u{f0450}";
 
 // a glyph for the kind of device, from the freedesktop icon name BlueZ gives it
 pub fn device_icon(device: &BluetoothDevice) -> &'static str {
     let icon = device.icon();
 
     if icon.starts_with("audio-head") {
-        "\u{f02cb}"
+        ICON_HEADPHONES
     } else if icon.starts_with("audio") {
-        "\u{f04c3}"
+        ICON_SPEAKER
     } else if icon == "input-mouse" || icon == "input-tablet" {
         "\u{f037d}"
     } else if icon == "input-keyboard" {
@@ -90,10 +90,6 @@ pub struct BluetoothPanel {
 
     // what went wrong last, like "Couldn't connect to WH-1000XM4"
     failure: Option<String>,
-
-    was_open: bool,
-    was_available: bool,
-    was_powered: bool,
 }
 
 impl Service for BluetoothPanel {
@@ -101,9 +97,6 @@ impl Service for BluetoothPanel {
         Self {
             busy: None,
             failure: None,
-            was_open: false,
-            was_available: false,
-            was_powered: false,
         }
     }
 
@@ -111,11 +104,14 @@ impl Service for BluetoothPanel {
         Duration::from_secs(1)
     }
 
+    // what the last tick saw is kept here, not in the service, so changes to it redraw nothing
     fn listen() {
+        let mut last = Previous::default();
+
         loop {
             thread::sleep(Self::interval());
 
-            tick();
+            last = tick(&last);
         }
     }
 }
@@ -124,7 +120,15 @@ impl Service for BluetoothPanel {
  * scans while the panel is open and the adapter is on, and registers the
  * pairing agent again when bluetoothd comes back, since it forgets agents
  */
-fn tick() {
+// what one tick saw, for the next to compare with
+#[derive(Default)]
+struct Previous {
+    open: bool,
+    available: bool,
+    powered: bool,
+}
+
+fn tick(last: &Previous) -> Previous {
     let open = Panels::read().is_open(BLUETOOTH);
 
     let (available, powered, scanning) = {
@@ -137,11 +141,7 @@ fn tick() {
         )
     };
 
-    let (was_open, was_available, was_powered) = {
-        let panel = BluetoothPanel::read();
-
-        (panel.was_open, panel.was_available, panel.was_powered)
-    };
+    let (was_open, was_available, was_powered) = (last.open, last.available, last.powered);
 
     if available && !was_available {
         agent::register();
@@ -160,12 +160,10 @@ fn tick() {
         Bluetooth::stop_scan();
     }
 
-    if open != was_open || available != was_available || powered != was_powered {
-        let mut panel = BluetoothPanel::write();
-
-        panel.was_open = open;
-        panel.was_available = available;
-        panel.was_powered = powered;
+    Previous {
+        open,
+        available,
+        powered,
     }
 }
 

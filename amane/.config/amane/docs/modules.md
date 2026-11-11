@@ -10,7 +10,8 @@ are made per monitor; the order matters for stacking: wallpaper first, then the
 bar, backdrop, notification popups, osd, every panel, and the lock screen.
 
 **Bar and always-there windows**
-- `bar.rs`: the top bar (32 px, reserves its space). Workspaces of its own
+- `bar.rs`: the top bar (`bar::HEIGHT`, 32 px, reserves its space; the
+  backdrop starts below it). Workspaces of its own
   monitor (wide accent block for the shown one, dots for urgent), the layout
   symbol `[S]` (opens the layout picker), the clock (opens the calendar),
   and icons: audio, network with a VPN shield badge, bluetooth, and the NixOS
@@ -37,9 +38,17 @@ bar, backdrop, notification popups, osd, every panel, and the lock screen.
   `title()`, `heading(t, text, height)`, `button`, `key_button`,
   `key_button_colored`, `key_text_button`, `icon_button_colored`, `switch`,
   `slider(t, width, value, dimmed, on_change)`,
-  `meter(t, width, percent, dimmed)`.
+  `meter(t, width, percent, dimmed)`; and for building panels: `header(title,
+  buttons)`, `note(t, text, height)`, `line(height, text)`, `card(t, height,
+  parts)`, `error_line(t, text, button)`, `list_box(t, rows)`,
+  `text_width(text, size)`, text sizes `TEXT_SMALL`/`NOTE`/`BODY`/`TITLE`
+  (12/13/14/15), `ICON_SIZE` (16), `ICON_REFRESH`. Panels use these rather
+  than their own copies.
 - `list.rs`: list rows and windowing for picker/menu panels (`Cursor`,
-  `ROWS` = 8, rows, footers, `help_row`, `hotkey` for 1–9, `scroll_delta`).
+  `ROWS` = 8, rows, footers, `help_row`, `hotkey` for 1–9, `scroll_delta`),
+  and the corner panels' highlight lists (`step_highlight`, `follow_window`,
+  `highlight_list`, `highlight_delta`). `panels::letter(key)` gives a typed
+  letter, lowercased.
 - `picker.rs`: the `Picker` trait for search panels (search box, list,
   optional preview and footer, `?` in an empty search shows a help screen).
 - `menu.rs`: the `Menu` trait for numbered menus with confirm-twice rows.
@@ -51,7 +60,7 @@ bar, backdrop, notification popups, osd, every panel, and the lock screen.
 - `screenshot.rs` (Menu): fullscreen/region × copy/save (`../screenshot.rs`).
 - `session.rs` (Menu): lock, suspend, logout, reboot, shutdown.
 - `notifications.rs`: the notification center (live, then "Earlier").
-- `network.rs`: Wi-Fi (`w` toggles, `r` rescans while on), the list (j/k or
+- `network/mod.rs` (+ `vpn_cards.rs`, the Tailscale card and tunnel lines): Wi-Fi (`w` toggles, `r` rescans while on), the list (j/k or
   arrows highlight, Enter clicks), `d` and `f` leave and forget the joined
   network, or `f` the highlighted one once there is a highlight; the
   password box (Escape closes just the box, `back_out`), "No Wi-Fi adapter",
@@ -100,12 +109,15 @@ bar, backdrop, notification popups, osd, every panel, and the lock screen.
 - `theme.rs`: `Theme` colors, `Accent` service and the `accent` IPC.
 - `json.rs`: small JSON reader (`parse`, `Value` getters) and `quote()`.
 - `command.rs`: `capture(command, timeout)`, a program's output with a time
-  limit (kills and waits on timeout); for tailscale and ddcutil, so a hung
-  call can't leave a busy flag set. Use it for new external calls.
+  limit (kills and waits on timeout), `read` (its output on success),
+  `feed(child, input)` (writes stdin, always waits), and curl's limits; used
+  for tailscale, ddcutil, wpctl, ip, df, curl and grim, so a hung call can't
+  leave a busy flag set. Use it for new external calls.
   `feed(child, input)` writes a piped stdin, closes it and always waits (no
   zombies when the write fails).
-- `state.rs`: `path(name)`/`save(name, text)` in the state folder; saves go
-  through `write_atomically` (temp file + rename), also used by the
-  notification history.
+- `state.rs`: `path(name)`/`save(name, text)` in the state folder, saved
+  through `write_atomically` (temp file + rename, also used by the
+  notification history); `runtime_dir()` and `runtime_path(name)` for
+  `$XDG_RUNTIME_DIR/amane-shell`.
 - `calendar.rs`, `calculator.rs`, `usage.rs`, `clipboard_preview.rs`, `clock.rs`.
 

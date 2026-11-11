@@ -12,7 +12,6 @@
  */
 
 use std::path::PathBuf;
-use std::time::Duration;
 
 use amane::{
     Align::{Center, Start},
@@ -53,9 +52,11 @@ const EDGE: i32 = 8;
 
 const HEIGHT: f32 = PADDING * 2.0 + BUTTON + HEADER_GAP + TILE_HEIGHT + NAME_GAP + NAME_LINE;
 
-// nerd font material design glyphs: refresh, and an image crossed out for none
-const ICON_REFRESH: &str = "\u{f0450}";
+// nerd font material design image crossed out, for none
 const ICON_NONE: &str = "\u{f082b}";
+
+// the None tile's glyph, big as it stands in for a picture
+const NONE_ICON: f32 = 28.0;
 
 const KEY_PREVIOUS: char = 'h';
 const KEY_NEXT: char = 'l';
@@ -72,9 +73,7 @@ impl Service for Strip {
     }
 
     // only changes through input
-    fn interval() -> Duration {
-        Duration::from_secs(3600)
-    }
+    fn listen() {}
 }
 
 pub fn view(monitor: &Monitor) -> LayerWindow {
@@ -237,7 +236,7 @@ fn content(t: &Theme, width: f32) -> Rectangle {
                 .width(Parent)
                 .height(TILE_HEIGHT)
                 .align_child(Center, Center)
-                .child(Text::new(note).size(13.0).color(t.comment).elide()),
+                .child(Text::new(note).size(ui::TEXT_NOTE).color(t.comment).elide()),
         ));
     }
 
@@ -263,7 +262,7 @@ fn header(t: &Theme, folder: &Folder) -> Row {
         .align_child(Start, Center)
         .child(
             Text::new(format!("{}{count}", wallpaper::folder_name()))
-                .size(12.0)
+                .size(ui::TEXT_SMALL)
                 .color(t.comment)
                 .elide(),
         );
@@ -274,7 +273,7 @@ fn header(t: &Theme, folder: &Folder) -> Row {
         .align_child(Start, Center)
         .child(
             Text::new("Wallpapers")
-                .size(15.0)
+                .size(ui::TEXT_TITLE)
                 .weight(Weight::Bold)
                 .color(t.fg),
         );
@@ -282,7 +281,7 @@ fn header(t: &Theme, folder: &Folder) -> Row {
     Row::new(children![
         title,
         place,
-        ui::key_button(t, ICON_REFRESH, KEY_REREAD, |_| reset()),
+        ui::key_button(t, ui::ICON_REFRESH, KEY_REREAD, |_| reset()),
     ])
     .gap(HEADER_GAP)
     .align(Center)
@@ -328,7 +327,7 @@ fn tile(t: &Theme, item: Option<PathBuf>, selected: bool, in_use: bool) -> Colum
             .width(Parent)
             .height(Parent)
             .align_child(Center, Center)
-            .child(Text::new(ICON_NONE).size(28.0).color(t.comment)),
+            .child(Text::new(ICON_NONE).size(NONE_ICON).color(t.comment)),
     };
 
     let fill = if item.is_some() { t.bg1 } else { t.bg_deep };

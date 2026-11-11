@@ -13,7 +13,6 @@
  */
 
 use std::marker::PhantomData;
-use std::time::Duration;
 
 use amane::{
     Cursor::Pointer, Key, LayerWindow, Monitor, Rectangle, Service, TextInput, Vertical, Widget,
@@ -98,9 +97,7 @@ impl<P: Picker> Service for Search<P> {
     }
 
     // only changes through input
-    fn interval() -> Duration {
-        Duration::from_secs(3600)
-    }
+    fn listen() {}
 }
 
 pub fn view<P: Picker>(monitor: &Monitor) -> LayerWindow {

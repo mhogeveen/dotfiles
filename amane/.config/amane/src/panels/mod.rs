@@ -58,6 +58,9 @@ pub struct PanelDef {
      * there is nothing to clear
      */
     pub on_close: Option<fn()>,
+
+    // sits in the top-right corner, where notification popups show, which hide while it's open
+    pub corner: bool,
 }
 
 /*
@@ -77,61 +80,73 @@ static REGISTRY: &[PanelDef] = &[
         name: LAUNCHER,
         groups: &[PANELS],
         on_close: Some(launcher::reset),
+        corner: false,
     },
     PanelDef {
         name: CLIPBOARD,
         groups: &[PANELS],
         on_close: Some(clipboard::reset),
+        corner: false,
     },
     PanelDef {
         name: SCREENSHOT,
         groups: &[],
         on_close: Some(screenshot::reset),
+        corner: false,
     },
     PanelDef {
         name: SESSION,
         groups: &[PANELS],
         on_close: Some(session::reset),
+        corner: false,
     },
     PanelDef {
         name: LAYOUT,
         groups: &[PANELS],
         on_close: Some(layout::reset),
+        corner: false,
     },
     PanelDef {
         name: NOTIFICATIONS,
         groups: &[PANELS],
         on_close: Some(notifications::reset),
+        corner: true,
     },
     PanelDef {
         name: NETWORK,
         groups: &[PANELS],
         on_close: Some(network::reset),
+        corner: true,
     },
     PanelDef {
         name: BLUETOOTH,
         groups: &[PANELS],
         on_close: Some(bluetooth::reset),
+        corner: true,
     },
     PanelDef {
         name: AUDIO,
         groups: &[PANELS],
         on_close: None,
+        corner: true,
     },
     PanelDef {
         name: SYSTEM,
         groups: &[PANELS],
         on_close: None,
+        corner: true,
     },
     PanelDef {
         name: CALENDAR,
         groups: &[PANELS],
         on_close: Some(calendar::reset),
+        corner: false,
     },
     PanelDef {
         name: WALLPAPER,
         groups: &[PANELS],
         on_close: Some(wallpaper::reset),
+        corner: false,
     },
 ];
 
@@ -175,9 +190,7 @@ impl Service for Panels {
     }
 
     // only changes through input and ipc
-    fn interval() -> Duration {
-        Duration::from_secs(3600)
-    }
+    fn listen() {}
 }
 
 // reading, safe inside views
@@ -188,6 +201,11 @@ impl Panels {
 
     pub fn any_open(&self) -> bool {
         !self.open.is_empty()
+    }
+
+    // whether a panel in the top-right corner is open
+    pub fn corner_open(&self) -> bool {
+        self.open.iter().any(|panel| panel.def.corner)
     }
 
     pub fn open_names(&self) -> impl Iterator<Item = &'static str> + '_ {
@@ -390,6 +408,14 @@ pub fn ipc(arguments: &[String]) -> String {
  * mango still focuses an on-demand surface as soon as it shows, and the backdrop
  * covers everything else, so the panel keeps the keyboard while it's open
  */
+// the letter a key typed, lowercased, so a held Shift doesn't change what it does; None for other keys
+pub fn letter(key: &Key) -> Option<char> {
+    match key {
+        Key::Character(letter) => Some(letter.to_ascii_lowercase()),
+        _ => None,
+    }
+}
+
 /*
  * for Escape: whether the panel closed something inside it instead, like the
  * network panel's password box (a text input lets go of Escape and passes it

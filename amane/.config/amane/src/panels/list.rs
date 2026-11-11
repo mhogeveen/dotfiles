@@ -7,15 +7,16 @@
  */
 
 use std::ops::Range;
+use std::sync::atomic::{AtomicUsize, Ordering};
 
 use amane::{
     Align::{Center, Start},
-    Color, Column, Key, Padding, Rectangle, Row, Scroll,
+    Color, Column, Key, Padding, Rectangle, Row, Scroll, ScrollArea,
     Size::Parent,
     Text, TextInput, Widget, children,
 };
 
-use super::ui::{PADDING, SIDES};
+use super::ui::{self, PADDING, SIDES};
 use crate::theme::Theme;
 
 pub const ROWS: usize = 8;
@@ -25,6 +26,7 @@ const GAP: f32 = 8.0;
 const SEARCH_HEIGHT: f32 = 44.0;
 const ROW_HEIGHT: f32 = 40.0;
 const TEXT_SIZE: f32 = 15.0;
+const SEARCH_TEXT: f32 = 16.0;
 const NUMBER_WIDTH: f32 = 24.0;
 const FOOTER_HEIGHT: f32 = 28.0;
 const STRIPE_WIDTH: f32 = 2.0;
@@ -193,6 +195,42 @@ pub fn follow_window(
     first
 }
 
+/*
+ * a highlight list's box: through its ScrollArea while there's no highlight,
+ * so the mouse sees the list as always; with one, drawn from the first row
+ * that keeps rows keep.0..=keep.1 in view (the highlight, with its heading
+ * or password box), remembered in first_row as a view can't write a service,
+ * and the wheel moves the highlight
+ */
+pub fn highlight_list(
+    t: &Theme,
+    rows: Vec<Box<dyn Widget>>,
+    heights: &[f32],
+    keep: Option<(usize, usize)>,
+    visible: f32,
+    first_row: &AtomicUsize,
+    scroll_id: &'static str,
+    move_highlight: fn(isize),
+) -> Rectangle {
+    let Some((anchor, last)) = keep else {
+        return ui::list_box(t, ScrollArea::new(scroll_id, Column::new(rows)));
+    };
+
+    let first = follow_window(
+        first_row.load(Ordering::Relaxed),
+        anchor,
+        last,
+        heights,
+        visible,
+    );
+
+    first_row.store(first, Ordering::Relaxed);
+
+    let rows: Vec<Box<dyn Widget>> = rows.into_iter().skip(first).collect();
+
+    ui::list_box(t, Column::new(rows)).on_scroll(move |scroll| move_highlight(scroll_delta(scroll)))
+}
+
 // the movement keys of a highlight list: arrows and j/k
 pub fn highlight_delta(key: &Key) -> Option<isize> {
     match key {
@@ -240,7 +278,7 @@ pub fn frame_with(
                 .fill(t.bg1)
                 .padding(SIDES)
                 .align_child(Start, Center)
-                .child(input.size(16.0).color(t.fg)),
+                .child(input.size(SEARCH_TEXT).color(t.fg)),
         ));
     }
 

@@ -29,7 +29,7 @@ anything. More detail, read when the task touches it:
 ## Workflow
 - Build `amane compile` (zero warnings, fix every one); format
   `rustfmt --edition 2024 src/main.rs`; test `./test.sh` (`./test.sh system::`
-  filters; 88 tests), add tests for pure logic.
+  filters; 107 tests), add tests for pure logic.
 - Restart `amane restart` after a compile (loses panel state; fine for checks).
 - IPC `amane ipc call <name> ...`: `panel open|close|toggle <name>`,
   `close-all`, `list`; `lock`; `accent`; `weather`; `media`; `brightness up|down`.
@@ -41,7 +41,8 @@ anything. More detail, read when the task touches it:
   (`ddcutil --bus 5 getvcp 10 --brief`), wallpaper. Ask before locking, the
   microphone, starting media, or touching the user's files.
   `media play-pause` toggles whatever player is active.
-- External programs: `command::capture(command, timeout)` for output,
+- External programs: `command::read` (output on success) or `command::capture`
+  (the full output) with a time limit,
   `command::feed(child, input)` for stdin; `clock::local_now()` for the time,
   never `date`.
 
@@ -53,7 +54,7 @@ anything. More detail, read when the task touches it:
 - Git: the user commits; don't commit, push or stage. Check `git status` /
   `git log` first; don't revert the user's changes.
 - Recommendations: keep statuses current; built items move to `DONE.md` with
-  their number; new ideas get the next number (20 was the last).
+  their number; new ideas get the next number (21 was the last).
 - Code style: lowercase comments, `/* */` blocks, `//` lines, saying why;
   every module starts with a block comment; descriptive names, no
   abbreviations; constants for every size and timing.

@@ -23,6 +23,7 @@ use amane::{
     Text, Urgency, Weight, Widget,
 };
 
+use crate::panels::ui;
 use crate::theme::Theme;
 
 use super::history::Kept;
@@ -31,6 +32,10 @@ use super::{icon_path, plain, time_ago};
 const PADDING: f32 = 12.0;
 const GAP: f32 = 6.0;
 const HEADER: f32 = 20.0;
+const HEADER_GAP: f32 = 8.0;
+
+// nerd font material design close
+const ICON_CLOSE: &str = "\u{f0156}";
 const ACTIONS: f32 = 28.0;
 
 pub struct Options {
@@ -109,7 +114,7 @@ pub fn card(
 
     let summary = (!summary.is_empty()).then(|| {
         Text::new(summary)
-            .size(14.0)
+            .size(ui::TEXT_BODY)
             .weight(Weight::Bold)
             .color(t.fg)
             .elide()
@@ -120,7 +125,7 @@ pub fn card(
 
     let body = (!body.is_empty()).then(|| {
         Text::new(body)
-            .size(13.0)
+            .size(ui::TEXT_NOTE)
             .color(t.fg_dim)
             .wrap()
             .max_lines(options.body_lines)
@@ -185,9 +190,11 @@ fn header(
 
     let icon = match &content.icon {
         Some(path) => icon.fill(Image::contain(path.clone())),
-        None => icon
-            .align_child(Center, Center)
-            .child(Text::new("\u{f009a}").size(14.0).color(t.fg_dim)),
+        None => icon.align_child(Center, Center).child(
+            Text::new(super::ICON_BELL)
+                .size(ui::TEXT_BODY)
+                .color(t.fg_dim),
+        ),
     };
 
     let sender = match content.app_name {
@@ -199,14 +206,19 @@ fn header(
         .width(Parent)
         .height(HEADER)
         .align_child(Start, Center)
-        .child(Text::new(sender).size(12.0).color(t.fg_dim).elide());
+        .child(
+            Text::new(sender)
+                .size(ui::TEXT_SMALL)
+                .color(t.fg_dim)
+                .elide(),
+        );
 
     let mut parts: Vec<Box<dyn Widget>> = vec![Box::new(icon), Box::new(sender)];
 
     if let Some(now) = now {
         parts.push(Box::new(
             Text::new(time_ago(content.received, now))
-                .size(12.0)
+                .size(ui::TEXT_SMALL)
                 .color(t.comment),
         ));
     }
@@ -218,10 +230,10 @@ fn header(
             .align_child(Center, Center)
             .cursor(Pointer)
             .on_click(on_close)
-            .child(Text::new("\u{f0156}").size(14.0).color(t.fg_dim)),
+            .child(Text::new(ICON_CLOSE).size(ui::TEXT_BODY).color(t.fg_dim)),
     ));
 
-    Row::new(parts).gap(8.0).align(Center).height(HEADER)
+    Row::new(parts).gap(HEADER_GAP).align(Center).height(HEADER)
 }
 
 // the buttons share the row evenly
@@ -245,7 +257,12 @@ fn actions(t: &Theme, id: u32, buttons: &[Action]) -> Row {
                 .align_child(Center, Center)
                 .cursor(Pointer)
                 .on_click(move |_| Notifications::invoke(id, &key))
-                .child(Text::new(action.label()).size(13.0).color(t.fg).elide()),
+                .child(
+                    Text::new(action.label())
+                        .size(ui::TEXT_NOTE)
+                        .color(t.fg)
+                        .elide(),
+                ),
         ));
     }
 
@@ -258,5 +275,5 @@ pub fn message(t: &Theme, width: f32, text: &str) -> Rectangle {
         .width(width)
         .height(PADDING * 2.0 + HEADER)
         .align_child(Center, Center)
-        .child(Text::new(text).size(13.0).color(t.comment))
+        .child(Text::new(text).size(ui::TEXT_NOTE).color(t.comment))
 }

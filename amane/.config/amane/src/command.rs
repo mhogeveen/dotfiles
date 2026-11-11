@@ -19,6 +19,12 @@ use std::time::{Duration, Instant};
 // how often a running program is checked on; short next to any time limit
 const POLL: Duration = Duration::from_millis(20);
 
+// curl's own limit for a whole transfer, in seconds; the shell only fetches small things
+pub const CURL_MAX_TIME: &str = "10";
+
+// past curl's own limit, for a curl that hangs anyway
+pub const CURL_TIMEOUT: Duration = Duration::from_secs(15);
+
 // why a program gave no output: callers word these differently (not installed vs. stuck)
 #[derive(Debug)]
 pub enum Failure {
@@ -48,6 +54,16 @@ pub fn capture(command: &mut Command, timeout: Duration) -> Result<Output, Failu
         stdout: stdout.join().unwrap_or_default(),
         stderr: stderr.join().unwrap_or_default(),
     })
+}
+
+// what a program printed when it ran and succeeded in time; None otherwise
+pub fn read(command: &mut Command, timeout: Duration) -> Option<String> {
+    let output = capture(command, timeout).ok()?;
+
+    output
+        .status
+        .success()
+        .then(|| String::from_utf8_lossy(&output.stdout).into_owned())
 }
 
 // the exit status, or None after killing a program that ran out of time

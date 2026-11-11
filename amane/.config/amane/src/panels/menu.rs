@@ -9,7 +9,6 @@
  */
 
 use std::marker::PhantomData;
-use std::time::Duration;
 
 use amane::{Cursor::Pointer, Key, LayerWindow, Monitor, Rectangle, Service, Vertical, Widget};
 
@@ -58,9 +57,7 @@ impl<M: Menu> Service for Choice<M> {
     }
 
     // only changes through input
-    fn interval() -> Duration {
-        Duration::from_secs(3600)
-    }
+    fn listen() {}
 }
 
 pub fn view<M: Menu>(monitor: &Monitor) -> LayerWindow {

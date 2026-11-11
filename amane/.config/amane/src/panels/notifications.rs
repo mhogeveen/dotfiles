@@ -38,9 +38,7 @@ pub fn view(monitor: &Monitor) -> LayerWindow {
 const KEY_CLEAR: char = 'c';
 
 fn key_pressed(key: Key) {
-    if let Key::Character(letter) = key
-        && letter.to_ascii_lowercase() == KEY_CLEAR
-    {
+    if super::letter(&key) == Some(KEY_CLEAR) {
         clear_all();
     }
 }

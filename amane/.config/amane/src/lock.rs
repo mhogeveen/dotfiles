@@ -31,6 +31,22 @@ const DARKEN: f32 = 0.6;
 
 const INPUT: &str = "lock-password";
 
+// the big clock, the date under it, and the room before the login part
+const CLOCK_SIZE: f32 = 72.0;
+const DATE_SIZE: f32 = 18.0;
+const CLOCK_ROOM: f32 = 32.0;
+
+// the user's name, the password box and the line saying how it went
+const LOGIN_SIZE: f32 = 16.0;
+const STATUS_SIZE: f32 = 14.0;
+const BOX_WIDTH: f32 = 320.0;
+const BOX_HEIGHT: f32 = 44.0;
+const BOX_BORDER: f32 = 1.0;
+const BOX_SIDES: f32 = 12.0;
+
+// between the lines of the column
+const GAP: f32 = 12.0;
+
 pub fn view(_monitor: &Monitor) -> LayerWindow {
     let t = theme();
     let clock = Clock::read();
@@ -51,15 +67,15 @@ pub fn view(_monitor: &Monitor) -> LayerWindow {
      * text and typing works on whichever monitor the compositor sends keys to
      */
     let password = Rectangle::new()
-        .width(320.0)
-        .height(44.0)
+        .width(BOX_WIDTH)
+        .height(BOX_HEIGHT)
         .fill(t.bg1)
-        .border(1.0, if lock.failed() { t.accent } else { t.bg3 })
+        .border(BOX_BORDER, if lock.failed() { t.accent } else { t.bg3 })
         .padding(Padding {
             top: 0.0,
-            right: 12.0,
+            right: BOX_SIDES,
             bottom: 0.0,
-            left: 12.0,
+            left: BOX_SIDES,
         })
         .align_child(Start, Center)
         .child(
@@ -67,7 +83,7 @@ pub fn view(_monitor: &Monitor) -> LayerWindow {
                 .placeholder("Password")
                 .password()
                 .focused()
-                .size(16.0)
+                .size(LOGIN_SIZE)
                 .color(t.fg)
                 .on_submit(|password| {
                     // an empty Enter would cost a PAM attempt and say "Wrong password"
@@ -83,17 +99,17 @@ pub fn view(_monitor: &Monitor) -> LayerWindow {
 
     let content = Column::new(children![
         Text::new(clock.time())
-            .size(72.0)
+            .size(CLOCK_SIZE)
             .weight(Weight::Bold)
             .color(t.fg),
-        Text::new(clock.date()).size(18.0).color(t.fg_dim),
+        Text::new(clock.date()).size(DATE_SIZE).color(t.fg_dim),
         // room between the clock and the login part
-        Rectangle::new().width(1.0).height(32.0),
-        Text::new(user).size(16.0).color(t.fg),
+        Rectangle::new().width(1.0).height(CLOCK_ROOM),
+        Text::new(user).size(LOGIN_SIZE).color(t.fg),
         password,
-        Text::new(status).size(14.0).color(status_color),
+        Text::new(status).size(STATUS_SIZE).color(status_color),
     ])
-    .gap(12.0)
+    .gap(GAP)
     .align(Center);
 
     let mut layers = background(&t);

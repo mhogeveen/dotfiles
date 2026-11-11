@@ -14,8 +14,6 @@
  * the same, and now and today are in the accent wherever they show
  */
 
-use std::time::Duration;
-
 use amane::{
     Align::{Center, Start},
     Color, Column,
@@ -30,13 +28,12 @@ use super::{CALENDAR, hints, panel};
 use crate::calendar::{self, Date, Day, MONTHS, WEEKDAYS};
 use crate::clock::Clock;
 use crate::theme::Theme;
-use crate::weather::forecast::{self, DayForecast, Slot};
+use crate::weather::forecast::{self, DayForecast, Now, Slot};
 use crate::weather::{self, Weather};
 
-// nerd font material design chevrons and refresh
+// nerd font material design chevrons
 const ICON_PREVIOUS: &str = "\u{f0141}";
 const ICON_NEXT: &str = "\u{f0142}";
-const ICON_REFRESH: &str = "\u{f0450}";
 
 const KEY_PREVIOUS: char = 'h';
 const KEY_NEXT: char = 'l';
@@ -73,6 +70,7 @@ const MONTH: f32 = LABEL_ROW + GAP + 6.0 * DAY + 5.0 * GAP;
 // a forecast cell's four lines, when, icon, temperature and rain, and the room around them
 const LABEL_LINE: f32 = 16.0;
 const ICON_LINE: f32 = 24.0;
+const FORECAST_ICON: f32 = 18.0;
 const VALUE_LINE: f32 = 18.0;
 const EXTRA_LINE: f32 = 14.0;
 const LINE_GAP: f32 = 2.0;
@@ -84,6 +82,10 @@ const SLOT: f32 =
 const NOW_ROW: f32 = 28.0;
 const NOW_ICON: f32 = 24.0;
 const NOW_LINE: f32 = 16.0;
+
+// the icon and temperature now, bigger than the rest of the card
+const NOW_ICON_SIZE: f32 = 20.0;
+const NOW_TEMPERATURE: f32 = 22.0;
 const NOW_GAP: f32 = 4.0;
 const NOW: f32 = NOW_ROW + NOW_GAP + NOW_LINE;
 
@@ -108,9 +110,7 @@ impl Service for Shown {
     }
 
     // only changes through input
-    fn interval() -> Duration {
-        Duration::from_secs(3600)
-    }
+    fn listen() {}
 }
 
 pub fn view(monitor: &Monitor) -> LayerWindow {
@@ -148,15 +148,11 @@ pub fn reset() {
 }
 
 fn key_pressed(key: Key) {
-    let Key::Character(letter) = key else {
-        return;
-    };
-
-    match letter.to_ascii_lowercase() {
-        KEY_PREVIOUS => go(-1),
-        KEY_NEXT => go(1),
-        KEY_TODAY => reset(),
-        KEY_REFRESH => weather::refresh(),
+    match super::letter(&key) {
+        Some(KEY_PREVIOUS) => go(-1),
+        Some(KEY_NEXT) => go(1),
+        Some(KEY_TODAY) => reset(),
+        Some(KEY_REFRESH) => weather::refresh(),
         _ => {}
     }
 }
@@ -235,7 +231,7 @@ fn calendar_card(t: &Theme, today: Date, year: i32, month: u32) -> Rectangle {
             .align_child(Start, Center)
             .child(
                 Text::new(KEY_TODAY.to_string())
-                    .size(15.0)
+                    .size(ui::TEXT_TITLE)
                     .weight(Weight::Bold)
                     .color(t.accent),
             )
@@ -318,7 +314,7 @@ fn weather_card(t: &Theme, today: Date) -> Rectangle {
 
     let header = header(
         ui::title(t, &format!("Weather · {}", weather.place().name)),
-        children![ui::key_button(t, ICON_REFRESH, KEY_REFRESH, |_| {
+        children![ui::key_button(t, ui::ICON_REFRESH, KEY_REFRESH, |_| {
             weather::refresh()
         })],
     );
@@ -339,56 +335,8 @@ fn weather_card(t: &Theme, today: Date) -> Rectangle {
     };
 
     let now = &forecast.now;
-    let (icon, description) = forecast::describe(now.code, now.daytime);
 
-    // nerd font icons draw wider than they measure, so the icon gets a box of its own
-    let icon = Rectangle::new()
-        .width(NOW_ICON)
-        .height(NOW_ROW)
-        .align_child(Start, Center)
-        .child(Text::new(icon).size(20.0).color(t.fg));
-
-    let conditions = Row::new(children![
-        icon,
-        Text::new(forecast::degrees(now.temperature))
-            .size(22.0)
-            .weight(Weight::Bold)
-            .color(t.fg),
-        Rectangle::new()
-            .width(Parent)
-            .height(NOW_ROW)
-            .align_child(Start, Center)
-            .child(
-                Text::new(format!(
-                    "{description} · feels {}",
-                    forecast::degrees(now.feels_like)
-                ))
-                .size(VALUE)
-                .color(t.fg_dim)
-                .elide()
-            ),
-    ])
-    .gap(HEADER_GAP)
-    .align(Center)
-    .height(NOW_ROW);
-
-    let when = match (weather.error(), weather.fetched_at()) {
-        (Some(_), Some(at)) => format!(" · couldn't update · from {at}"),
-        (None, Some(at)) => format!(" · updated {at}"),
-        _ => String::new(),
-    };
-
-    let details = format!(
-        "{:.0} km/h {}{when}",
-        now.wind,
-        forecast::compass(now.direction)
-    );
-
-    let details = Rectangle::new()
-        .width(Parent)
-        .height(NOW_LINE)
-        .align_child(Start, Center)
-        .child(Text::new(details).size(LABEL).color(t.comment).elide());
+    let when = when_text(weather.error().is_some(), weather.fetched_at());
 
     let slots = forecast
         .slots
@@ -404,13 +352,73 @@ fn weather_card(t: &Theme, today: Date) -> Rectangle {
         .collect();
 
     let body = Column::new(children![
-        Column::new(children![conditions, details]).gap(NOW_GAP),
+        Column::new(children![
+            now_conditions(t, now),
+            now_details(t, now, &when)
+        ])
+        .gap(NOW_GAP),
         forecast_row(t, "Next 24 hours", slots),
         forecast_row(t, "Next 7 days", days),
     ])
     .gap(SECTION_GAP);
 
     card(t, WEATHER_CARD, header, body)
+}
+
+// the icon, the temperature, and what it's like: Mainly clear · feels 1°
+fn now_conditions(t: &Theme, now: &Now) -> Row {
+    let (icon, description) = forecast::describe(now.code, now.daytime);
+
+    // nerd font icons draw wider than they measure, so the icon gets a box of its own
+    let icon = Rectangle::new()
+        .width(NOW_ICON)
+        .height(NOW_ROW)
+        .align_child(Start, Center)
+        .child(Text::new(icon).size(NOW_ICON_SIZE).color(t.fg));
+
+    Row::new(children![
+        icon,
+        Text::new(forecast::degrees(now.temperature))
+            .size(NOW_TEMPERATURE)
+            .weight(Weight::Bold)
+            .color(t.fg),
+        ui::line(
+            NOW_ROW,
+            Text::new(format!(
+                "{description} · feels {}",
+                forecast::degrees(now.feels_like)
+            ))
+            .size(VALUE)
+            .color(t.fg_dim)
+            .elide()
+        ),
+    ])
+    .gap(HEADER_GAP)
+    .align(Center)
+    .height(NOW_ROW)
+}
+
+// the wind, and when the forecast was fetched: 7 km/h NE · updated 17:43
+fn now_details(t: &Theme, now: &Now, when: &str) -> Rectangle {
+    let details = format!(
+        "{:.0} km/h {}{when}",
+        now.wind,
+        forecast::compass(now.direction)
+    );
+
+    ui::line(
+        NOW_LINE,
+        Text::new(details).size(LABEL).color(t.comment).elide(),
+    )
+}
+
+// " · updated 17:43", or " · couldn't update · from 17:43" after a failed refetch
+fn when_text(failed: bool, fetched_at: Option<&str>) -> String {
+    match (failed, fetched_at) {
+        (true, Some(at)) => format!(" · couldn't update · from {at}"),
+        (false, Some(at)) => format!(" · updated {at}"),
+        _ => String::new(),
+    }
 }
 
 // a heading over seven cells on the grid
@@ -451,7 +459,7 @@ fn forecast_cell(
         .child(
             Column::new(children![
                 line(LABEL_LINE, Text::new(when).size(LABEL).color(quiet)),
-                line(ICON_LINE, Text::new(icon).size(18.0).color(strong)),
+                line(ICON_LINE, Text::new(icon).size(FORECAST_ICON).color(strong)),
                 line(VALUE_LINE, temperature),
                 line(
                     EXTRA_LINE,
@@ -519,4 +527,19 @@ fn day_forecast_cell(t: &Theme, day: &DayForecast, today: Date) -> Rectangle {
     .align(Center);
 
     forecast_cell(t, is_today, name, icon, temperatures, day.rain)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::when_text;
+
+    #[test]
+    fn the_weather_says_when_it_was_fetched() {
+        assert_eq!(when_text(false, Some("17:43")), " · updated 17:43");
+        assert_eq!(
+            when_text(true, Some("17:43")),
+            " · couldn't update · from 17:43"
+        );
+        assert_eq!(when_text(false, None), "");
+    }
 }

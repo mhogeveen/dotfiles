@@ -29,9 +29,7 @@ impl Service for Hints {
     }
 
     // only changes through ? and its timer
-    fn interval() -> Duration {
-        Duration::from_secs(3600)
-    }
+    fn listen() {}
 }
 
 // whether buttons show their keys right now; read it while building a panel

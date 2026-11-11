@@ -23,8 +23,10 @@ use crate::system::{self, NetworkSpeed, SystemInfo};
 use crate::theme::{ACCENTS, Accent, Theme};
 use crate::vpn::{self, Vpn};
 
-// header, details, five diagnostics rows (a laptop's battery included) and the settings:
-// the accent and the brightness
+/*
+ * header, details, five diagnostics rows (a laptop's battery included) and the
+ * settings: the accent and the brightness
+ */
 const HEIGHT: f32 = 324.0 + BUTTON + GAP;
 const GAP: f32 = 8.0;
 const LINE: f32 = 20.0;
@@ -43,6 +45,7 @@ const INTERFACE: f32 = 72.0;
  */
 const SHIELD_WIDTH: f32 = 12.0;
 const SHIELD_GAP: f32 = 4.0;
+const SHIELD_SIZE: f32 = 11.0;
 
 // nerd font material design power and wallpaper glyphs
 const ICON_SESSION: &str = "\u{f0425}";
@@ -79,14 +82,10 @@ fn content(t: &Theme, monitor: &str) -> Rectangle {
 
 // the header buttons by their letters, uppercase too; escape is handled by the panel manager
 fn key_pressed(key: Key) {
-    let Key::Character(letter) = key else {
-        return;
-    };
-
-    match letter.to_ascii_lowercase() {
-        KEY_NOTIFICATIONS => open_notifications(),
-        KEY_SESSION => open_session(),
-        KEY_WALLPAPER => open_wallpaper(),
+    match super::letter(&key) {
+        Some(KEY_NOTIFICATIONS) => open_notifications(),
+        Some(KEY_SESSION) => open_session(),
+        Some(KEY_WALLPAPER) => open_wallpaper(),
         _ => {}
     }
 }
@@ -114,7 +113,7 @@ fn header(t: &Theme, info: &SystemInfo) -> Row {
         .align_child(Start, Center)
         .child(
             Text::new(format!("{}@{}", info.user, info.host))
-                .size(15.0)
+                .size(ui::TEXT_TITLE)
                 .weight(Weight::Bold)
                 .color(t.fg)
                 .elide(),
@@ -153,7 +152,7 @@ fn details(t: &Theme, info: &SystemInfo) -> Rectangle {
         .width(Parent)
         .height(LINE)
         .align_child(Start, Center)
-        .child(Text::new(line).size(12.0).color(t.fg_dim).elide())
+        .child(Text::new(line).size(ui::TEXT_SMALL).color(t.fg_dim).elide())
 }
 
 fn meters(t: &Theme, info: &SystemInfo) -> Vec<Box<dyn Widget>> {
@@ -222,13 +221,18 @@ fn meter_row(t: &Theme, name: &str, percent: u8, numbers: String) -> Row {
             .width(NAME)
             .height(BUTTON)
             .align_child(Start, Center)
-            .child(Text::new(name).size(13.0).color(t.fg)),
+            .child(Text::new(name).size(ui::TEXT_NOTE).color(t.fg)),
         ui::meter(t, METER, percent, false),
         Rectangle::new()
             .width(NUMBERS)
             .height(BUTTON)
             .align_child(Start, Center)
-            .child(Text::new(numbers).size(12.0).color(t.fg_dim).elide()),
+            .child(
+                Text::new(numbers)
+                    .size(ui::TEXT_SMALL)
+                    .color(t.fg_dim)
+                    .elide()
+            ),
     ])
     .gap(GAP)
     .align(Center)
@@ -258,12 +262,12 @@ fn network_row(t: &Theme, network: Option<&NetworkSpeed>) -> Row {
             .width(NAME)
             .height(BUTTON)
             .align_child(Start, Center)
-            .child(Text::new("Network").size(13.0).color(t.fg)),
+            .child(Text::new("Network").size(ui::TEXT_NOTE).color(t.fg)),
         Rectangle::new()
             .width(Parent)
             .height(BUTTON)
             .align_child(Start, Center)
-            .child(Text::new(speeds).size(12.0).color(t.fg).elide()),
+            .child(Text::new(speeds).size(ui::TEXT_SMALL).color(t.fg).elide()),
         interface_with_shield(t, interface),
     ])
     .width(Parent)
@@ -303,7 +307,7 @@ fn accent_setting(t: &Theme) -> Row {
             .width(NAME)
             .height(BUTTON)
             .align_child(Start, Center)
-            .child(Text::new("Accent").size(13.0).color(t.fg)),
+            .child(Text::new("Accent").size(ui::TEXT_NOTE).color(t.fg)),
         Row::new(swatches)
             .gap(SWATCH_GAP)
             .align(Center)
@@ -325,14 +329,14 @@ fn brightness_setting(t: &Theme, monitor: &str) -> Row {
         .width(NAME)
         .height(BUTTON)
         .align_child(Start, Center)
-        .child(Text::new("Brightness").size(13.0).color(t.fg));
+        .child(Text::new("Brightness").size(ui::TEXT_NOTE).color(t.fg));
 
     let numbers = |text: &str, color| {
         Rectangle::new()
             .width(NUMBERS)
             .height(BUTTON)
             .align_child(Start, Center)
-            .child(Text::new(text).size(12.0).color(color))
+            .child(Text::new(text).size(ui::TEXT_SMALL).color(color))
     };
 
     let row = match brightness::level(monitor) {
@@ -375,7 +379,12 @@ fn interface_with_shield(t: &Theme, interface: String) -> Rectangle {
             .width(name_width)
             .height(BUTTON)
             .align_child(Start, Center)
-            .child(Text::new(interface).size(12.0).color(t.comment).elide()),
+            .child(
+                Text::new(interface)
+                    .size(ui::TEXT_SMALL)
+                    .color(t.comment)
+                    .elide(),
+            ),
     )];
 
     if let Some(all_traffic) = shield {
@@ -386,7 +395,7 @@ fn interface_with_shield(t: &Theme, interface: String) -> Rectangle {
                 .width(SHIELD_WIDTH)
                 .height(BUTTON)
                 .align_child(Start, Center)
-                .child(Text::new(vpn::ICON_SHIELD).size(11.0).color(color)),
+                .child(Text::new(vpn::ICON_SHIELD).size(SHIELD_SIZE).color(color)),
         ));
     }
 

@@ -260,11 +260,11 @@ fn level_row(t: &Theme, level: &Level) -> Rectangle {
     // while ? hints show, the percentage says which keys change the volume
     let percent = match (hints::shown(), level.volume_keys) {
         (true, Some((quieter, louder))) => Text::new(format!("{quieter} {louder}"))
-            .size(13.0)
+            .size(ui::TEXT_NOTE)
             .weight(Weight::Bold)
             .color(t.accent),
         _ => Text::new(format!("{}%", level.volume))
-            .size(13.0)
+            .size(ui::TEXT_NOTE)
             .color(color),
     };
 
@@ -273,7 +273,7 @@ fn level_row(t: &Theme, level: &Level) -> Rectangle {
             .width(ICON)
             .height(BUTTON)
             .align_child(Center, Center)
-            .child(Text::new(level.icon).size(16.0).color(color)),
+            .child(Text::new(level.icon).size(ui::ICON_SIZE).color(color)),
         ui::slider(t, SLIDER, level.volume, level.muted, level.set_volume),
         Rectangle::new()
             .width(PERCENT)
@@ -308,7 +308,7 @@ fn device_row(t: &Theme, device: &Device, choosable: bool) -> Rectangle {
                 .width(ICON)
                 .height(ROW)
                 .align_child(Center, Center)
-                .child(Text::new(mark).size(12.0).color(color)),
+                .child(Text::new(mark).size(ui::TEXT_SMALL).color(color)),
         ));
     }
 
@@ -317,7 +317,11 @@ fn device_row(t: &Theme, device: &Device, choosable: bool) -> Rectangle {
             .width(ICON)
             .height(ROW)
             .align_child(Center, Center)
-            .child(Text::new(device.kind.icon()).size(15.0).color(color)),
+            .child(
+                Text::new(device.kind.icon())
+                    .size(ui::TEXT_TITLE)
+                    .color(color),
+            ),
     ));
 
     parts.push(Box::new(
@@ -327,7 +331,7 @@ fn device_row(t: &Theme, device: &Device, choosable: bool) -> Rectangle {
             .align_child(Start, Center)
             .child(
                 Text::new(device.label.as_str())
-                    .size(13.0)
+                    .size(ui::TEXT_NOTE)
                     .color(color)
                     .elide(),
             ),
@@ -355,14 +359,7 @@ fn device_row(t: &Theme, device: &Device, choosable: bool) -> Rectangle {
 }
 
 fn note(t: &Theme, text: &str) -> Box<dyn Widget> {
-    Box::new(
-        Rectangle::new()
-            .width(Parent)
-            .height(ROW)
-            .padding(SIDES)
-            .align_child(Start, Center)
-            .child(Text::new(text).size(13.0).color(t.comment)),
-    )
+    Box::new(ui::note(t, text, ROW))
 }
 
 /*
@@ -396,6 +393,9 @@ const ICON_PREVIOUS: &str = "\u{f04ae}";
 const ICON_NEXT: &str = "\u{f04ad}";
 const ICON_MUSIC: &str = "\u{f075a}";
 
+// the note shown in place of a cover while nothing plays
+const PLACEHOLDER_ICON: f32 = 24.0;
+
 fn now_playing(t: &Theme) -> Column {
     let media = Media::read();
 
@@ -410,7 +410,9 @@ fn now_playing(t: &Theme) -> Column {
         None => card.align_child(Start, Center).child(
             Row::new(children![
                 art(t, None),
-                Text::new("Nothing playing").size(13.0).color(t.comment),
+                Text::new("Nothing playing")
+                    .size(ui::TEXT_NOTE)
+                    .color(t.comment),
             ])
             .gap(GAP * 1.5)
             .align(Center),
@@ -444,17 +446,20 @@ fn now_playing(t: &Theme) -> Column {
             .height(BUTTON);
 
             let text = Column::new(children![
-                line(
+                ui::line(
                     TITLE_LINE,
                     Text::new(title)
-                        .size(14.0)
+                        .size(ui::TEXT_BODY)
                         .weight(Weight::Bold)
                         .color(t.fg)
                         .elide()
                 ),
-                line(
+                ui::line(
                     ARTIST_LINE,
-                    Text::new(source).size(12.0).color(t.fg_dim).elide()
+                    Text::new(source)
+                        .size(ui::TEXT_SMALL)
+                        .color(t.fg_dim)
+                        .elide()
                 ),
                 progress(t, player.position(), player.length()),
                 buttons,
@@ -479,18 +484,12 @@ fn art(t: &Theme, cover: Option<std::path::PathBuf>) -> Rectangle {
 
     match cover {
         Some(path) => square.fill(Image::cover(path).thumbnail(ART as u32 * 2, ART as u32 * 2)),
-        None => square
-            .align_child(Center, Center)
-            .child(Text::new(ICON_MUSIC).size(24.0).color(t.comment)),
+        None => square.align_child(Center, Center).child(
+            Text::new(ICON_MUSIC)
+                .size(PLACEHOLDER_ICON)
+                .color(t.comment),
+        ),
     }
-}
-
-fn line(height: f32, text: Text) -> Rectangle {
-    Rectangle::new()
-        .width(Parent)
-        .height(height)
-        .align_child(Start, Center)
-        .child(text)
 }
 
 // a bar and "1:23 / 3:45"; nothing for a stream without a length

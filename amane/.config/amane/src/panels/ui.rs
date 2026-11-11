@@ -7,7 +7,7 @@ use amane::{
     Align::{Center, Start},
     Button, Color, Column,
     Cursor::Pointer,
-    Horizontal, LayerWindow, Margin, Padding, Rectangle,
+    Horizontal, LayerWindow, Margin, Padding, Rectangle, Row,
     Size::Parent,
     Text, Vertical, Weight, Widget,
 };
@@ -16,6 +16,17 @@ use super::hints;
 use crate::theme::Theme;
 
 pub const BUTTON: f32 = 28.0;
+
+// nerd font material design refresh, on every button that reads or scans again
+pub const ICON_REFRESH: &str = "\u{f0450}";
+
+// BlexMono is monospaced: every character is this much of the text size wide
+const CHARACTER_WIDTH: f32 = 0.6;
+
+// how wide a text is at this size, for boxes that fit their text exactly
+pub fn text_width(text: &str, size: f32) -> f32 {
+    text.chars().count() as f32 * size * CHARACTER_WIDTH
+}
 
 // the room every panel keeps inside its border and on either side of a row
 pub const PADDING: f32 = 12.0;
@@ -28,20 +39,24 @@ pub const SIDES: Padding = Padding {
     left: PADDING,
 };
 
+// what every button is: this wide, a button tall, its content centered, clickable
+fn base(width: f32, fill: Color, on_click: impl Fn(Button) + 'static) -> Rectangle {
+    Rectangle::new()
+        .width(width)
+        .height(BUTTON)
+        .fill(fill)
+        .align_child(Center, Center)
+        .cursor(Pointer)
+        .on_click(on_click)
+}
+
 pub fn button(
     t: &Theme,
     label: &str,
     width: f32,
     on_click: impl Fn(Button) + 'static,
 ) -> Rectangle {
-    Rectangle::new()
-        .width(width)
-        .height(BUTTON)
-        .fill(t.bg2)
-        .align_child(Center, Center)
-        .cursor(Pointer)
-        .on_click(on_click)
-        .child(Text::new(label).size(13.0).color(t.fg))
+    base(width, t.bg2, on_click).child(Text::new(label).size(TEXT_NOTE).color(t.fg))
 }
 
 // a text button with a key that does the same; while ? hints show, the key replaces the label
@@ -67,14 +82,7 @@ pub fn hint_text_button(
         return button(t, label, width, on_click);
     }
 
-    Rectangle::new()
-        .width(width)
-        .height(BUTTON)
-        .fill(t.bg2)
-        .align_child(Center, Center)
-        .cursor(Pointer)
-        .on_click(on_click)
-        .child(key_text(hint, t.accent))
+    base(width, t.bg2, on_click).child(key_text(hint, t.accent))
 }
 
 // a square button with a glyph in its own color, like a bell that lights up
@@ -84,14 +92,78 @@ pub fn icon_button_colored(
     color: Color,
     on_click: impl Fn(Button) + 'static,
 ) -> Rectangle {
+    base(BUTTON, t.bg2, on_click).child(Text::new(glyph).size(TEXT_BODY).color(color))
+}
+
+// the text sizes the panels share
+pub const TEXT_SMALL: f32 = 12.0;
+pub const TEXT_NOTE: f32 = 13.0;
+pub const TEXT_BODY: f32 = 14.0;
+pub const TEXT_TITLE: f32 = 15.0;
+
+// a glyph at the start of a row, like a device or wi-fi strength
+pub const ICON_SIZE: f32 = 16.0;
+
+// between the parts of a header, a card, or an error line
+const GAP: f32 = 8.0;
+
+// a card's border, around a group of lines like the network you're on
+const CARD_BORDER: f32 = 1.0;
+
+/*
+ * a panel's header: the title (taking the room the rest leaves), then its
+ * buttons; as tall as a button
+ */
+pub fn header(title: impl Widget + 'static, buttons: Vec<Box<dyn Widget>>) -> Row {
+    let mut parts: Vec<Box<dyn Widget>> = vec![Box::new(title)];
+
+    parts.extend(buttons);
+
+    Row::new(parts).gap(GAP).align(Center).height(BUTTON)
+}
+
+// a dim line saying why a list is empty, like "Bluetooth is off"
+pub fn note(t: &Theme, text: &str, height: f32) -> Rectangle {
     Rectangle::new()
-        .width(BUTTON)
-        .height(BUTTON)
-        .fill(t.bg2)
-        .align_child(Center, Center)
-        .cursor(Pointer)
-        .on_click(on_click)
-        .child(Text::new(glyph).size(14.0).color(color))
+        .width(Parent)
+        .height(height)
+        .padding(SIDES)
+        .align_child(Start, Center)
+        .child(Text::new(text).size(TEXT_NOTE).color(t.comment))
+}
+
+// one line of text in a box this tall, taking the width it's given
+pub fn line(height: f32, text: Text) -> Rectangle {
+    Rectangle::new()
+        .width(Parent)
+        .height(height)
+        .align_child(Start, Center)
+        .child(text)
+}
+
+// a bordered group of lines, this tall (cards add their parts' heights up)
+pub fn card(t: &Theme, height: f32, parts: Vec<Box<dyn Widget>>) -> Rectangle {
+    Rectangle::new()
+        .width(Parent)
+        .height(height)
+        .fill(t.bg0)
+        .border(CARD_BORDER, t.bg3)
+        .padding(PADDING)
+        .child(Column::new(parts).gap(GAP))
+}
+
+// what went wrong, in the accent, with a button to act on it when there is one
+pub fn error_line(t: &Theme, text: &str, button: Option<Rectangle>) -> Row {
+    let mut parts: Vec<Box<dyn Widget>> = vec![Box::new(line(
+        BUTTON,
+        Text::new(text).size(TEXT_NOTE).color(t.accent).elide(),
+    ))];
+
+    if let Some(button) = button {
+        parts.push(Box::new(button));
+    }
+
+    Row::new(parts).gap(GAP).align(Center).height(BUTTON)
 }
 
 // a section heading's usual height
@@ -105,7 +177,7 @@ pub fn heading(t: &Theme, text: &str, height: f32) -> Rectangle {
         .align_child(Start, Center)
         .child(
             Text::new(text)
-                .size(12.0)
+                .size(TEXT_SMALL)
                 .weight(Weight::Bold)
                 .color(t.comment),
         )
@@ -120,7 +192,7 @@ pub fn title(t: &Theme, text: &str) -> Rectangle {
         .child(
             // shortened rather than running under the buttons beside it (a long weather place)
             Text::new(text)
-                .size(15.0)
+                .size(TEXT_TITLE)
                 .weight(Weight::Bold)
                 .color(t.fg)
                 .elide(),
@@ -142,21 +214,14 @@ pub fn switch(
         ("off", t.bg2, t.fg_dim)
     };
 
-    Rectangle::new()
-        .width(width)
-        .height(BUTTON)
-        .fill(fill)
-        .align_child(Center, Center)
-        .cursor(Pointer)
-        .on_click(on_click)
-        .child(if hints::shown() {
-            // the switch's own text color, the accent wouldn't show on an accent fill
-            key_text(&key.to_string(), color)
-        } else {
-            Text::new(format!("{label} {state}"))
-                .size(13.0)
-                .color(color)
-        })
+    base(width, fill, on_click).child(if hints::shown() {
+        // the switch's own text color, the accent wouldn't show on an accent fill
+        key_text(&key.to_string(), color)
+    } else {
+        Text::new(format!("{label} {state}"))
+            .size(TEXT_NOTE)
+            .color(color)
+    })
 }
 
 const SLIDER_HEIGHT: f32 = 8.0;
@@ -299,17 +364,13 @@ pub fn key_button_colored(
         return icon_button_colored(t, glyph, color, on_click);
     }
 
-    Rectangle::new()
-        .width(BUTTON)
-        .height(BUTTON)
-        .fill(t.bg2)
-        .align_child(Center, Center)
-        .cursor(Pointer)
-        .on_click(on_click)
-        .child(key_text(&key.to_string(), t.accent))
+    base(BUTTON, t.bg2, on_click).child(key_text(&key.to_string(), t.accent))
 }
 
 // a key as the ? hints show it: a letter, or a name like Enter
 fn key_text(key: &str, color: Color) -> Text {
-    Text::new(key).size(14.0).weight(Weight::Bold).color(color)
+    Text::new(key)
+        .size(TEXT_BODY)
+        .weight(Weight::Bold)
+        .color(color)
 }

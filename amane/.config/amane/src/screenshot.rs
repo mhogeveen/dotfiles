@@ -11,12 +11,17 @@ use std::env;
 use std::fs;
 use std::path::PathBuf;
 use std::process::{Command, Stdio};
+use std::time::Duration;
 
 use amane::Urgency;
 
-use crate::{clock, command, notifications};
+use crate::command::{self, Failure};
+use crate::{clock, notifications};
 
 const APP_NAME: &str = "Screenshots";
+
+// grim takes well under a second for a whole screen; past this it's stuck
+const CAPTURE_TIMEOUT: Duration = Duration::from_secs(10);
 
 #[derive(Clone, Copy)]
 pub enum Area {
@@ -122,13 +127,13 @@ fn pick_region() -> Result<Option<String>, String> {
 }
 
 // runs a capture and gives back what it printed, the png when writing to "-"
-fn run(command: &mut Command) -> Result<Vec<u8>, String> {
-    let name = command.get_program().to_string_lossy().into_owned();
+fn run(program: &mut Command) -> Result<Vec<u8>, String> {
+    let name = program.get_program().to_string_lossy().into_owned();
 
-    let result = command
-        .stdin(Stdio::null())
-        .output()
-        .map_err(|error| format!("couldn't start {name}: {error}"))?;
+    let result = command::capture(program, CAPTURE_TIMEOUT).map_err(|failure| match failure {
+        Failure::Start => format!("couldn't start {name}"),
+        Failure::Timeout => format!("{name} didn't finish"),
+    })?;
 
     if !result.status.success() {
         let error = String::from_utf8_lossy(&result.stderr);

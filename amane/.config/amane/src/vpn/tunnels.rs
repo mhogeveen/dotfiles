@@ -11,11 +11,17 @@
 use std::fs;
 use std::path::Path;
 use std::process::Command;
+use std::time::Duration;
+
+use crate::command;
 
 const INTERFACES: &str = "/sys/class/net";
 
 // any address on the internet will do, nothing is sent to it
 const SOMEWHERE: &str = "1.1.1.1";
+
+// ip answers from the kernel's tables at once
+const IP_TIMEOUT: Duration = Duration::from_secs(2);
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Kind {
@@ -81,15 +87,12 @@ fn kind_of(uevent: &str, tun_flags: bool) -> Option<Kind> {
 
 // the interface traffic to the internet leaves by; waits on `ip`, so from a thread
 pub fn route() -> Option<String> {
-    let output = Command::new("ip")
-        .args(["route", "get", SOMEWHERE])
-        .output()
-        .ok()?;
+    let answer = command::read(
+        Command::new("ip").args(["route", "get", SOMEWHERE]),
+        IP_TIMEOUT,
+    )?;
 
-    output
-        .status
-        .success()
-        .then(|| device(&String::from_utf8_lossy(&output.stdout)))?
+    device(&answer)
 }
 
 // 1.1.1.1 via 192.168.1.1 dev wlp2s0 src 192.168.1.204 uid 1000

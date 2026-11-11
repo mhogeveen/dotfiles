@@ -138,37 +138,16 @@ Settled earlier, no need to revisit:
 
 ## Code health
 
-### 20. Audit findings (2026-11-11)
-- **Status:** open, worked through in three rounds (see HISTORY.md). Done:
-  the most important bugs (Tailscale `up` hanging on a needed login, time
-  limits for tailscale/ddcutil, weather and cover retries, popups held after
-  a hover, the wallpaper picker applying None, an empty lock-screen
-  password), then round A, the smaller bugs (`%20` icon paths, a bare `<` in
-  bodies, atomic state saves, lost launch counts, zombies on error paths,
-  overflowing text, history save logging, reused PipeWire ids, `date`
-  replaced by `localtime_r`, nested service reads), then round B, the UX
-  gaps (pairing keys, keyboard in the network and Bluetooth lists, mic volume
-  keys, scrolling audio device lists, the network panel's reserved list
-  height, no rescan with Wi-Fi off, "No Wi-Fi adapter", errors cleared on
-  close, wording). Left: round C + D (helpers, structure, tests), below.
-- **Duplication worth a helper:** running a command and reading its output
-  (~12 copies; `command::capture` exists now), the runtime folder path (three
-  copies, three different fallbacks), muted note/card/list box/header/error
-  line/fixed-height line in the panels (into `panels/ui.rs`), the letter-key
-  boilerplate (7 panels), `text_width` (`chars × size × 0.6`, 3 copies), the
-  refresh glyph under 4 names, the bar height `32` in `bar.rs` and
-  `backdrop.rs`, the top-right panel list in `popups.rs`.
-- **Structure and rules:** split `panels/network.rs` (715 lines; the
-  Tailscale card into its own file) and the long functions in
-  `calendar.rs`, `audio.rs`, `bluetooth.rs`; module block comments missing in
-  `bar.rs`, `main.rs`, `panels/backdrop.rs`; `bt`/`net` aliases in `bar.rs`;
-  text sizes and button widths without constants; four services write
-  `was_open` with a normal write (a redraw each open/close);
-  input-only services use a 3600 s `interval()` instead of `fn listen() {}`.
-- **Tests missing for:** `network::judge`, `Toasts::shows`, the `wpctl
-  inspect` parsing, `theme::from_name`/`next`, `system` formatting, `plain`,
-  `time_ago`.
-- **To settle:** which parts are worth doing, and in what order.
+### 21. Audit leftovers
+- **Status:** open, small. What item 20 (DONE.md) left on purpose:
+  - button widths differ for the same label (Forget 64 or 80, Dismiss 72
+    or 84, the Wi-Fi and Bluetooth switches 92 and 124); making them equal
+    changes how panels look, so it's a choice to make first
+  - `Toasts::shows` (popup timing) has no test: amane's `Notification`
+    can't be built outside the library
+  - `audio.rs` `now_playing` and `bluetooth.rs` `device_row` are still long
+  - `slurp` has no time limit: it waits for a region to be dragged
+- **To settle:** whether the button widths should match.
 
 ## Worth reporting to amane upstream
 

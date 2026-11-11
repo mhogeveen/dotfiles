@@ -23,6 +23,21 @@ pub fn path(name: &str) -> PathBuf {
     state.join("amane-shell").join(name)
 }
 
+/*
+ * the session's runtime folder ($XDG_RUNTIME_DIR, in memory, emptied at
+ * logout); None when it isn't set to an absolute path, then nothing is kept there
+ */
+pub fn runtime_dir() -> Option<PathBuf> {
+    env::var_os("XDG_RUNTIME_DIR")
+        .map(PathBuf::from)
+        .filter(|path| path.is_absolute())
+}
+
+// the shell's own file or folder in the runtime folder: $XDG_RUNTIME_DIR/amane-shell/<name>
+pub fn runtime_path(name: &str) -> Option<PathBuf> {
+    Some(runtime_dir()?.join("amane-shell").join(name))
+}
+
 // writes the file, making the folder first when it's missing
 pub fn save(name: &str, contents: &str) -> io::Result<()> {
     write_atomically(&path(name), contents)

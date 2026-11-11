@@ -6,7 +6,7 @@
 
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
-use std::time::{Duration, SystemTime};
+use std::time::SystemTime;
 
 use amane::{Apps, Argument, Bus, Notifications, Service, Urgency};
 
@@ -30,9 +30,7 @@ impl Service for Seen {
     }
 
     // only changes when the center closes
-    fn interval() -> Duration {
-        Duration::from_secs(3600)
-    }
+    fn listen() {}
 }
 
 impl Seen {
@@ -191,6 +189,7 @@ pub fn time_ago(received: SystemTime, now: SystemTime) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::time::Duration;
 
     #[test]
     fn markup_becomes_plain_text() {

@@ -23,7 +23,7 @@ use amane::{
 };
 
 use super::card::{self, Options};
-use crate::panels::{self, AUDIO, BLUETOOTH, NETWORK, NOTIFICATIONS, Panels, SYSTEM};
+use crate::panels::{self, Panels};
 use crate::theme::theme;
 
 const TIMEOUT: Duration = Duration::from_secs(5);
@@ -196,11 +196,7 @@ fn forget_lost_hover() {
 
 // a panel open in the popups' corner hides them (the center lists them anyway)
 fn corner_taken() -> bool {
-    let panels = Panels::read();
-
-    [NOTIFICATIONS, NETWORK, BLUETOOTH, AUDIO, SYSTEM]
-        .iter()
-        .any(|name| panels.is_open(name))
+    Panels::read().corner_open()
 }
 
 fn shown_ids(toasts: &Toasts, list: &[Notification]) -> Vec<u32> {

@@ -14,7 +14,7 @@
 use std::fs;
 use std::sync::{Mutex, PoisonError};
 use std::thread;
-use std::time::{Duration, SystemTime, UNIX_EPOCH};
+use std::time::{SystemTime, UNIX_EPOCH};
 
 use amane::Service;
 
@@ -57,9 +57,7 @@ impl Service for Usage {
     }
 
     // only changes through launches
-    fn interval() -> Duration {
-        Duration::from_secs(3600)
-    }
+    fn listen() {}
 }
 
 impl Usage {

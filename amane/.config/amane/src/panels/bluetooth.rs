@@ -12,7 +12,7 @@ use amane::{
     Align::{Center, Start},
     Bluetooth, BluetoothDevice, Column,
     Cursor::Pointer,
-    Key, LayerWindow, Monitor, Rectangle, Row, ScrollArea, Service,
+    Key, LayerWindow, Monitor, Rectangle, Row, Service,
     Size::Parent,
     Text, Widget, children,
 };
@@ -20,7 +20,7 @@ use amane::{
 use super::ui::{self, BUTTON, PADDING, SIDES, button};
 use super::{BLUETOOTH, list, panel};
 use crate::bluetooth::agent::{self, Agent, Kind, Request};
-use crate::bluetooth::{self, BluetoothPanel, ICON_RESCAN, Job};
+use crate::bluetooth::{self, BluetoothPanel, Job};
 use crate::theme::Theme;
 
 const HEIGHT: f32 = 560.0;
@@ -68,12 +68,7 @@ impl Service for Highlight {
  */
 fn key_pressed(key: Key) {
     if let Some(delta) = list::highlight_delta(&key) {
-        let count = listed(&Bluetooth::read()).len();
-        let mut highlight = Highlight::write();
-
-        highlight.index = list::step_highlight(highlight.index, delta, count);
-
-        return;
+        return move_highlight(delta);
     }
 
     let answerable = Agent::read().request().map(Request::answerable);
@@ -94,6 +89,14 @@ fn key_pressed(key: Key) {
         },
         _ => {}
     }
+}
+
+// from the keys and the wheel
+fn move_highlight(delta: isize) {
+    let count = listed(&Bluetooth::read()).len();
+    let mut highlight = Highlight::write();
+
+    highlight.index = list::step_highlight(highlight.index, delta, count);
 }
 
 enum Action {
@@ -202,16 +205,21 @@ fn content(t: &Theme) -> Rectangle {
 
 // "Bluetooth", scanning and rescan, and the power switch
 fn header(t: &Theme, bluetooth: &Bluetooth) -> Row {
-    let mut parts: Vec<Box<dyn Widget>> = vec![Box::new(ui::title(t, "Bluetooth"))];
+    let mut parts: Vec<Box<dyn Widget>> = Vec::new();
 
     if bluetooth.powered() {
         if bluetooth.scanning() {
-            parts.push(Box::new(Text::new("Scanning…").size(12.0).color(t.comment)));
+            parts.push(Box::new(
+                Text::new("Scanning…").size(ui::TEXT_SMALL).color(t.comment),
+            ));
         }
 
-        parts.push(Box::new(ui::key_button(t, ICON_RESCAN, KEY_RESCAN, |_| {
-            rescan()
-        })));
+        parts.push(Box::new(ui::key_button(
+            t,
+            ui::ICON_REFRESH,
+            KEY_RESCAN,
+            |_| rescan(),
+        )));
     }
 
     if bluetooth.available() {
@@ -225,7 +233,7 @@ fn header(t: &Theme, bluetooth: &Bluetooth) -> Row {
         )));
     }
 
-    Row::new(parts).gap(GAP).align(Center).height(BUTTON)
+    ui::header(ui::title(t, "Bluetooth"), parts)
 }
 
 // the pairing agent's question, or the code to type on the device; the card and its height
@@ -250,11 +258,7 @@ fn pairing(t: &Theme, request: &Request) -> (Rectangle, f32) {
     };
 
     let text = |text: String, size: f32, color| {
-        Rectangle::new()
-            .width(Parent)
-            .height(LINE)
-            .align_child(Start, Center)
-            .child(Text::new(text).size(size).color(color).elide())
+        ui::line(LINE, Text::new(text).size(size).color(color).elide())
     };
 
     let mut parts: Vec<Box<dyn Widget>> = vec![
@@ -295,19 +299,13 @@ fn pairing(t: &Theme, request: &Request) -> (Rectangle, f32) {
 }
 
 fn failure_line(t: &Theme, failure: &str) -> Row {
-    Row::new(children![
-        Rectangle::new()
-            .width(Parent)
-            .height(BUTTON)
-            .align_child(Start, Center)
-            .child(Text::new(failure).size(13.0).color(t.accent).elide()),
-        ui::key_text_button(t, "Dismiss", 72.0, KEY_DISMISS, |_| {
+    ui::error_line(
+        t,
+        failure,
+        Some(ui::key_text_button(t, "Dismiss", 72.0, KEY_DISMISS, |_| {
             BluetoothPanel::dismiss_failure()
-        }),
-    ])
-    .gap(GAP)
-    .align(Center)
-    .height(BUTTON)
+        })),
+    )
 }
 
 const AVAILABLE: &str = "Available";
@@ -420,46 +418,22 @@ fn devices(t: &Theme, bluetooth: &Bluetooth, panel: &BluetoothPanel, visible: f3
         }
     }
 
-    /*
-     * with the keys in use, drawn from a first row that keeps the highlight in
-     * sight (a ScrollArea can't be scrolled from code), and the wheel moves it
-     */
-    match highlighted_row {
-        Some(row) => {
-            let first = list::follow_window(
-                FIRST_ROW.load(Ordering::Relaxed),
-                anchor,
-                row,
-                &heights,
-                visible,
-            );
+    let keep = highlighted_row.map(|row| (anchor, row));
 
-            // remembered for the next draw; a static, as a view can't write a service
-            FIRST_ROW.store(first, Ordering::Relaxed);
-
-            let rows: Vec<Box<dyn Widget>> = rows.into_iter().skip(first).collect();
-
-            ui::list_box(t, Column::new(rows)).on_scroll(|scroll| {
-                let count = listed(&Bluetooth::read()).len();
-                let mut highlight = Highlight::write();
-
-                highlight.index =
-                    list::step_highlight(highlight.index, list::scroll_delta(scroll), count);
-            })
-        }
-        None => ui::list_box(t, ScrollArea::new("bluetooth-list", Column::new(rows))),
-    }
+    list::highlight_list(
+        t,
+        rows,
+        &heights,
+        keep,
+        visible,
+        &FIRST_ROW,
+        "bluetooth-list",
+        move_highlight,
+    )
 }
 
 fn note(t: &Theme, text: &str) -> Box<dyn Widget> {
-    Box::new(
-        Rectangle::new()
-            .width(Parent)
-            .height(ROW)
-            .padding(SIDES)
-            .align_child(Start, Center)
-            .child(Text::new(text).size(13.0).color(t.comment)),
-    )
+    Box::new(ui::note(t, text, ROW))
 }
 
 fn device_row(
@@ -476,7 +450,7 @@ fn device_row(
                 .align_child(Center, Center)
                 .child(
                     Text::new(bluetooth::device_icon(device))
-                        .size(16.0)
+                        .size(ui::ICON_SIZE)
                         .color(if device.connected() { t.fg } else { t.fg_dim }),
                 ),
         ),
@@ -485,7 +459,12 @@ fn device_row(
                 .width(Parent)
                 .height(ROW)
                 .align_child(Start, Center)
-                .child(Text::new(device.name()).size(14.0).color(t.fg).elide()),
+                .child(
+                    Text::new(device.name())
+                        .size(ui::TEXT_BODY)
+                        .color(t.fg)
+                        .elide(),
+                ),
         ),
     ];
 
@@ -498,12 +477,16 @@ fn device_row(
             Job::PoweringOn | Job::PoweringOff => "",
         };
 
-        parts.push(Box::new(Text::new(label).size(12.0).color(t.fg_dim)));
+        parts.push(Box::new(
+            Text::new(label).size(ui::TEXT_SMALL).color(t.fg_dim),
+        ));
     }
 
     if let Some(battery) = device.battery() {
         parts.push(Box::new(
-            Text::new(format!("{battery}%")).size(12.0).color(t.fg_dim),
+            Text::new(format!("{battery}%"))
+                .size(ui::TEXT_SMALL)
+                .color(t.fg_dim),
         ));
     }
 

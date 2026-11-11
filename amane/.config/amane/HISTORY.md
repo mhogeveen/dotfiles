@@ -289,6 +289,37 @@ each finished recommendation by number; `AGENTS.md` and `docs/` the current stat
      while the rows above would fit, so a list never leaves empty room under
      its last row (also after a rescan finds fewer networks).
 
+6. **Item 20, round C + D: refactor, structure, tests.** Nothing meant to
+   look different. Item 20 moved to DONE.md; what was left on purpose is
+   item 21 (button widths that differ for the same label, a test for popup
+   timing, two long functions, slurp's missing time limit).
+   - `ui.rs`: `header`, `note`, `line`, `card`, `error_line`, `list_box`,
+     `text_width`, a private button base, text size constants (and named
+     sizes in card, clock, osd, lock). The calendar keeps its own header
+     and line: its gaps follow its 6 px grid.
+   - Shared: `list::highlight_list` (the highlight window, first row and
+     wheel for both corner lists), `panels::letter`, `state::runtime_dir`/
+     `runtime_path`, `bar::HEIGHT` (backdrop), a `corner` flag in the panel
+     registry (popups), one constant per glyph, `command::read` and
+     `capture` for wpctl, ip, df, curl and grim (curl's limits shared).
+   - `panels/network.rs` became `panels/network/mod.rs` and `vpn_cards.rs`
+     (not `tailscale.rs`: the panel already imports `vpn::tailscale`);
+     `connection`, `tailscale_card` and `weather_card` split into smaller
+     functions, several of them pure and tested.
+   - Module comments for `bar.rs`, `main.rs`, `backdrop.rs`; no `bt`/`net`
+     aliases; `was_open` kept in the poll loops (no redraw on open/close);
+     empty `listen()` for nine input-only services.
+   - Tests 89 → 107: `judge`, connection text and details, the Tailscale
+     card's title and state, the weather's time text, accents, `gib`,
+     `Disk::percent`, `Sampler::rate`, `wpctl inspect` parsing (split from
+     the call).
+   - A pixel comparison of every panel was started and dropped at the
+     user's request: the terminal behind the panels changed between shots,
+     so it needed an empty workspace and a separate build of the old code.
+     Checked instead by looking at the network (with hints), system,
+     calendar and audio panels. Removing imports once broke only the tests
+     (`./test.sh`), not the build: run both after import changes.
+
 ## Habits worth keeping
 
 - Verify before claiming: check the code, the running shell (`pgrep`, its

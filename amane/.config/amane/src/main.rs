@@ -1,3 +1,10 @@
+/*
+ * amane-shell: a desktop shell for mango on the amane library. this starts the
+ * parts that must run from launch, registers the ipc handlers, and makes every
+ * window once per monitor; the order of the windows is their stacking order,
+ * bottom first: wallpaper, bar, backdrop, popups, every panel, the lock screen
+ */
+
 use amane::App;
 
 mod audio;
@@ -31,8 +38,10 @@ fn main() {
     // locks on suspend and `loginctl lock-session`
     session::watch_logind();
 
-    // answers BlueZ when a device asks to confirm a pairing code, and registers again
-    // when bluetoothd restarts
+    /*
+     * answers BlueZ when a device asks to confirm a pairing code, and registers
+     * again when bluetoothd restarts
+     */
     bluetooth::agent::start();
     bluetooth::start();
 

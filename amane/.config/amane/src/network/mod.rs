@@ -59,8 +59,6 @@ pub struct NetworkPanel {
 
     // what the details were read for, to read them again when the connection changes
     details_for: Option<(Link, Option<String>)>,
-
-    was_open: bool,
 }
 
 impl Service for NetworkPanel {
@@ -71,7 +69,6 @@ impl Service for NetworkPanel {
             expanded: None,
             details: None,
             details_for: None,
-            was_open: false,
         }
     }
 
@@ -79,15 +76,17 @@ impl Service for NetworkPanel {
         Duration::from_secs(1)
     }
 
+    // was_open is kept here, not in the service, so opening the panel redraws nothing by itself
     fn listen() {
         let mut ticks: u32 = 0;
+        let mut was_open = false;
 
         loop {
             thread::sleep(Self::interval());
 
             ticks = ticks.wrapping_add(1);
 
-            tick(ticks % DETAILS_EVERY == 0);
+            was_open = tick(ticks % DETAILS_EVERY == 0, was_open);
         }
     }
 }
@@ -123,7 +122,6 @@ pub const ICON_OFFLINE: &str = "\u{f092e}";
 pub const ICON_NO_INTERNET: &str = "\u{f092b}";
 pub const ICON_CONNECTING: &str = "\u{f092f}";
 pub const ICON_LOCK: &str = "\u{f033e}";
-pub const ICON_RESCAN: &str = "\u{f0450}";
 
 // one to four bars
 pub fn strength_icon(strength: u8) -> &'static str {
@@ -184,17 +182,14 @@ pub fn joined(network: &Network) -> Option<String> {
         .map(|access_point| String::from(access_point.ssid()))
 }
 
-fn tick(refresh_details: bool) {
+// returns whether the panel was open, for the next tick
+fn tick(refresh_details: bool, was_open: bool) -> bool {
     let now = Snapshot::take();
 
-    let (attempt, details_for, was_open) = {
+    let (attempt, details_for) = {
         let panel = NetworkPanel::read();
 
-        (
-            panel.attempt.clone(),
-            panel.details_for.clone(),
-            panel.was_open,
-        )
+        (panel.attempt.clone(), panel.details_for.clone())
     };
 
     let opened = now.open && !was_open;
@@ -211,16 +206,13 @@ fn tick(refresh_details: bool) {
 
     let (judged, failed) = judge(attempt.clone(), &now);
 
-    let changed =
-        details.is_some() || judged != attempt || failed.is_some() || was_open != now.open;
+    let changed = details.is_some() || judged != attempt || failed.is_some();
 
     if !changed {
-        return;
+        return now.open;
     }
 
     let mut panel = NetworkPanel::write();
-
-    panel.was_open = now.open;
 
     if let Some(details) = details {
         // writing anyway would redraw the panel every few seconds for nothing
@@ -238,6 +230,8 @@ fn tick(refresh_details: bool) {
             panel.result = Some(Outcome::Failed(ssid));
         }
     }
+
+    now.open
 }
 
 // the attempt as it stands now, and the network it failed to join if it did
@@ -373,3 +367,68 @@ pub fn has_wifi_adapter() -> bool {
 }
 
 const SYSFS_INTERFACES: &str = "/sys/class/net";
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn attempt(ssid: &str, saw_connecting: bool, age: Duration) -> Attempt {
+        Attempt {
+            ssid: String::from(ssid),
+            started: Instant::now().checked_sub(age).expect("a time in the past"),
+            saw_connecting,
+        }
+    }
+
+    fn snapshot(connecting: bool, joined: Option<&str>) -> Snapshot {
+        Snapshot {
+            open: true,
+            link: Link::Wifi,
+            connecting,
+            joined: joined.map(String::from),
+        }
+    }
+
+    const SOON: Duration = Duration::from_secs(1);
+
+    #[test]
+    fn joining_the_network_ends_the_attempt_quietly() {
+        let (left, failed) = judge(
+            Some(attempt("home", true, SOON)),
+            &snapshot(false, Some("home")),
+        );
+
+        assert_eq!(left, None);
+        assert_eq!(failed, None);
+    }
+
+    #[test]
+    fn an_attempt_still_connecting_goes_on() {
+        let (left, failed) = judge(Some(attempt("home", false, SOON)), &snapshot(true, None));
+
+        assert!(left.is_some_and(|attempt| attempt.saw_connecting));
+        assert_eq!(failed, None);
+    }
+
+    #[test]
+    fn stopping_without_joining_is_a_failure() {
+        let (left, failed) = judge(
+            Some(attempt("home", true, SOON)),
+            &snapshot(false, Some("other")),
+        );
+
+        assert_eq!(left, None);
+        assert_eq!(failed.as_deref(), Some("home"));
+    }
+
+    #[test]
+    fn an_attempt_that_never_starts_times_out() {
+        let (left, failed) = judge(
+            Some(attempt("home", false, ATTEMPT_TIMEOUT + SOON)),
+            &snapshot(false, None),
+        );
+
+        assert_eq!(left, None);
+        assert_eq!(failed.as_deref(), Some("home"));
+    }
+}

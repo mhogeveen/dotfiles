@@ -16,7 +16,7 @@ use amane::{
 };
 
 use crate::calendar::{self, Date};
-use crate::panels::{CALENDAR, Panels};
+use crate::panels::{CALENDAR, Panels, ui};
 use crate::theme::Theme;
 
 // read it in a view to redraw once a minute, like the notification center's "5m ago"
@@ -32,6 +32,10 @@ const DAY_NAMES: [&str; 7] = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
 // how many letters of a month's name the bar shows: Nov
 const MONTH_LETTERS: usize = 3;
+
+// the clock in the bar: a fixed width, so it stays centered as the text changes
+const WIDTH: f32 = 300.0;
+const GAP: f32 = 8.0;
 
 // the local time, timezone and daylight saving included, read from the C library
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -129,7 +133,7 @@ pub fn view(t: &Theme) -> Rectangle {
     let clock = Clock::read();
 
     Rectangle::new()
-        .width(300.0)
+        .width(WIDTH)
         .height(Parent)
         .align_child(Center, Center)
         .cursor(Pointer)
@@ -138,11 +142,11 @@ pub fn view(t: &Theme) -> Rectangle {
         })
         .child(
             Row::new(children![
-                Text::new(&clock.time).color(t.fg_dim).size(14.0),
-                Text::new(&clock.date).color(t.fg_dim).size(12.0)
+                Text::new(&clock.time).color(t.fg_dim).size(ui::TEXT_BODY),
+                Text::new(&clock.date).color(t.fg_dim).size(ui::TEXT_SMALL)
             ])
             .align(Center)
-            .gap(8.0),
+            .gap(GAP),
         )
 }
 

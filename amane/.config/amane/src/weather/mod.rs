@@ -17,6 +17,7 @@ use std::time::{Duration, Instant};
 
 use amane::Service;
 
+use crate::command::{self, Failure};
 use crate::{clock, state};
 
 pub use forecast::Forecast;
@@ -196,11 +197,17 @@ fn fetch(place: &Place) -> Result<Forecast, String> {
         place.latitude, place.longitude
     );
 
-    let output = Command::new("curl")
-        .args(["--silent", "--show-error", "--fail", "--max-time", "10"])
-        .arg(&url)
-        .output()
-        .map_err(|error| format!("couldn't run curl: {error}"))?;
+    let output = command::capture(
+        Command::new("curl")
+            .args(["--silent", "--show-error", "--fail"])
+            .args(["--max-time", command::CURL_MAX_TIME])
+            .arg(&url),
+        command::CURL_TIMEOUT,
+    )
+    .map_err(|failure| match failure {
+        Failure::Start => String::from("couldn't run curl"),
+        Failure::Timeout => String::from("no answer in time"),
+    })?;
 
     if !output.status.success() {
         let error = String::from_utf8_lossy(&output.stderr);

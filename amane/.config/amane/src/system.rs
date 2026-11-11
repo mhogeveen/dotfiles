@@ -17,6 +17,7 @@ use std::time::{Duration, Instant};
 
 use amane::Service;
 
+use crate::command;
 use crate::panels::{Panels, SYSTEM};
 
 // one-second ticks between reads while the panel is open
@@ -24,6 +25,9 @@ const REFRESH_EVERY: u32 = 30;
 
 // readings kept for the network speed: four readings span the last 3 seconds
 const SAMPLES: usize = 4;
+
+// df can hang on a stuck network mount; / answers at once
+const DF_TIMEOUT: Duration = Duration::from_secs(3);
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Disk {
@@ -56,8 +60,6 @@ pub struct SystemInfo {
 
     // None while there's no default route
     pub network: Option<NetworkSpeed>,
-
-    was_open: bool,
 }
 
 impl Service for SystemInfo {
@@ -72,7 +74,6 @@ impl Service for SystemInfo {
             uptime_minutes: uptime_minutes(),
             disk: disk("/"),
             network: None,
-            was_open: false,
         }
     }
 
@@ -85,13 +86,15 @@ impl Service for SystemInfo {
         let mut ticks: u32 = 0;
         let mut sampler = Sampler::default();
 
+        // kept here, not in the service, so opening the panel redraws nothing by itself
+        let mut was_open = false;
+
         loop {
             thread::sleep(Self::interval());
 
             ticks = ticks.wrapping_add(1);
 
             let open = Panels::read().is_open(SYSTEM);
-            let was_open = SystemInfo::read().was_open;
 
             // a closed panel reads nothing, and the speed starts over when it opens
             if !open {
@@ -100,6 +103,8 @@ impl Service for SystemInfo {
 
             let due = open && (!was_open || ticks % REFRESH_EVERY == 0);
 
+            was_open = open;
+
             let fresh = due.then(|| (uptime_minutes(), disk("/")));
 
             let network = open.then(|| sampler.sample());
@@ -107,13 +112,11 @@ impl Service for SystemInfo {
             let changed = {
                 let info = SystemInfo::read();
 
-                open != info.was_open
-                    || fresh.is_some_and(|(uptime, disk)| {
-                        uptime != info.uptime_minutes || disk != info.disk
-                    })
-                    || network
-                        .as_ref()
-                        .is_some_and(|network| *network != info.network)
+                fresh.is_some_and(|(uptime, disk)| {
+                    uptime != info.uptime_minutes || disk != info.disk
+                }) || network
+                    .as_ref()
+                    .is_some_and(|network| *network != info.network)
             };
 
             if !changed {
@@ -121,8 +124,6 @@ impl Service for SystemInfo {
             }
 
             let mut info = SystemInfo::write();
-
-            info.was_open = open;
 
             if let Some((uptime, disk)) = fresh {
                 info.uptime_minutes = uptime;
@@ -246,12 +247,10 @@ mod statvfs {
 
 // `df -B1 --output=size,used /`, for when statvfs isn't available
 fn df(path: &str) -> Option<Disk> {
-    let output = Command::new("df")
-        .args(["-B1", "--output=size,used", path])
-        .output()
-        .ok()?;
-
-    let text = String::from_utf8_lossy(&output.stdout);
+    let text = command::read(
+        Command::new("df").args(["-B1", "--output=size,used", path]),
+        DF_TIMEOUT,
+    )?;
 
     let mut numbers = text.lines().nth(1)?.split_whitespace();
 
@@ -395,6 +394,48 @@ pub fn speed(bytes_per_second: f64) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn sizes_read_in_gib_with_one_decimal() {
+        assert_eq!(gib(0), "0.0");
+        assert_eq!(gib(1024 * 1024 * 1024), "1.0");
+        assert_eq!(gib(2_254_857_830), "2.1");
+    }
+
+    #[test]
+    fn a_disk_is_never_past_full() {
+        assert_eq!(Disk { used: 0, total: 0 }.percent(), 0);
+        assert_eq!(
+            Disk {
+                used: 50,
+                total: 200
+            }
+            .percent(),
+            25
+        );
+        assert_eq!(
+            Disk {
+                used: 300,
+                total: 200
+            }
+            .percent(),
+            100
+        );
+    }
+
+    #[test]
+    fn a_speed_needs_two_readings_apart_in_time() {
+        let start = Instant::now();
+        let mut sampler = Sampler::default();
+
+        sampler.readings.push_back((start, 1_000, 500));
+        assert_eq!(sampler.rate(), None);
+
+        sampler
+            .readings
+            .push_back((start + Duration::from_secs(2), 5_000, 1_500));
+        assert_eq!(sampler.rate(), Some((2_000.0, 500.0)));
+    }
 
     #[test]
     fn root_can_be_measured() {

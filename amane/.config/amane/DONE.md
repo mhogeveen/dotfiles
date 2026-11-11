@@ -221,3 +221,28 @@ are kept, so references between the two files still work.
 - **To settle:** the step size, and whether the popup should also show for
   changes made with the monitor's own buttons, which can only be noticed by
   polling DDC (about 0.4 s per read).
+
+### 20. Audit findings (2026-11-11)
+- **Status:** done in four steps (see HISTORY.md, session "audit"):
+  - the most important bugs: Tailscale `up` hanging on a needed login,
+    time limits for the external calls that read output
+    (`src/command.rs`), weather and cover retries, popups held after a
+    hover, the wallpaper picker applying None, an empty lock-screen password
+  - round A, smaller bugs: `%20` icon paths, a bare `<` in bodies, atomic
+    state saves, lost launch counts, zombies (`command::feed`), overflowing
+    text, history save logging, reused PipeWire ids, `date` replaced by
+    `clock::local_now` (libc `localtime_r`), nested service reads
+  - round B, UX gaps: pairing keys, keyboard highlight in the network and
+    Bluetooth lists, mic volume keys, scrolling audio device lists, the
+    network panel's reserved list height, "No Wi-Fi adapter", errors
+    cleared on close, wording
+  - round C + D, structure: `ui` helpers (`header`, `note`, `line`, `card`,
+    `error_line`, `list_box`, `text_width`, a button base, text size
+    constants), `list::highlight_list`, `panels::letter`,
+    `state::runtime_path`, `bar::HEIGHT`, a `corner` flag in the panel
+    registry, shared glyphs, `command::read`/`capture` for wpctl, ip, df,
+    curl and grim, `panels/network/` split into `mod.rs` and
+    `vpn_cards.rs`, long functions split, module comments, no `bt`/`net`
+    aliases, `was_open` kept in the poll loops, empty `listen()` for
+    input-only services, tests (74 at the start, 107 after)
+- **Left on purpose:** see item 21.

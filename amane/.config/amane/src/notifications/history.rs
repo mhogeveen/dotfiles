@@ -9,7 +9,6 @@
  * clicking them does nothing; × and Clear all remove them
  */
 
-use std::env;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::thread;
@@ -158,20 +157,16 @@ pub fn clear() {
 fn forget_image(image: &str) {
     let path = Path::new(image);
 
-    if runtime().is_some_and(|runtime| path.parent() == Some(&runtime.join(AMANE_IMAGES))) {
+    if state::runtime_dir()
+        .is_some_and(|runtime| path.parent() == Some(&runtime.join(AMANE_IMAGES)))
+    {
         let _ = fs::remove_file(path);
     }
 }
 
-fn runtime() -> Option<PathBuf> {
-    env::var_os("XDG_RUNTIME_DIR")
-        .map(PathBuf::from)
-        .filter(|path| path.is_absolute())
-}
-
 // none without a runtime folder: then nothing is kept
 fn file() -> Option<PathBuf> {
-    Some(runtime()?.join("amane-shell").join(FILE))
+    state::runtime_path(FILE)
 }
 
 // at most KEEP, the newest; the list is oldest first

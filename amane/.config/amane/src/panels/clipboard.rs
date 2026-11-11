@@ -136,9 +136,7 @@ impl Service for Armed {
     }
 
     // only changes through input
-    fn interval() -> Duration {
-        Duration::from_secs(3600)
-    }
+    fn listen() {}
 }
 
 // anything else done in between, like moving or typing, takes the first press back
@@ -238,7 +236,11 @@ impl Picker for Clipboard {
 
         let previews = Previews::read();
 
-        let note = |text: &str| Text::new(String::from(text)).size(13.0).color(t.comment);
+        let note = |text: &str| {
+            Text::new(String::from(text))
+                .size(ui::TEXT_NOTE)
+                .color(t.comment)
+        };
 
         let area = match previews.get(&entry.id) {
             None => area.align_child(Center, Center).child(note("…")),
@@ -247,9 +249,12 @@ impl Picker for Clipboard {
                 .align_child(Center, Center)
                 .child(note("Can't show this entry")),
 
-            Some(Preview::Text(text)) => {
-                area.child(Text::new(text.as_str()).size(13.0).color(t.fg).wrap())
-            }
+            Some(Preview::Text(text)) => area.child(
+                Text::new(text.as_str())
+                    .size(ui::TEXT_NOTE)
+                    .color(t.fg)
+                    .wrap(),
+            ),
 
             Some(Preview::Image(path)) => {
                 let picture = Rectangle::new()
@@ -281,7 +286,11 @@ impl Picker for Clipboard {
             .width(Parent)
             .height(ui::BUTTON)
             .align_child(Start, Center)
-            .child(Text::new(entries(count)).size(13.0).color(t.comment));
+            .child(
+                Text::new(entries(count))
+                    .size(ui::TEXT_NOTE)
+                    .color(t.comment),
+            );
 
         let button = if Armed::read().clear {
             Rectangle::new()
@@ -293,7 +302,7 @@ impl Picker for Clipboard {
                 .on_click(|_| clear_clicked())
                 .child(
                     Text::new(format!("Click again to clear {}", entries(count)))
-                        .size(13.0)
+                        .size(ui::TEXT_NOTE)
                         .color(t.on_accent),
                 )
         } else {
