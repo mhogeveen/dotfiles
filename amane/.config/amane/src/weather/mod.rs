@@ -26,6 +26,9 @@ const STATE: &str = "weather";
 // how old a forecast may get before opening the calendar fetches a new one
 const STALE: Duration = Duration::from_secs(30 * 60);
 
+// how long after a failed fetch opening the calendar tries again
+const RETRY: Duration = Duration::from_secs(60);
+
 const API: &str = "https://api.open-meteo.com/v1/forecast";
 
 // what's asked for; forecast.rs finds each by name in the answer
@@ -59,8 +62,9 @@ pub struct Weather {
     fetched_at: Option<String>,
     fetched: Option<Instant>,
 
-    // why the last fetch failed; the older forecast, if any, stays
+    // why and when the last fetch failed; the older forecast, if any, stays
     error: Option<String>,
+    failed: Option<Instant>,
 
     // a fetch is due on the next open even if the forecast is fresh
     forced: bool,
@@ -79,6 +83,7 @@ impl Service for Weather {
             fetched_at: None,
             fetched: None,
             error: None,
+            failed: None,
             forced: false,
         }
     }
@@ -106,8 +111,29 @@ impl Weather {
     }
 
     fn stale(&self) -> bool {
-        self.forced || self.fetched.is_none_or(|fetched| fetched.elapsed() > STALE)
+        due(
+            self.forced,
+            self.fetched.map(|fetched| fetched.elapsed()),
+            self.failed.map(|failed| failed.elapsed()),
+        )
     }
+}
+
+/*
+ * whether to fetch, from how long ago the last good and the last failed fetch
+ * were: a failure is tried again after RETRY rather than STALE, so a calendar
+ * opened while offline doesn't keep saying so for half an hour
+ */
+fn due(forced: bool, since_fetched: Option<Duration>, since_failed: Option<Duration>) -> bool {
+    if forced {
+        return true;
+    }
+
+    if let Some(since_failed) = since_failed {
+        return since_failed > RETRY;
+    }
+
+    since_fetched.is_none_or(|since_fetched| since_fetched > STALE)
 }
 
 // one fetch at a time; not part of the service, so starting one redraws nothing
@@ -129,6 +155,9 @@ pub fn refresh_if_stale() {
     }
 
     thread::spawn(move || {
+        // cleared as the fetch starts, so a refresh asked for during it makes another one
+        Weather::write().forced = false;
+
         let result = fetch(&place);
 
         {
@@ -136,16 +165,18 @@ pub fn refresh_if_stale() {
 
             // the place changed while fetching, the answer is for the old one
             if weather.place == place {
-                weather.fetched = Some(Instant::now());
-                weather.forced = false;
-
                 match result {
                     Ok(forecast) => {
                         weather.forecast = Some(forecast);
+                        weather.fetched = Some(Instant::now());
                         weather.fetched_at = Some(wall_clock());
                         weather.error = None;
+                        weather.failed = None;
                     }
-                    Err(error) => weather.error = Some(error),
+                    Err(error) => {
+                        weather.error = Some(error);
+                        weather.failed = Some(Instant::now());
+                    }
                 }
             }
         }
@@ -278,6 +309,7 @@ fn set_location(arguments: &[String]) -> String {
         weather.place = place;
         weather.forecast = None;
         weather.fetched = None;
+        weather.failed = None;
         weather.fetched_at = None;
         weather.error = None;
     }
@@ -294,6 +326,26 @@ fn set_location(arguments: &[String]) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    const MINUTE: Duration = Duration::from_secs(60);
+
+    #[test]
+    fn a_fetch_is_due_when_old_missing_or_forced() {
+        assert!(due(false, None, None));
+        assert!(due(false, Some(STALE + MINUTE), None));
+        assert!(!due(false, Some(MINUTE), None));
+        assert!(due(true, Some(MINUTE), None));
+    }
+
+    #[test]
+    fn a_failure_is_tried_again_soon() {
+        // offline at the first open: not again at once, but well before STALE
+        assert!(!due(false, None, Some(Duration::from_secs(10))));
+        assert!(due(false, None, Some(RETRY + MINUTE)));
+
+        // a failure after a good fetch retries too, the old forecast staying
+        assert!(due(false, Some(MINUTE), Some(RETRY + MINUTE)));
+    }
 
     #[test]
     fn places_read_back() {

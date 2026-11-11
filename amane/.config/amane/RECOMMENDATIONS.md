@@ -136,6 +136,61 @@ Settled earlier, no need to revisit:
 - **To settle:** whether it's wanted, how dim, and when (e.g. at 4.5 min,
   before the 5 min lock).
 
+## Code health
+
+### 20. Audit findings (2026-11-11)
+- **Status:** open. The most important bugs were fixed in the same session
+  (see HISTORY.md): Tailscale `up` hanging on a needed login, no time limit on
+  tailscale/ddcutil (`src/command.rs`), weather not retrying after a failure,
+  covers never retried, popups held forever after a hover, the wallpaper
+  picker applying None on Enter, an empty lock-screen password.
+- **Smaller bugs left:**
+  - notification icons with `%20` in a `file://` path don't show
+    (`notifications/mod.rs` `icon_path`; reuse `covers::file_path`)
+  - `notifications::plain` drops everything after a bare `<` ("x < y")
+  - `state::save` isn't atomic (temp file + rename, like
+    `notifications/history.rs`); a crash mid-write empties the state file
+  - `usage.rs` saves on one thread per launch; two quick launches can save
+    out of order and lose a count
+  - zombies on error paths: `screenshot.rs` (wl-copy stdin write fails) and
+    `clipboard_preview.rs` (decode stdin) return before `wait()`
+  - text overflowing its space: the network panel's status line with a long
+    SSID, `ui::title` with a long weather place, interface names in the
+    system panel (72 px)
+  - `notifications/history.rs` logs a failed save every second
+  - the audio device-name cache is keyed by PipeWire id (ids get reused) and
+    never refreshed
+  - `amane::output` panics if the program can't start (`clock.rs`,
+    `weather/mod.rs`, `screenshot.rs` use it to run `date`); `localtime_r`
+    through libc would remove all three
+  - a few nested service reads (`osd.rs` `popup()`, `notifications::has_unread`,
+    `popups.rs` view) work by consistent order only
+- **Duplication worth a helper:** running a command and reading its output
+  (~12 copies; `command::capture` exists now), the runtime folder path (three
+  copies, three different fallbacks), muted note/card/list box/header/error
+  line/fixed-height line in the panels (into `panels/ui.rs`), the letter-key
+  boilerplate (7 panels), `text_width` (`chars × size × 0.6`, 3 copies), the
+  refresh glyph under 4 names, the bar height `32` in `bar.rs` and
+  `backdrop.rs`, the top-right panel list in `popups.rs`.
+- **UX gaps:** Bluetooth pairing Confirm/Cancel have no keys; network rows
+  can't be reached by keyboard; no mic volume keys; a 5th audio device pushes
+  the Input section out (needs a ScrollArea like network/bluetooth); the
+  Tailscale card can squeeze the Wi-Fi list to under a row; network `r` scans
+  with Wi-Fi off; no "no Wi-Fi adapter" state; errors stay after closing a
+  panel (no `on_close` for bluetooth, audio, system); wording ("1 entries",
+  lowercase "scanning", "press ↻" instead of `r`, calendar's `'t'` hint style).
+- **Structure and rules:** split `panels/network.rs` (715 lines; the
+  Tailscale card into its own file) and the long functions in
+  `calendar.rs`, `audio.rs`, `bluetooth.rs`; module block comments missing in
+  `bar.rs`, `main.rs`, `panels/backdrop.rs`; `bt`/`net` aliases in `bar.rs`;
+  text sizes and button widths without constants; four services write
+  `was_open` with a normal write (a redraw each open/close);
+  input-only services use a 3600 s `interval()` instead of `fn listen() {}`.
+- **Tests missing for:** `network::judge`, `Toasts::shows`, the `wpctl
+  inspect` parsing, `theme::from_name`/`next`, `system` formatting, `plain`,
+  `time_ago`.
+- **To settle:** which parts are worth doing, and in what order.
+
 ## Worth reporting to amane upstream
 
 Behavior the shell works around, better fixed in amane itself. Could be written

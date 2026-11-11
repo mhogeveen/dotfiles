@@ -74,6 +74,8 @@ impl Service for Toasts {
         loop {
             thread::sleep(Self::interval());
 
+            forget_lost_hover();
+
             let shown = {
                 let toasts = Toasts::read();
                 let notifications = Notifications::read();
@@ -126,20 +128,27 @@ impl Toasts {
         Toasts::write().hidden.insert((id, received));
     }
 
+    /*
+     * amane tells a leave before the next enter, and by the card's place in the
+     * list, so after cards moved a leave can carry another id: any leave means the
+     * pointer left the hovered card, whichever it was
+     */
     fn hover(id: u32, inside: bool) {
         let mut toasts = Toasts::write();
 
         if inside {
             toasts.hovered = Some(id);
-        } else {
-            if toasts.hovered == Some(id) {
-                toasts.hovered = None;
-            }
 
-            toasts
-                .held_until
-                .insert(id, SystemTime::now() + HOVER_GRACE);
+            return;
         }
+
+        let until = SystemTime::now() + HOVER_GRACE;
+
+        if let Some(hovered) = toasts.hovered.take() {
+            toasts.held_until.insert(hovered, until);
+        }
+
+        toasts.held_until.insert(id, until);
     }
 }
 
@@ -152,6 +161,46 @@ fn shown<'a>(toasts: &Toasts, list: &'a [Notification]) -> Vec<&'a Notification>
         .filter(|notification| toasts.shows(notification, now))
         .take(MAX_SHOWN)
         .collect()
+}
+
+/*
+ * amane follows the pointer by a card's place in the list, not by the card, so
+ * when the hovered card goes away (a panel opens in the corner by keybind, the
+ * notification closes) its leave may never come, or go to the card now in its
+ * place; the hover would then hold its popup forever. the pointer can't be on a
+ * card that isn't drawn, so then it counts as left, with the usual grace
+ */
+fn forget_lost_hover() {
+    let Some(id) = Toasts::read().hovered else {
+        return;
+    };
+
+    let live = Notifications::read()
+        .list()
+        .iter()
+        .any(|notification| notification.id() == id);
+
+    if live && !corner_taken() {
+        return;
+    }
+
+    let mut toasts = Toasts::write();
+
+    if toasts.hovered == Some(id) {
+        toasts.hovered = None;
+        toasts
+            .held_until
+            .insert(id, SystemTime::now() + HOVER_GRACE);
+    }
+}
+
+// a panel open in the popups' corner hides them (the center lists them anyway)
+fn corner_taken() -> bool {
+    let panels = Panels::read();
+
+    [NOTIFICATIONS, NETWORK, BLUETOOTH, AUDIO, SYSTEM]
+        .iter()
+        .any(|name| panels.is_open(name))
 }
 
 fn shown_ids(toasts: &Toasts, list: &[Notification]) -> Vec<u32> {
@@ -173,15 +222,7 @@ pub fn view(monitor: &Monitor) -> LayerWindow {
      * none while a panel holds the same corner (the center lists them anyway),
      * and only the focused monitor gets popups
      */
-    let right_panel = {
-        let panels = Panels::read();
-
-        [NOTIFICATIONS, NETWORK, BLUETOOTH, AUDIO, SYSTEM]
-            .iter()
-            .any(|name| panels.is_open(name))
-    };
-
-    let hidden = right_panel || !panels::is_focused(monitor);
+    let hidden = corner_taken() || !panels::is_focused(monitor);
 
     let mut cards: Vec<Box<dyn Widget>> = Vec::new();
     let mut areas = Vec::new();

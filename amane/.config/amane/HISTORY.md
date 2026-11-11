@@ -30,7 +30,7 @@ each finished recommendation by number; `AGENTS.md` the current state.
   Tailscale card. Tailscale was installed by the user (531 Mullvad exit
   nodes on the tailnet).
 
-## This session
+## Session: exit nodes to brightness
 
 1. **Exit nodes reworked.** With 531 Mullvad exit nodes the full peer list
    (850 KB) was unworkable. Status now comes from `tailscale status --json
@@ -140,6 +140,45 @@ each finished recommendation by number; `AGENTS.md` the current state.
 
 17. **Context files.** This file and `AGENTS.md` were written so a new session
     starts with the right context.
+
+## Session: audit (2026-11-11)
+
+1. **Audit.** Two read-only sweeps (services, panels), with the main claims
+   checked in the code. One sweep reported line numbers that couldn't exist,
+   so only what was verified was kept. What wasn't fixed is item 20 in
+   `RECOMMENDATIONS.md`.
+
+2. **The most important bugs fixed:**
+   - **Time limits on external calls:** new `src/command.rs` (`capture`)
+     kills a program that runs too long and waits on it. tailscale (5 s for
+     queries, 20 s for commands) and ddcutil (5 s, 15 s for detect) use it,
+     so a hang can't leave `vpn.busy` or brightness's `WRITING` set forever.
+   - **Tailscale:** `v` while a login is needed opens the login page instead
+     of running `tailscale up`, which waited for the browser login with no
+     end and left every Tailscale button dead. `up` also gets `--timeout=15s`.
+   - **Weather:** a failed fetch is tried again after 1 min, not 30 (the time
+     of failure is kept apart from the last good fetch; the check is the pure
+     `due()`, tested). `forced` is cleared when a fetch starts, so a refresh
+     during a fetch isn't lost.
+   - **Covers:** failures are kept with their time and retried after 1 min,
+     not remembered as "no cover" for the session; curl writes to `.part`
+     and renames, so a cut-off download isn't taken for a cover.
+   - **Popups:** amane tracks hover by a card's place in the list, sending
+     the leave before the next enter. Any leave now ends the hover, whichever
+     id it carries, and `listen()` drops a hover whose card can't be drawn
+     (a corner panel open, the notification gone). Before, a popup could
+     stay on screen for good.
+   - **Wallpaper picker:** with the picture in use not in the list, nothing
+     is selected and Enter only closes (it used to apply None); `r` resets
+     the selection and preview so they can't disagree.
+   - **Lock screen:** an empty Enter is ignored (it cost a PAM attempt and
+     said "Wrong password").
+
+   Checked live: brightness up/down through the new helper (put back at
+   50%), a popup timing out with a corner panel opened and closed in
+   between, the picker opening on the picture in use. The hover itself, the
+   Tailscale login case and the lock screen weren't exercised (no pointer
+   control, Tailscale in use, locking needs asking).
 
 ## Habits worth keeping
 

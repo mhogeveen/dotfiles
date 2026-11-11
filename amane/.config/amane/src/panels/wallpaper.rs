@@ -113,7 +113,11 @@ fn key_pressed(key: Key) {
         Key::Character(letter) => match letter.to_ascii_lowercase() {
             KEY_PREVIOUS => step(-1),
             KEY_NEXT => step(1),
-            KEY_REREAD => wallpaper::reread(),
+            /*
+             * the list can change under the selection, so it starts over from the
+             * one in use, the preview with it, or the two would disagree
+             */
+            KEY_REREAD => reset(),
             _ => {}
         },
         _ => {}
@@ -136,22 +140,27 @@ fn items() -> Vec<Option<PathBuf>> {
     items
 }
 
-// where the selection is: as moved, or else on the one in use (None when it isn't in the folder)
-fn selected(items: &[Option<PathBuf>]) -> usize {
+/*
+ * where the selection is: as moved, or else on the one in use. nothing is
+ * selected while the one in use isn't in the list (moved or deleted, or the
+ * folder still being read), so Enter can't swap it for the None tile unasked
+ */
+fn selected(items: &[Option<PathBuf>]) -> Option<usize> {
     if let Some(index) = Strip::read().selected {
-        return index.min(items.len().saturating_sub(1));
+        return Some(index.min(items.len().saturating_sub(1)));
     }
 
     let current = Wallpaper::read().current().map(PathBuf::from);
 
-    items.iter().position(|item| *item == current).unwrap_or(0)
+    items.iter().position(|item| *item == current)
 }
 
-// moves along and shows that one on the background
+// moves along and shows that one on the background; from no selection it starts at the first tile
 fn step(by: isize) {
     let items = items();
 
     let index = selected(&items)
+        .unwrap_or(0)
         .saturating_add_signed(by)
         .min(items.len() - 1);
 
@@ -160,12 +169,16 @@ fn step(by: isize) {
     wallpaper::preview(items[index].clone());
 }
 
-// keeps the selected one and closes
+// keeps the selected one and closes; with nothing selected, the one in use stays
 fn keep() {
     let items = items();
-    let index = selected(&items);
 
-    pick(items[index].clone());
+    match selected(&items) {
+        Some(index) => pick(items[index].clone()),
+        None => {
+            let _ = Panels::close(WALLPAPER);
+        }
+    }
 }
 
 fn pick(item: Option<PathBuf>) {
@@ -190,6 +203,7 @@ fn content(t: &Theme, width: f32) -> Rectangle {
 
     // the selection stays in the middle where it can, the ends stay put
     let start = selected
+        .unwrap_or(0)
         .saturating_sub(fits / 2)
         .min(items.len().saturating_sub(fits));
 
@@ -198,7 +212,12 @@ fn content(t: &Theme, width: f32) -> Rectangle {
     for (index, item) in items.iter().enumerate().skip(start).take(fits) {
         let in_use = *item == current;
 
-        tiles.push(Box::new(tile(t, item.clone(), index == selected, in_use)));
+        tiles.push(Box::new(tile(
+            t,
+            item.clone(),
+            selected == Some(index),
+            in_use,
+        )));
     }
 
     // with nothing but None to pick, the room beside it says why
@@ -263,7 +282,7 @@ fn header(t: &Theme, folder: &Folder) -> Row {
     Row::new(children![
         title,
         place,
-        ui::key_button(t, ICON_REFRESH, KEY_REREAD, |_| wallpaper::reread()),
+        ui::key_button(t, ICON_REFRESH, KEY_REREAD, |_| reset()),
     ])
     .gap(HEADER_GAP)
     .align(Center)

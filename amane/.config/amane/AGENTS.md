@@ -46,7 +46,7 @@ things came to be the way they are.
 - **Format:** `rustfmt --edition 2024 src/main.rs` (formats every module).
 - **Test:** `./test.sh` runs `cargo test` on the cache project with the same
   toolchain and libraries as `amane compile` (it sources amane's nix wrapper
-  minus its `exec` line). `./test.sh system::` filters. 74 tests at last count;
+  minus its `exec` line). `./test.sh system::` filters. 79 tests at last count;
   add tests for pure logic (parsers, formatting, state files).
 - **Restart the running shell:** `amane compile --restart`, or `amane restart`
   after a compile. A restart loses in-memory state (panel state, popups); the
@@ -89,7 +89,7 @@ things came to be the way they are.
   their changes.
 - **Recommendations:** keep `RECOMMENDATIONS.md` statuses current. When an item
   is built, move it to `DONE.md` keeping its number, with a status line saying
-  what was built. New ideas get the next free number (19 was the last).
+  what was built. New ideas get the next free number (20 was the last).
 - **Code style:**
   - lowercase explanatory comments, `/* */` for blocks, `//` for lines; say
     why, not what. Every module starts with a block comment on what it is.
@@ -188,6 +188,9 @@ bar, backdrop, notification popups, osd, every panel, and the lock screen.
 - `system.rs`: `SystemInfo` (os, kernel, uptime, disk, network speed).
 - `theme.rs`: `Theme` colors, `Accent` service and the `accent` IPC.
 - `json.rs`: small JSON reader (`parse`, `Value` getters) and `quote()`.
+- `command.rs`: `capture(command, timeout)`, a program's output with a time
+  limit (kills and waits on timeout); for tailscale and ddcutil, so a hung
+  call can't leave a busy flag set. Use it for new external calls.
 - `state.rs`: `path(name)`/`save(name, text)` in the state folder.
 - `calendar.rs`, `calculator.rs`, `usage.rs`, `clipboard_preview.rs`, `clock.rs`.
 
@@ -248,8 +251,9 @@ gutter (week numbers) plus 7 columns of 50 px, 6 px apart, so hourly and daily
 forecast slots line up under the weekdays. Cells are `bg1`; today, "Now" and
 "Today" get the accent fill. Headers: title left, key buttons right (`h`/`l`
 months, `t` today, `r` refetch). Weather: Open-Meteo CSV (no key), fetched on
-open at most every 30 min, place via the `weather` IPC (Hilversum default).
-Rain chance is always shown, 0% included.
+open at most every 30 min (a failed fetch is tried again after 1 min), place
+via the `weather` IPC (Hilversum default). Rain chance is always shown, 0%
+included.
 
 ### 5.6 Wallpaper
 `wallpaper.rs`: `current` (kept) and `shown` (previewed) as `Option<PathBuf>`.
@@ -261,8 +265,11 @@ scale 2), or `Color::TRANSPARENT` for None so mango's `root_color` (equal to
 folder's pictures by name (recognized by their first bytes, `is_picture`),
 read each time it opens or on `r`. h/l/arrows/wheel move and preview on the
 real background (only visible where no window covers it, by choice),
-Enter/click keeps, Escape/outside restores. Selected tile: 2 px accent border;
-in use: " · in use" after its name (names shortened to fit; left-aligned).
+Enter/click keeps, Escape/outside restores. When the one in use isn't in the
+list (moved, deleted, or the folder still being read), nothing is selected and
+Enter only closes; `r` starts over from the one in use, preview included.
+Selected tile: 2 px accent border; in use: " · in use" after its name (names
+shortened to fit; left-aligned).
 
 ### 5.7 Lock and session
 `session::watch_logind` locks on logind's `PrepareForSleep` and on this
@@ -303,7 +310,10 @@ peers). Exit nodes: only None, what `tailscale exit-node suggest` suggests
 (asked on panel open and after changes) and the one in use if different
 (named via `tailscale whois`, cached by IP). Polls every 5 s (2 s with the
 network or system panel open); shield badge on the bar's network icon, accent
-when all traffic goes through the VPN.
+when all traffic goes through the VPN. Every tailscale call has a time limit
+(`command::capture`); `up` also gets `--timeout=15s`. While tailscale needs a
+login and has a login page, `v` opens that page instead of running `up`
+(which would only wait for the login).
 
 ## 6. amane gotchas
 
@@ -356,7 +366,8 @@ when all traffic goes through the VPN.
 ## 8. Where to pick up
 
 `RECOMMENDATIONS.md`: open are 4 (missing keybinds), 12 (leftover configs),
-15 (a key for the clipboard's Clear history), 18 (dimming before the lock);
+15 (a key for the clipboard's Clear history), 18 (dimming before the lock),
+20 (the rest of the 2026-11-11 audit: smaller bugs, duplication, UX gaps);
 10 (polkit agent) is blocked on amane, 17 (floating window decorations) is
 parked. Its "Already decided" list and the upstream list are worth reading
 before proposing anything. `DONE.md` holds items 1, 2, 3, 5–9, 11, 13, 14,

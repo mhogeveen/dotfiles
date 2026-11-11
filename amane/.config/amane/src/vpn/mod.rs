@@ -236,9 +236,29 @@ pub const ICON_SHIELD: &str = "\u{f0565}";
  * state is read again at once instead of at the next check
  */
 impl Vpn {
-    // up or starting switches it off, anything else on
+    /*
+     * up or starting switches it off, anything else on. a needed login with its
+     * page known opens that page: `tailscale up` would only wait for the login
+     * (until its --timeout). without the page yet, `up` is what asks for one
+     */
     pub fn toggle_tailscale() {
-        let active = Vpn::read().tailscale.as_ref().is_some_and(Status::active);
+        let (active, login_page) = {
+            let vpn = Vpn::read();
+            let status = vpn.tailscale.as_ref();
+
+            (
+                status.is_some_and(Status::active),
+                status.is_some_and(|status| {
+                    status.backend == Backend::NeedsLogin && !status.auth_url.is_empty()
+                }),
+            )
+        };
+
+        if login_page {
+            Vpn::log_in();
+
+            return;
+        }
 
         run(move || {
             if active {

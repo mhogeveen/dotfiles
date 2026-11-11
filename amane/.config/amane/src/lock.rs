@@ -70,6 +70,11 @@ pub fn view(_monitor: &Monitor) -> LayerWindow {
                 .size(16.0)
                 .color(t.fg)
                 .on_submit(|password| {
+                    // an empty Enter would cost a PAM attempt and say "Wrong password"
+                    if password.is_empty() {
+                        return;
+                    }
+
                     TextInput::set_text(INPUT, "");
 
                     Lock::unlock(&password);

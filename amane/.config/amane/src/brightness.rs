@@ -23,10 +23,17 @@ use std::time::{Duration, Instant};
 
 use amane::{Brightness, Service};
 
-use crate::panels;
+use crate::{command, panels};
 
 // the panel reads the monitor again when it's been open this long
 const READ_EVERY: Duration = Duration::from_secs(10);
+
+/*
+ * a read or write takes ~0.4 s, a detect about a second; past these a hung
+ * ddcutil is killed, so the one-at-a-time flags are cleared and later changes go through
+ */
+const CALL_TIMEOUT: Duration = Duration::from_secs(5);
+const DETECT_TIMEOUT: Duration = Duration::from_secs(15);
 
 // VCP feature code for brightness
 const VCP_BRIGHTNESS: &str = "10";
@@ -352,14 +359,16 @@ fn write_newest() {
     }
 }
 
-// ddcutil's answer, None when it isn't installed or failed
+// ddcutil's answer, None when it isn't installed, failed or hung
 fn ddcutil(bus: u32, arguments: &[&str]) -> Option<String> {
-    let output = Command::new("ddcutil")
-        .arg("--bus")
-        .arg(bus.to_string())
-        .args(arguments)
-        .output()
-        .ok()?;
+    let output = command::capture(
+        Command::new("ddcutil")
+            .arg("--bus")
+            .arg(bus.to_string())
+            .args(arguments),
+        CALL_TIMEOUT,
+    )
+    .ok()?;
 
     output
         .status
@@ -369,7 +378,10 @@ fn ddcutil(bus: u32, arguments: &[&str]) -> Option<String> {
 
 // every monitor ddcutil can talk to, by connector name like DP-1
 fn detect() -> HashMap<String, Bus> {
-    let Ok(output) = Command::new("ddcutil").args(["detect", "--brief"]).output() else {
+    let Ok(output) = command::capture(
+        Command::new("ddcutil").args(["detect", "--brief"]),
+        DETECT_TIMEOUT,
+    ) else {
         return HashMap::new();
     };
 

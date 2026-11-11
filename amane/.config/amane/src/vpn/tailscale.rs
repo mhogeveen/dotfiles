@@ -10,9 +10,21 @@
  * tailscaled refuses them from a normal user
  */
 
-use std::process::Command;
+use std::process::{Command, Output};
+use std::time::Duration;
 
+use crate::command::{self, Failure};
 use crate::json::{self, Value};
+
+// status, whois and suggest answer in well under a second while tailscaled is fine
+const QUERY_TIMEOUT: Duration = Duration::from_secs(5);
+
+/*
+ * `up` waits until tailscaled is running; its own --timeout gives up first, and
+ * COMMAND_TIMEOUT is the backstop for any command that hangs
+ */
+const UP_TIMEOUT: &str = "--timeout=15s";
+const COMMAND_TIMEOUT: Duration = Duration::from_secs(20);
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Backend {
@@ -114,20 +126,19 @@ pub fn short_name(name: &str) -> &str {
 
 // `tailscale status --json --peers=false`; None when tailscale isn't installed or tailscaled isn't up
 pub fn status() -> Option<Status> {
-    let output = Command::new("tailscale")
-        .args(["status", "--json", "--peers=false"])
-        .output()
-        .ok()?;
+    let output = query(&["status", "--json", "--peers=false"])?;
 
     parse(&String::from_utf8_lossy(&output.stdout))
 }
 
+// a read-only tailscale command; None when it can't start or doesn't answer in time
+fn query(arguments: &[&str]) -> Option<Output> {
+    command::capture(Command::new("tailscale").args(arguments), QUERY_TIMEOUT).ok()
+}
+
 // the machine name behind a tailnet address, from `tailscale whois`
 pub fn whois(ip: &str) -> Option<String> {
-    let output = Command::new("tailscale")
-        .args(["whois", ip])
-        .output()
-        .ok()?;
+    let output = query(&["whois", ip])?;
 
     machine_name(&String::from_utf8_lossy(&output.stdout))
 }
@@ -149,10 +160,7 @@ fn machine_name(answer: &str) -> Option<String> {
 
 // the exit node tailscale thinks best right now, from `tailscale exit-node suggest`
 pub fn suggest() -> Option<String> {
-    let output = Command::new("tailscale")
-        .args(["exit-node", "suggest"])
-        .output()
-        .ok()?;
+    let output = query(&["exit-node", "suggest"])?;
 
     suggestion(&String::from_utf8_lossy(&output.stdout))
 }
@@ -168,8 +176,12 @@ fn suggestion(answer: &str) -> Option<String> {
     (!name.is_empty()).then(|| String::from(name))
 }
 
+/*
+ * only while logged in: when tailscale needs a login, `up` waits for it in the
+ * browser, so the panel opens the login page instead (Vpn::toggle_tailscale)
+ */
 pub fn up() -> Result<(), String> {
-    run(&["up"])
+    run(&["up", UP_TIMEOUT])
 }
 
 pub fn down() -> Result<(), String> {
@@ -193,10 +205,11 @@ pub fn log_in(url: &str) -> Result<(), String> {
 }
 
 fn run(arguments: &[&str]) -> Result<(), String> {
-    let output = Command::new("tailscale")
-        .args(arguments)
-        .output()
-        .map_err(|_| String::from("Tailscale isn't installed"))?;
+    let output = command::capture(Command::new("tailscale").args(arguments), COMMAND_TIMEOUT)
+        .map_err(|failure| match failure {
+            Failure::Start => String::from("Tailscale isn't installed"),
+            Failure::Timeout => String::from("Tailscale didn't answer"),
+        })?;
 
     if output.status.success() {
         return Ok(());
