@@ -1,6 +1,6 @@
 /*
- * screenshot menu, the same choices as the old fuzzel menu in screenshot.sh:
- * press a choice's number to take it right away, or pick one with up/down or tab
+ * screenshot menu, the same choices as the old fuzzel menu in screenshot.sh plus
+ * a region to annotate in satty: press a choice's number to take it right away, or pick one with up/down or tab
  * and press enter, or click it
  *
  * the capture itself happens in src/screenshot.rs
@@ -48,6 +48,11 @@ static CHOICES: &[Choice] = &[
         label: "Region (save)",
         area: Area::Region,
         target: Target::File,
+    },
+    Choice {
+        label: "Region (annotate)",
+        area: Area::Region,
+        target: Target::Annotate,
     },
 ];
 

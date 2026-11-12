@@ -60,7 +60,8 @@ bar, backdrop, notification popups, osd, every panel, and the lock screen.
 - `clipboard.rs` (Picker): cliphist history, × deletes, "Clear history"
   clicked twice, preview pane (`clipboard_preview.rs`).
 - `layout.rs` (Picker): mango layouts, the one in use striped.
-- `screenshot.rs` (Menu): fullscreen/region × copy/save (`../screenshot.rs`).
+- `screenshot.rs` (Menu): fullscreen/region × copy/save, and region annotate
+  in satty (`../screenshot.rs`).
 - `session.rs` (Menu): lock, suspend, logout, reboot, shutdown.
 - `notifications.rs`: the notification center (live, then "Earlier").
 - `network/mod.rs` (+ `vpn_cards.rs`, the Tailscale card and tunnel lines): Wi-Fi (`w` toggles, `r` rescans while on), the list (j/k or
@@ -112,7 +113,8 @@ bar, backdrop, notification popups, osd, every panel, and the lock screen.
 - `covers.rs`: cover art paths/downloads for "Now playing".
 - `layout.rs`: mango's layout per monitor (own `watch all-monitors` socket).
 - `session.rs`: session actions, the `lock` IPC, logind watcher.
-- `screenshot.rs`: grim/slurp/wl-copy, notification after capture.
+- `screenshot.rs`: grim/slurp/wl-copy, notification after capture; annotate
+  pipes the capture into satty (configured in `~/.nixos/home/satty.nix`).
 - `system.rs`: `SystemInfo` (os, kernel, uptime, disk, network speed).
 - `theme.rs`: `Theme` colors, `Accent` service and the `accent` IPC.
 - `animations.rs`: the `Animations` on/off setting (state file

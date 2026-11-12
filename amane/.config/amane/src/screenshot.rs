@@ -1,7 +1,9 @@
 /*
  * taking screenshots: slurp picks a region, grim captures it, and the result goes
  * to the clipboard through wl-copy or to ~/Pictures/Screenshots as a png; a
- * notification says how it went
+ * notification says how it went. to annotate, the capture opens in satty
+ * instead, which copies or saves it itself (its settings come from
+ * home-manager, ~/.nixos/home/satty.nix)
  *
  * everything here waits on other programs, slurp for as long as you take to drag
  * a region, so call take() from its own thread
@@ -20,6 +22,9 @@ use crate::{clock, notifications};
 
 const APP_NAME: &str = "Screenshots";
 
+// the annotation app; reads the png on stdin with `--filename -`
+const ANNOTATOR: &str = "satty";
+
 // grim takes well under a second for a whole screen; past this it's stuck
 const CAPTURE_TIMEOUT: Duration = Duration::from_secs(10);
 
@@ -33,6 +38,9 @@ pub enum Area {
 pub enum Target {
     Clipboard,
     File,
+
+    // opened in satty, which copies or saves it when you're done
+    Annotate,
 }
 
 pub fn take(area: Area, target: Target) {
@@ -107,6 +115,15 @@ fn capture(area: Area, target: Target) -> Result<Option<Done>, String> {
                 file: Some(file),
             }))
         }
+
+        // satty sends its own notification on copy or save, so nothing here
+        Target::Annotate => {
+            let png = run(grim.arg("-"))?;
+
+            annotate(&png)?;
+
+            Ok(None)
+        }
     }
 }
 
@@ -161,8 +178,35 @@ fn copy(png: &[u8]) -> Result<(), String> {
     Ok(())
 }
 
-// ~/Pictures/Screenshots/20261106171503.png, the folder made when missing
+/*
+ * waits for satty to close, which takes as long as you annotate; take() runs on
+ * its own thread. satty's exit status doesn't matter: closing its window
+ * without copying or saving isn't a failure
+ */
+fn annotate(png: &[u8]) -> Result<(), String> {
+    // satty saves to the screenshots folder (its output-filename) but doesn't make it
+    screenshots_folder()?;
+
+    let satty = Command::new(ANNOTATOR)
+        .args(["--filename", "-"])
+        .stdin(Stdio::piped())
+        .spawn()
+        .map_err(|error| format!("couldn't start {ANNOTATOR}: {error}"))?;
+
+    command::feed(satty, png).map_err(|error| format!("{ANNOTATOR}: {error}"))?;
+
+    Ok(())
+}
+
+// ~/Pictures/Screenshots/20261106171503.png
 fn new_file() -> Result<PathBuf, String> {
+    let stamp = clock::local_now().stamp();
+
+    Ok(screenshots_folder()?.join(format!("{stamp}.png")))
+}
+
+// ~/Pictures/Screenshots, made when missing
+fn screenshots_folder() -> Result<PathBuf, String> {
     let home = env::var("HOME").map_err(|_| String::from("HOME is not set"))?;
 
     let folder = PathBuf::from(home).join("Pictures").join("Screenshots");
@@ -170,7 +214,5 @@ fn new_file() -> Result<PathBuf, String> {
     fs::create_dir_all(&folder)
         .map_err(|error| format!("couldn't create {}: {error}", folder.display()))?;
 
-    let stamp = clock::local_now().stamp();
-
-    Ok(folder.join(format!("{stamp}.png")))
+    Ok(folder)
 }

@@ -65,6 +65,113 @@ Nothing open here right now (item 4, the keybinds, is in DONE.md).
 - **To settle:** whether `allow_csd` and the border/shadow options are enough,
   after checking mango's docs.
 
+## New features
+
+Common desktop-shell features the shell doesn't have yet, picked from a list
+on 2026-11-12. Not wanted (from the same list): a system tray, the focused
+window's title in the bar, a caffeine/idle-inhibit toggle, a window switcher,
+a screen color picker, calendar events, OCR of a screenshot region.
+
+### 26. Privacy indicators
+- **Status:** open
+- **Why:** nothing shows when the microphone is recording or the screen is
+  being shared.
+- **Hooks in:** `src/audio/mod.rs` already parses `wpctl status`, which has a
+  Streams section (capture streams on a source); screen sharing goes through
+  xdg-desktop-portal as a PipeWire video stream. A small accent icon in
+  `src/bar.rs` beside the audio icon while one is active.
+- **To settle:** microphone only, or also screen sharing; what clicking it
+  does (open the audio panel?); how often to check.
+
+### 27. Per-app volume
+- **Status:** open
+- **Why:** the audio panel only sets device volume; one loud app can't be
+  turned down on its own.
+- **Hooks in:** `src/panels/audio.rs`: an "Apps" list under the devices, a
+  slider and mute per playback stream (`wpctl status` Streams, `wpctl
+  set-volume <id>` / `set-mute <id>`), parsed in `src/audio/mod.rs`. The
+  panel has a fixed size, so the list scrolls like the device lists.
+- **To settle:** how many rows before it scrolls; how to name a stream (app
+  name, media name) and whether to show app icons.
+
+### 28. Night light
+- **Status:** open
+- **Why:** no warmer screen in the evening.
+- **Hooks in:** wlsunset or gammastep (wlr-gamma-control) as a home-manager
+  service, or started and stopped by the shell; a checkbox in the system
+  panel's Settings (`ui::checkbox`, a state file like `animations`), maybe a
+  key. The weather location's lat/lon could drive sunset times.
+- **To settle:** whether mango supports wlr-gamma-control (check first);
+  which tool; temperature; schedule (sun-based or fixed times); whether the
+  DDC brightness (`src/brightness.rs`) should drop too.
+
+### 29. Bluetooth battery
+- **Status:** open
+- **Why:** headphones' and controllers' battery levels aren't shown anywhere.
+- **Hooks in:** `src/panels/bluetooth.rs`, a percentage beside connected
+  devices, from BlueZ's `org.bluez.Battery1.Percentage` (read in
+  `src/bluetooth/mod.rs`). Many headsets only report it with `Experimental =
+  true` in bluez's `main.conf` (`hardware.bluetooth.settings` in the host
+  config).
+- **To settle:** panel only, or also on the bar's Bluetooth icon; a
+  notification when it runs low.
+
+### 30. Emoji and glyph picker
+- **Status:** open
+- **Why:** no way to search for and type an emoji or Nerd Font glyph.
+- **Hooks in:** a `Picker` (`src/panels/picker.rs`) with its own panel and
+  mango bind, or a launcher prefix (`src/panels/launcher.rs`, like `=`);
+  Enter copies with wl-copy, like the calculator. Data read at runtime (no
+  crates): an emoji list (e.g. Unicode's `emoji-test.txt` from a nix
+  package) and nerd-fonts' `glyphnames.json`. Recently used first through
+  `src/usage.rs`.
+- **To settle:** own panel or launcher prefix; emoji, glyphs or both; where
+  the data files come from.
+
+### 31. Screen recording
+- **Status:** open
+- **Why:** the screenshot menu only takes stills.
+- **Hooks in:** `src/panels/screenshot.rs` (more menu rows) and
+  `src/screenshot.rs`: wf-recorder on the whole monitor or a slurp region;
+  an accent indicator with the elapsed time in `src/bar.rs` while recording,
+  clicked (or an IPC call / mango bind) to stop; a notification with the file
+  afterwards, like screenshots.
+- **To settle:** with or without audio (which source); format (mp4/webm,
+  gif?); save folder; the stop key.
+
+### 32. Timer and pomodoro
+- **Status:** open
+- **Why:** no timers or reminders.
+- **Hooks in:** started from the launcher (a prefix like `t25m`, next to `=`
+  and `>`) or `amane ipc call timer ...`; a countdown in `src/bar.rs`; a
+  notification (`notifications::send`) when it ends. The end time kept in the
+  runtime folder (`state::runtime_path`) so a shell restart keeps it.
+- **To settle:** plain timers, pomodoro cycles (25/5) or both; one or several
+  at once; where in the bar; cancel/pause from the bar.
+
+### 33. Health warnings
+- **Status:** open
+- **Why:** an overheating CPU, a full disk or a failed service goes unnoticed.
+- **Hooks in:** CPU/GPU temperature from `/sys/class/hwmon` in the system
+  panel's diagnostics card (`src/system.rs`, `src/panels/system.rs`); a
+  background check every few minutes for low disk space (`df`, already read
+  for the disk meter) and failed systemd units (`systemctl --failed`, system
+  and `--user`), sending one shell notification per new problem.
+- **To settle:** thresholds (disk %, temperature); how often to check;
+  which sensors to show.
+
+### 34. Removable drives
+- **Status:** open
+- **Why:** plugging in a USB drive shows nothing, and mounting or ejecting
+  needs a terminal.
+- **Hooks in:** udisks2 over D-Bus (`org.freedesktop.UDisks2`, its
+  ObjectManager's `InterfacesAdded`/`Removed`): a notification when a drive
+  arrives, with Mount (and Open in the file manager); mount, unmount and eject
+  in a list (system panel, or its own panel). Needs `services.udisks2.enable`
+  in the host config (check).
+- **To settle:** where the list lives; automount or ask; whether the
+  notification's buttons are enough.
+
 ## Outside the shell
 
 ### 10. Polkit agent

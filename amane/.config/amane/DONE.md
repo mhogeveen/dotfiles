@@ -325,3 +325,22 @@ are kept, so references between the two files still work.
   min (`due()` takes a `Window`). `weather refresh` and `weather location`
   now take effect within a minute, without opening the calendar. Test:
   `the_bar_waits_longer`.
+
+### 35. Screenshot annotation
+- **Status:** done (2026-11-12). The screenshot menu's fifth row, "Region
+  (annotate)", opens the dragged region in satty (arrows, boxes, text, blur,
+  markers, crop). Enter copies and closes; satty's save button writes
+  `~/Pictures/Screenshots/<stamp>.png`, like the menu's saves. satty sends
+  its own notifications, so the shell sends none. Region only (satty can
+  crop a full capture anyway); swappy and OCR were offered and not wanted.
+- **Hooks in:** `src/screenshot.rs`: `Target::Annotate` captures with grim
+  to stdout and hands the png to `satty --filename -` through
+  `command::feed`, which waits for satty to close (on `take()`'s own
+  thread); the screenshots folder is made first (`screenshots_folder()`),
+  since satty doesn't make it. A missing satty gives the usual "Screenshot
+  failed" notification. `src/panels/screenshot.rs`: the extra `Choice`.
+- **Outside the shell:** satty and its settings come from home-manager's
+  `programs.satty` in `~/.nixos/home/satty.nix` (imported in
+  `home/default.nix`): output file, `wl-copy`, Enter copies, early exit,
+  font `BlexMono Nerd Font`. Kept there rather than as shell arguments, so
+  satty behaves the same when started elsewhere.

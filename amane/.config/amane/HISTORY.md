@@ -330,6 +330,21 @@ each finished recommendation by number; `AGENTS.md` and `docs/` the current stat
    `device_row` were split; slurp's missing time limit is deliberate. Tests
    107 → 112. RECOMMENDATIONS.md has no code-health items left.
 
+## Session: new features (2026-11-12)
+
+1. **Feature list.** Common desktop-shell features the shell lacked were
+   offered in groups; accepted ones became items 26–35 in
+   `RECOMMENDATIONS.md`, and the rest (tray, window title, caffeine,
+   window switcher, color picker, calendar events, OCR) are noted there as
+   not wanted. The tray was asked about with and without right-click
+   menus (dbusmenu); neither was picked.
+
+2. **Item 35, screenshot annotation.** satty over swappy, region only,
+   Enter copies. The user asked for satty through home-manager's
+   `programs.satty` in its own module (`~/.nixos/home/satty.nix`), not
+   `packages.nix`, so its options live in satty's config rather than as
+   arguments from the shell.
+
 ## Habits worth keeping
 
 - Verify before claiming: check the code, the running shell (`pgrep`, its
