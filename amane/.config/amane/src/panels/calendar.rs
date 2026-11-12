@@ -312,11 +312,27 @@ fn weather_card(t: &Theme, today: Date) -> Rectangle {
 
     let weather = Weather::read();
 
+    // like the bluetooth panel's "Scanning…", left of the button
+    let mut buttons: Vec<Box<dyn Widget>> = Vec::new();
+
+    if weather.refreshing() {
+        buttons.push(Box::new(
+            Text::new("Refreshing…")
+                .size(ui::TEXT_SMALL)
+                .color(t.comment),
+        ));
+    }
+
+    buttons.push(Box::new(ui::key_button(
+        t,
+        ui::ICON_REFRESH,
+        KEY_REFRESH,
+        |_| weather::refresh(),
+    )));
+
     let header = header(
         ui::title(t, &format!("Weather · {}", weather.place().name)),
-        children![ui::key_button(t, ui::ICON_REFRESH, KEY_REFRESH, |_| {
-            weather::refresh()
-        })],
+        buttons,
     );
 
     let Some(forecast) = weather.forecast() else {

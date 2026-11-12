@@ -77,6 +77,9 @@ pub struct Weather {
 
     // a fetch is due on the next check even if the forecast is fresh
     forced: bool,
+
+    // a fetch is running; kept here, unlike FETCHING, so the panel redraws when it changes
+    fetching: bool,
 }
 
 impl Service for Weather {
@@ -94,6 +97,7 @@ impl Service for Weather {
             error: None,
             failed: None,
             forced: false,
+            fetching: false,
         }
     }
 
@@ -117,6 +121,11 @@ impl Weather {
 
     pub fn error(&self) -> Option<&str> {
         self.error.as_deref()
+    }
+
+    // a fetch is running or asked for, so the panel can say so
+    pub fn refreshing(&self) -> bool {
+        self.fetching || self.forced
     }
 
     fn stale(&self, window: Window) -> bool {
@@ -198,12 +207,19 @@ fn refresh_within(window: Window) {
 
     thread::spawn(move || {
         // cleared as the fetch starts, so a refresh asked for during it makes another one
-        Weather::write().forced = false;
+        {
+            let mut weather = Weather::write();
+
+            weather.forced = false;
+            weather.fetching = true;
+        }
 
         let result = fetch(&place);
 
         {
             let mut weather = Weather::write();
+
+            weather.fetching = false;
 
             // the place changed while fetching, the answer is for the old one
             if weather.place == place {
