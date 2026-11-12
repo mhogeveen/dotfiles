@@ -14,7 +14,7 @@ use std::time::Duration;
 
 use amane::{
     Animation, Key, Keyboard, Layer, LayerWindow, Monitor, Rectangle, Service, Size::Parent,
-    Workspaces,
+    TextInput, Workspaces,
 };
 
 use crate::animations::{self, Animations};
@@ -76,7 +76,8 @@ pub struct PanelDef {
  * the keyboard closes, mango gives the keyboard to a window, never to another
  * panel, so escape could no longer reach a panel left open underneath
  *
- * except the screenshot menu, which opens on top so open panels can be captured;
+ * except the screenshot menu, which opens on top so open panels can be captured
+ * (its window is made last in main.rs, so it draws over them);
  * the panel underneath loses the keyboard once the menu (or slurp) closes, and
  * gets it back when clicked
  */
@@ -483,6 +484,22 @@ pub fn letter(key: &Key) -> Option<char> {
     match key {
         Key::Character(letter) => Some(letter.to_ascii_lowercase()),
         _ => None,
+    }
+}
+
+/*
+ * a panel's text input that takes typing as soon as the panel opens, except
+ * while the screenshot menu is open on top: amane has one focused input for
+ * the whole shell, and it takes every typed character whichever window has
+ * the keyboard, so the menu's number keys would land in the search below.
+ * a focused input claims the focus again on each redraw, so it has to stop
+ * asking; mango's keyboard leave clears what it already had
+ */
+pub fn focused(input: TextInput) -> TextInput {
+    if Panels::read().is_open(SCREENSHOT) {
+        input
+    } else {
+        input.focused()
     }
 }
 

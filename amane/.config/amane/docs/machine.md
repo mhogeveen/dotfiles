@@ -3,8 +3,13 @@
 The machine the shell runs on (host `prometheus`).
 
 - Host `prometheus`, NixOS 26.05, user `maarten`, home-manager as a NixOS module.
-- One monitor: `DP-1`, AOC U27B3AF, 2560×1440 at scale 1.5 (1706×960 widget
-  units), DDC/CI on `/dev/i2c-5` (works without the `i2c` group).
+- One monitor: `DP-1`, AOC U27B3AF, 3840×2160 at scale 1.5 (mango's
+  `monitorrule`), so 2560×1440 logical, which is also amane's widget units;
+  DDC/CI on `/dev/i2c-5` (works without the `i2c` group). These numbers
+  are for this monitor only: on another one, check `mmsg get all-monitors`
+  (logical size and scale) and the model name in
+  `/sys/class/drm/card1-DP-1/edid`, then update this line and the screenshot
+  coordinates in `AGENTS.md`.
   `root_color=0x0f0c0aff` in mango (= `bg_deep`).
 - Keyboard: NuPhy Halo65 (65%, no media or brightness keys; its Fn layer
   could be remapped with NuPhy's configurator). Caps is ctrl/esc via keyd.

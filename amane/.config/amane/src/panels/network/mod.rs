@@ -21,7 +21,7 @@ use amane::{
 };
 
 use super::ui::{self, BUTTON, PADDING, SIDES, button};
-use super::{NETWORK, list, panel};
+use super::{NETWORK, focused, list, panel};
 use crate::network::{self, Details, ICON_LOCK, NetworkPanel, Outcome, Status};
 use crate::theme::Theme;
 use crate::vpn::Vpn;
@@ -620,16 +620,17 @@ fn password_row(t: &Theme, ssid: &str) -> Rectangle {
         })
         .align_child(Start, Center)
         .child(
-            TextInput::new(PASSWORD_INPUT)
-                .placeholder("Password")
-                .password()
-                .focused()
-                .size(ui::TEXT_BODY)
-                .color(t.fg)
-                .on_change(|text| {
-                    *PASSWORD.lock().unwrap_or_else(|error| error.into_inner()) = text;
-                })
-                .on_submit(move |password| join(&submitted, &password)),
+            focused(
+                TextInput::new(PASSWORD_INPUT)
+                    .placeholder("Password")
+                    .password(),
+            )
+            .size(ui::TEXT_BODY)
+            .color(t.fg)
+            .on_change(|text| {
+                *PASSWORD.lock().unwrap_or_else(|error| error.into_inner()) = text;
+            })
+            .on_submit(move |password| join(&submitted, &password)),
         );
 
     let connect = button(t, "Connect", ui::fit("Connect"), move |_| {

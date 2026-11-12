@@ -98,10 +98,7 @@ fn changed(text: String) {
 fn content(t: &Theme) -> Rectangle {
     let query = Sheet::read().query.clone();
 
-    let input = TextInput::new(INPUT)
-        .placeholder(PLACEHOLDER)
-        .focused()
-        .on_change(changed);
+    let input = super::focused(TextInput::new(INPUT).placeholder(PLACEHOLDER)).on_change(changed);
 
     let sections = match sections() {
         Ok(sections) => sections,

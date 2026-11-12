@@ -2,7 +2,8 @@
  * amane-shell: a desktop shell for mango on the amane library. this starts the
  * parts that must run from launch, registers the ipc handlers, and makes every
  * window once per monitor; the order of the windows is their stacking order,
- * bottom first: wallpaper, bar, backdrop, popups, every panel, the lock screen
+ * bottom first: wallpaper, bar, backdrop, popups, every panel, the screenshot
+ * menu (over the panels it can capture), the lock screen
  */
 
 use amane::App;
@@ -72,7 +73,6 @@ fn main() {
         .window_per_monitor(osd::view)
         .window_per_monitor(panels::launcher::view)
         .window_per_monitor(panels::clipboard::view)
-        .window_per_monitor(panels::screenshot::view)
         .window_per_monitor(panels::session::view)
         .window_per_monitor(panels::layout::view)
         .window_per_monitor(panels::notifications::view)
@@ -83,6 +83,8 @@ fn main() {
         .window_per_monitor(panels::calendar::view)
         .window_per_monitor(panels::wallpaper::view)
         .window_per_monitor(panels::keybinds::view)
+        // after every panel, so it opens over one left open underneath
+        .window_per_monitor(panels::screenshot::view)
         .lock(lock::view)
         .run();
 }

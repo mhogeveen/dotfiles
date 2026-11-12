@@ -33,8 +33,11 @@ anything. More detail, read when the task touches it:
 - Restart `amane restart` after a compile (loses panel state; fine for checks).
 - IPC `amane ipc call <name> ...`: `panel open|close|toggle <name>`,
   `close-all`, `list`; `lock`; `accent`; `weather`; `media`; `brightness up|down`.
-- Screenshots: `grim -g "x,y wxh"` in physical pixels (2560×1440, scale 1.5;
-  top-right panels `"1940,0 620x700"`). Fresh file names, `sleep 10` and `ls`
+- Screenshots: `grim -g "x,y wxh"` takes logical coordinates (amane's widget
+  units); the png comes out at physical size (× scale). On the AOC U27B3AF
+  (`docs/machine.md`; 2560×1440 logical, scale 1.5): top-right panels
+  `"2140,0 420x760"`; `grim -s 0.5` for the whole screen. On another
+  monitor, redo these from `mmsg get all-monitors`. Fresh file names, `sleep 10` and `ls`
   before reading. Keys: `wt=$(nix build --no-link --print-out-paths
   nixpkgs#wtype)/bin/wtype; $wt '?'`.
 - Leave the machine as it was: volume, mute, brightness
@@ -54,7 +57,7 @@ anything. More detail, read when the task touches it:
 - Git: the user commits; don't commit, push or stage. Check `git status` /
   `git log` first; don't revert the user's changes.
 - Recommendations: keep statuses current; built items move to `DONE.md` with
-  their number; new ideas get the next number (23 was the last).
+  their number; new ideas get the next number (24 was the last).
 - Code style: lowercase comments, `/* */` blocks, `//` lines, saying why;
   every module starts with a block comment; descriptive names, no
   abbreviations; constants for every size and timing.

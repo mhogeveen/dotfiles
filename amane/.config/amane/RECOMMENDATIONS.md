@@ -16,6 +16,12 @@ Settled earlier, no need to revisit:
   underneath, so stacked panels broke Escape. The exception is the screenshot
   menu, which is in no group, so it opens on top of other panels and they can
   be captured.
+- The panel under the screenshot menu doesn't get the keyboard back when the
+  menu closes (click it to type again). Doing that would mean every panel is
+  `Keyboard::Exclusive` while open and drops to `None` in a commit before
+  hiding, with a short forced grace period when animations are off: a missed
+  path leaves an invisible panel holding the keyboard, and the extra commit
+  per close risks the layer-surface crash. Weighed and declined (2026-11-12).
 - amane's own `Apps` and `Network` services stay, despite their idle cost
   (~1% CPU each; see the upstream list).
 - No Do Not Disturb mode.

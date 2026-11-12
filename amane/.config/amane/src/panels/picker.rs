@@ -149,9 +149,7 @@ fn content<P: Picker>(t: &Theme, monitor: &Monitor) -> Rectangle {
         }
     }
 
-    let input = TextInput::new(P::INPUT)
-        .placeholder(P::PLACEHOLDER)
-        .focused()
+    let input = super::focused(TextInput::new(P::INPUT).placeholder(P::PLACEHOLDER))
         .on_change(changed::<P>)
         .on_submit(|_| submit::<P>());
 

@@ -300,3 +300,16 @@ are kept, so references between the two files still work.
   and spreads the sections over the columns as evenly as they go (a long
   section carries on under its heading again; overflow says how many are
   left). Tests for both.
+
+### 24. Screenshot menu on top
+- **Status:** done (2026-11-12). The menu now draws over every panel left
+  open underneath (before, it was made third, so ten panels covered it).
+- **Hooks in:** `src/main.rs`: its window is made after the last panel
+  (window order is stacking order). Mango gives the menu the keyboard, but
+  amane has one focused text input for the whole shell, which takes every
+  typed character whichever window has the keyboard, so number keys landed
+  in the keybind sheet's search below. `panels::focused()` (used by the
+  keybind sheet, the pickers and the network password) only marks an input
+  focused while the screenshot menu is closed; mango's keyboard leave clears
+  the focus it already had. Checked over the keybind sheet: arrows and
+  letters reach the menu, Escape closes only the menu.
