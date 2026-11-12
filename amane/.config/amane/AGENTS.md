@@ -29,7 +29,7 @@ anything. More detail, read when the task touches it:
 ## Workflow
 - Build `amane compile` (zero warnings, fix every one); format
   `rustfmt --edition 2024 src/main.rs`; test `./test.sh` (`./test.sh system::`
-  filters; 129 tests), add tests for pure logic.
+  filters; 137 tests), add tests for pure logic.
 - Restart `amane restart` after a compile (loses panel state; fine for checks).
 - IPC `amane ipc call <name> ...`: `panel open|close|toggle <name>`,
   `close-all`, `list`; `lock`; `accent`; `weather`; `media`; `brightness up|down`.
@@ -77,5 +77,6 @@ anything. More detail, read when the task touches it:
   `Key::Other`; Shift arrives as an uppercase character; a focused
   `TextInput` takes every character.
 - UI, decided: the accent picked in the system panel for every highlight,
-  warning and error (no status colors); font `BlexMono Nerd Font`
+  warning and error (no status colors; the one exception is `theme.error`,
+  only for the bar's privacy dot); font `BlexMono Nerd Font`
   (monospaced: width = chars × size × 0.6); no Do Not Disturb.

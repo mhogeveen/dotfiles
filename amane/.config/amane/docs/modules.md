@@ -15,7 +15,7 @@ bar, backdrop, notification popups, osd, every panel, and the lock screen.
   monitor (wide accent block for the shown one, dots for urgent; width and
   color animate on a switch, see 5.11), the layout
   symbol `[S]` (opens the layout picker), the clock (opens the calendar),
-  and icons: audio, network with a VPN shield badge, bluetooth, and the NixOS
+  and icons: a red privacy dot while recording or sharing the screen, audio, network with a VPN shield badge, bluetooth, and the NixOS
   snowflake (opens the system panel, accent while notifications are unread).
 - `clock.rs`: the `Clock` service, waking at each minute with
   `clock_nanosleep` on `CLOCK_REALTIME`; the bar's clock text ("17:05 Wed 11
@@ -99,6 +99,9 @@ bar, backdrop, notification popups, osd, every panel, and the lock screen.
 **Services and helpers**
 - `audio/mod.rs`: `Devices` from `wpctl status`/`inspect` (amane's `Audio`
   only knows the defaults).
+- `audio/privacy.rs`: `Privacy`, whether a microphone is recording or the
+  screen is shared (a long-running `pw-mon` as the signal, `pw-dump Node` to
+  read; see 5.12).
 - `bluetooth/mod.rs`, `bluetooth/agent.rs`: BlueZ jobs and failures; the
   pairing agent (exports `org.bluez.Agent1`).
 - `network/mod.rs`, `details.rs`, `profiles.rs`: NetworkManager over D-Bus on

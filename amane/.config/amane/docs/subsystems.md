@@ -136,3 +136,15 @@ their first target so nothing animates in). Every animated value goes
 through `animations::follow(animation, target, enabled)`, which gives the
 target at once while the system panel's Animations checkbox is off; read
 `Animations::read().enabled()` once per view. One `DURATION` (200 ms) for all.
+
+## 5.12 Privacy dot
+`audio/privacy.rs` keeps the shell's one long-running child process,
+`pw-mon -N`, as a signal that PipeWire changed; it's killed and waited for
+when its output ends, and started again after 2 s (`RESTART_DELAY`), with
+the dot cleared meanwhile. Only events about nodes count (`NodeEvents`):
+every `pw-dump` is itself a PipeWire client, so reacting to client events
+reads PipeWire in a loop. After 300 ms without node events (`SETTLE`) one
+`pw-dump Node` is parsed with `json.rs`; a failed read keeps the dot as it
+was. Microphone: a running `Stream/Input/Audio` not flagged
+`stream.capture.sink`/`stream.monitor`. Screen: a `Video/Source` named
+`xdpw*`. The dot is `theme.error`, the one non-accent color.

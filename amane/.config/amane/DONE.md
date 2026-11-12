@@ -326,6 +326,23 @@ are kept, so references between the two files still work.
   now take effect within a minute, without opening the calendar. Test:
   `the_bar_waits_longer`.
 
+### 26. Privacy indicator
+- **Status:** done (2026-11-12). A red dot (`theme.error`, `#d25780`, the one
+  color besides the accent) is the leftmost item on the bar's right side
+  while an app records from a microphone or the screen is shared; clicking
+  it opens the audio panel. Camera use isn't shown (not asked for).
+- **Hooks in:** `src/audio/privacy.rs`, the `Privacy` service. A
+  long-running `pw-mon -N` is the change signal (restarted 2 s after it
+  exits, the dot cleared meanwhile); `NodeEvents` keeps only events about
+  nodes, since each `pw-dump` joins as a client and reacting to clients
+  looped (~5% CPU). A burst settled for 300 ms is read with `pw-dump Node`
+  and `detect()`: a running `Stream/Input/Audio` that isn't recording a
+  speaker (`stream.capture.sink`, `stream.monitor`) is the microphone; a
+  `Video/Source` named `xdpw*` (xdg-desktop-portal-wlr's cast) is the
+  screen. No pw-dump runs while nothing changes. `src/bar.rs`:
+  `privacy_dot`. Tested live with a recording from a temporary virtual
+  source; the screen share is untested live. Tests: `audio::privacy::`.
+
 ### 35. Screenshot annotation
 - **Status:** done (2026-11-12). The screenshot menu's fifth row, "Region
   (annotate)", opens the dragged region in satty (arrows, boxes, text, blur,

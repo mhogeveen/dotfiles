@@ -28,7 +28,9 @@ Settled earlier, no need to revisit:
 - Font stays `BlexMono Nerd Font`, not the Mono or Propo variant.
 - Every accent, warning and error uses the accent picked in the system panel;
   there are no separate warning/error colors. Five fixed status colors
-  (error, warning, ok, hint, info) were tried and reverted.
+  (error, warning, ok, hint, info) were tried and reverted. The one exception
+  is `theme.error` (`#d25780`), used only for the bar's privacy dot (item 26),
+  which must stand out whatever accent is picked (2026-11-12).
 - Panels have a fixed size (showing, hiding or resizing a layer surface while
   another changes can crash the shell, see the upstream list).
 - Neovim: the relative `path = 'src/main.rs'` in `Cargo.toml` is what lets
@@ -71,17 +73,6 @@ Common desktop-shell features the shell doesn't have yet, picked from a list
 on 2026-11-12. Not wanted (from the same list): a system tray, the focused
 window's title in the bar, a caffeine/idle-inhibit toggle, a window switcher,
 a screen color picker, calendar events, OCR of a screenshot region.
-
-### 26. Privacy indicators
-- **Status:** open
-- **Why:** nothing shows when the microphone is recording or the screen is
-  being shared.
-- **Hooks in:** `src/audio/mod.rs` already parses `wpctl status`, which has a
-  Streams section (capture streams on a source); screen sharing goes through
-  xdg-desktop-portal as a PipeWire video stream. A small accent icon in
-  `src/bar.rs` beside the audio icon while one is active.
-- **To settle:** microphone only, or also screen sharing; what clicking it
-  does (open the audio panel?); how often to check.
 
 ### 27. Per-app volume
 - **Status:** open

@@ -18,6 +18,7 @@ use amane::{
 };
 
 use crate::animations::{self, Animations};
+use crate::audio::privacy::Privacy;
 use crate::bluetooth::{
     self,
     agent::{Agent, Request},
@@ -77,6 +78,9 @@ const BADGE: f32 = 10.0;
 const BADGE_GLYPH: f32 = 9.0;
 const BADGE_X: f32 = 10.0;
 const BADGE_Y: f32 = -4.0;
+
+// the privacy dot's diameter, like a workspace dot
+const PRIVACY_DOT: f32 = WORKSPACE_DOT;
 
 // nerd font linux-nixos
 const ICON_NIXOS: &str = "\u{f313}";
@@ -228,9 +232,19 @@ fn status(t: &Theme) -> Rectangle {
         .child(Row::new(status_icons(t)).gap(GAP).align(Center))
 }
 
-// left to right: audio, network, bluetooth (only on machines that have it), system
+/*
+ * left to right: the privacy dot (only while recording or sharing), audio,
+ * network, bluetooth (only on machines that have it), system
+ */
 fn status_icons(t: &Theme) -> Vec<Box<dyn Widget>> {
-    let mut icons: Vec<Box<dyn Widget>> = vec![Box::new(audio(t)), Box::new(network(t))];
+    let mut icons: Vec<Box<dyn Widget>> = Vec::new();
+
+    if Privacy::read().active() {
+        icons.push(Box::new(privacy_dot(t)));
+    }
+
+    icons.push(Box::new(audio(t)));
+    icons.push(Box::new(network(t)));
 
     if let Some(bluetooth) = bluetooth_icon(t) {
         icons.push(Box::new(bluetooth));
@@ -343,6 +357,21 @@ fn bluetooth_icon(t: &Theme) -> Option<Rectangle> {
         BLUETOOTH,
         Text::new(icon).size(ICON_SIZE).color(color),
     ))
+}
+
+/*
+ * a red dot while an app records from a microphone or the screen is shared;
+ * red rather than the accent so it can't be missed. opens the audio panel
+ */
+fn privacy_dot(t: &Theme) -> Rectangle {
+    status_button(
+        AUDIO,
+        Rectangle::new()
+            .width(PRIVACY_DOT)
+            .height(PRIVACY_DOT)
+            .radius(Full)
+            .fill(t.error),
+    )
 }
 
 // the speaker by volume, dimmed while muted; opens the audio panel

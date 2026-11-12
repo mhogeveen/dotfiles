@@ -10,6 +10,8 @@
  * that, and right after switching
  */
 
+pub mod privacy;
+
 use std::collections::HashMap;
 use std::process::Command;
 use std::sync::Mutex;

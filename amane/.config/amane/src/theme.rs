@@ -22,6 +22,12 @@ pub struct Theme {
     // text on an accent fill; dark reads well on all five, light ones included
     pub on_accent: Color,
 
+    /*
+     * the one color besides the accent: the bar's privacy dot, which must stand
+     * out whatever accent is picked
+     */
+    pub error: Color,
+
     pub fg: Color,
     pub fg_dim: Color,
     pub comment: Color,
@@ -44,6 +50,7 @@ pub fn theme() -> Theme {
     Theme {
         accent: accent.color(),
         on_accent: BG_DEEP,
+        error: Color::rgb(0xd2, 0x57, 0x80),
         fg: Color::rgb(0xe6, 0xd5, 0xc2),
         fg_dim: Color::rgb(0xa0, 0x93, 0x84),
         comment: Color::rgb(0x73, 0x66, 0x5b),
