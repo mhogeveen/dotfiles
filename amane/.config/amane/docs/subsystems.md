@@ -59,7 +59,9 @@ gutter (week numbers) plus 7 columns of 50 px, 6 px apart, so hourly and daily
 forecast slots line up under the weekdays. Cells are `bg1`; today, "Now" and
 "Today" get the accent fill. Headers: title left, key buttons right (`h`/`l`
 months, `t` today, `r` refetch). Weather: Open-Meteo CSV (no key), fetched on
-open at most every 30 min (a failed fetch is tried again after 1 min), place
+open at most every 30 min (a failed fetch is tried again after 1 min), and by
+the bar's clock, which shows icon and temperature, at most every 2 h (retry
+after 10 min; it asks every minute as it redraws), place
 via the `weather` IPC (Hilversum default). Rain chance is always shown, 0%
 included.
 

@@ -2,7 +2,8 @@
  * the weather beside the calendar, from Open-Meteo: no account or key, and it
  * answers in csv (forecast.rs reads it)
  *
- * it's fetched only while the calendar shows, and at most every 30 minutes; the
+ * opening the calendar fetches when the forecast is over 30 minutes old, and the
+ * bar's clock, which shows the weather now, when it's over 2 hours old; the
  * place is set with `amane ipc call weather location <latitude> <longitude> <name>`
  * and kept in ~/.local/state/amane-shell/weather, Hilversum until then
  */
@@ -29,6 +30,13 @@ const STALE: Duration = Duration::from_secs(30 * 60);
 
 // how long after a failed fetch opening the calendar tries again
 const RETRY: Duration = Duration::from_secs(60);
+
+/*
+ * the same for the bar, which asks every minute without anyone looking: the
+ * weather doesn't change much in 2 hours, and offline curl runs every 10 minutes, not every minute
+ */
+const BAR_STALE: Duration = Duration::from_secs(2 * 60 * 60);
+const BAR_RETRY: Duration = Duration::from_secs(10 * 60);
 
 const API: &str = "https://api.open-meteo.com/v1/forecast";
 
@@ -67,7 +75,7 @@ pub struct Weather {
     error: Option<String>,
     failed: Option<Instant>,
 
-    // a fetch is due on the next open even if the forecast is fresh
+    // a fetch is due on the next check even if the forecast is fresh
     forced: bool,
 }
 
@@ -111,8 +119,9 @@ impl Weather {
         self.error.as_deref()
     }
 
-    fn stale(&self) -> bool {
+    fn stale(&self, window: Window) -> bool {
         due(
+            window,
             self.forced,
             self.fetched.map(|fetched| fetched.elapsed()),
             self.failed.map(|failed| failed.elapsed()),
@@ -120,35 +129,67 @@ impl Weather {
     }
 }
 
+// how old a forecast may get, and how soon a failed fetch is tried again
+#[derive(Debug, Clone, Copy)]
+struct Window {
+    stale: Duration,
+    retry: Duration,
+}
+
+const CALENDAR: Window = Window {
+    stale: STALE,
+    retry: RETRY,
+};
+
+const BAR: Window = Window {
+    stale: BAR_STALE,
+    retry: BAR_RETRY,
+};
+
 /*
  * whether to fetch, from how long ago the last good and the last failed fetch
- * were: a failure is tried again after RETRY rather than STALE, so a calendar
- * opened while offline doesn't keep saying so for half an hour
+ * were: a failure is tried again after the retry rather than the stale time, so
+ * a calendar opened while offline doesn't keep saying so for half an hour
  */
-fn due(forced: bool, since_fetched: Option<Duration>, since_failed: Option<Duration>) -> bool {
+fn due(
+    window: Window,
+    forced: bool,
+    since_fetched: Option<Duration>,
+    since_failed: Option<Duration>,
+) -> bool {
     if forced {
         return true;
     }
 
     if let Some(since_failed) = since_failed {
-        return since_failed > RETRY;
+        return since_failed > window.retry;
     }
 
-    since_fetched.is_none_or(|since_fetched| since_fetched > STALE)
+    since_fetched.is_none_or(|since_fetched| since_fetched > window.stale)
 }
 
 // one fetch at a time; not part of the service, so starting one redraws nothing
 static FETCHING: AtomicBool = AtomicBool::new(false);
 
+// for the calendar, when it opens
+pub fn refresh_if_stale() {
+    refresh_within(CALENDAR);
+}
+
+// for the bar's clock, asked every minute
+pub fn refresh_for_bar() {
+    refresh_within(BAR);
+}
+
 /*
  * fetches when the forecast is old or missing; safe to call from a view, as it
  * only starts a thread, which writes the result when it's done
  */
-pub fn refresh_if_stale() {
+fn refresh_within(window: Window) {
     let (stale, place) = {
         let weather = Weather::read();
 
-        (weather.stale(), weather.place.clone())
+        (weather.stale(window), weather.place.clone())
     };
 
     if !stale || FETCHING.swap(true, Ordering::AcqRel) {
@@ -186,7 +227,7 @@ pub fn refresh_if_stale() {
     });
 }
 
-// the next open fetches, fresh or not; from a key or ipc
+// the next check fetches, fresh or not (the bar asks every minute); from a key or ipc
 pub fn refresh() {
     Weather::write().forced = true;
 }
@@ -260,7 +301,7 @@ const USAGE: &str =
 
 /*
  * `amane ipc call weather location 52.22 5.18 Hilversum` sets the place,
- * `weather refresh` fetches on the next open, `weather` says where it's for
+ * `weather refresh` fetches within a minute, `weather` says where it's for
  */
 pub fn ipc(arguments: &[String]) -> String {
     match arguments.first().map(String::as_str) {
@@ -273,7 +314,7 @@ pub fn ipc(arguments: &[String]) -> String {
         Some("refresh") => {
             refresh();
 
-            String::from("fetching when the calendar opens")
+            String::from("fetching within a minute")
         }
 
         Some("location") => set_location(&arguments[1..]),
@@ -327,7 +368,7 @@ fn set_location(arguments: &[String]) -> String {
         name
     };
 
-    format!("weather for {name} from the next time the calendar opens")
+    format!("weather for {name} within a minute")
 }
 
 #[cfg(test)]
@@ -338,20 +379,32 @@ mod tests {
 
     #[test]
     fn a_fetch_is_due_when_old_missing_or_forced() {
-        assert!(due(false, None, None));
-        assert!(due(false, Some(STALE + MINUTE), None));
-        assert!(!due(false, Some(MINUTE), None));
-        assert!(due(true, Some(MINUTE), None));
+        assert!(due(CALENDAR, false, None, None));
+        assert!(due(CALENDAR, false, Some(STALE + MINUTE), None));
+        assert!(!due(CALENDAR, false, Some(MINUTE), None));
+        assert!(due(CALENDAR, true, Some(MINUTE), None));
     }
 
     #[test]
     fn a_failure_is_tried_again_soon() {
         // offline at the first open: not again at once, but well before STALE
-        assert!(!due(false, None, Some(Duration::from_secs(10))));
-        assert!(due(false, None, Some(RETRY + MINUTE)));
+        assert!(!due(CALENDAR, false, None, Some(Duration::from_secs(10))));
+        assert!(due(CALENDAR, false, None, Some(RETRY + MINUTE)));
 
         // a failure after a good fetch retries too, the old forecast staying
-        assert!(due(false, Some(MINUTE), Some(RETRY + MINUTE)));
+        assert!(due(CALENDAR, false, Some(MINUTE), Some(RETRY + MINUTE)));
+    }
+
+    #[test]
+    fn the_bar_waits_longer() {
+        // a forecast the calendar would fetch again is still fine for the bar
+        assert!(!due(BAR, false, Some(STALE + MINUTE), None));
+        assert!(due(BAR, false, Some(BAR_STALE + MINUTE), None));
+        assert!(due(BAR, false, None, None));
+
+        // offline, it doesn't try every minute
+        assert!(!due(BAR, false, None, Some(RETRY + MINUTE)));
+        assert!(due(BAR, false, None, Some(BAR_RETRY + MINUTE)));
     }
 
     #[test]

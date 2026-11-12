@@ -19,7 +19,8 @@ bar, backdrop, notification popups, osd, every panel, and the lock screen.
   snowflake (opens the system panel, accent while notifications are unread).
 - `clock.rs`: the `Clock` service, waking at each minute with
   `clock_nanosleep` on `CLOCK_REALTIME`; the bar's clock text ("17:05 Wed 11
-  Nov", English whatever `LC_TIME` says, like the calendar). `local_now()`
+  Nov | 󰖙 4°", the weather once a forecast is in; English whatever `LC_TIME`
+  says, like the calendar). `local_now()`
   reads the local time through libc `localtime_r` (`time()`, `stamp()` for
   file names); use it instead of running `date`.
 - `lock.rs`: the lock screen (amane's session lock + PAM): clock, date, user,
@@ -103,7 +104,8 @@ bar, backdrop, notification popups, osd, every panel, and the lock screen.
   top of amane's `Network` (connect attempts, details, forgetting).
 - `vpn/mod.rs`, `tunnels.rs`, `tailscale.rs`: tunnels in `/sys/class/net`,
   `ip route get`, `tailscale status --peers=false`, exit nodes.
-- `weather/mod.rs`, `forecast.rs`: Open-Meteo CSV via curl.
+- `weather/mod.rs`, `forecast.rs`: Open-Meteo CSV via curl; fetched by the
+  calendar (30 min) and the bar's clock (2 h).
 - `notifications/mod.rs`, `card.rs`, `history.rs`: shared card, unread
   tracking (`Seen`), `send()` for the shell's own notifications, history.
 - `brightness.rs`: brightness over DDC/CI or a laptop backlight (see 5.9).

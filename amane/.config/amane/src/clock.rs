@@ -1,6 +1,7 @@
 /*
- * the time and date in the bar, and today's date for the calendar; click the
- * clock to open the calendar
+ * the time and date in the bar, then the weather now (icon and temperature,
+ * once a forecast is in), and today's date for the calendar; click the clock to
+ * open the calendar
  *
  * the C library's localtime_r gives the local time, timezone and daylight
  * saving included (no `date` to start, which could fail). it's read once a
@@ -12,12 +13,13 @@
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use amane::{
-    Align::Center, Cursor::Pointer, Rectangle, Row, Service, Size::Parent, Text, children,
+    Align::Center, Cursor::Pointer, Rectangle, Row, Service, Size::Parent, Text, Widget, children,
 };
 
 use crate::calendar::{self, Date};
 use crate::panels::{CALENDAR, Panels, ui};
 use crate::theme::Theme;
+use crate::weather::{self, Weather, forecast};
 
 // read it in a view to redraw once a minute, like the notification center's "5m ago"
 #[derive(PartialEq)]
@@ -36,6 +38,12 @@ const MONTH_LETTERS: usize = 3;
 // the clock in the bar: a fixed width, so it stays centered as the text changes
 const WIDTH: f32 = 300.0;
 const GAP: f32 = 8.0;
+
+// between the date and the weather
+const SEPARATOR: &str = "|";
+
+// nerd font icons draw wider than they measure, so the weather's icon gets a box of its own
+const WEATHER_ICON: f32 = 16.0;
 
 // the local time, timezone and daylight saving included, read from the C library
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -130,7 +138,45 @@ impl Service for Clock {
 }
 
 pub fn view(t: &Theme) -> Rectangle {
-    let clock = Clock::read();
+    // only starts a thread; this view redraws every minute, so that's how often it's asked
+    weather::refresh_for_bar();
+
+    // one service at a time: the weather is copied out before the clock is read
+    let now = Weather::read().forecast().map(|forecast| {
+        let (icon, _) = forecast::describe(forecast.now.code, forecast.now.daytime);
+
+        (icon, forecast::degrees(forecast.now.temperature))
+    });
+
+    let (time, date) = {
+        let clock = Clock::read();
+
+        (clock.time.clone(), clock.date.clone())
+    };
+
+    let mut parts: Vec<Box<dyn Widget>> = children![
+        Text::new(time).color(t.fg_dim).size(ui::TEXT_BODY),
+        Text::new(date).color(t.fg_dim).size(ui::TEXT_SMALL)
+    ];
+
+    // nothing until the first forecast is in, so the clock looks as it did
+    if let Some((icon, temperature)) = now {
+        parts.push(Box::new(
+            Text::new(SEPARATOR).color(t.bg3).size(ui::TEXT_SMALL),
+        ));
+
+        parts.push(Box::new(
+            Rectangle::new()
+                .width(WEATHER_ICON)
+                .height(Parent)
+                .align_child(Center, Center)
+                .child(Text::new(icon).color(t.fg_dim).size(ui::TEXT_BODY)),
+        ));
+
+        parts.push(Box::new(
+            Text::new(temperature).color(t.fg_dim).size(ui::TEXT_SMALL),
+        ));
+    }
 
     Rectangle::new()
         .width(WIDTH)
@@ -140,14 +186,7 @@ pub fn view(t: &Theme) -> Rectangle {
         .on_click(|_| {
             let _ = Panels::toggle(CALENDAR);
         })
-        .child(
-            Row::new(children![
-                Text::new(&clock.time).color(t.fg_dim).size(ui::TEXT_BODY),
-                Text::new(&clock.date).color(t.fg_dim).size(ui::TEXT_SMALL)
-            ])
-            .align(Center)
-            .gap(GAP),
-        )
+        .child(Row::new(parts).align(Center).gap(GAP).height(Parent))
 }
 
 // a little past the minute, so the new one is surely read

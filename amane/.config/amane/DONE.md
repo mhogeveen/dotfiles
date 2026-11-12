@@ -313,3 +313,15 @@ are kept, so references between the two files still work.
   focused while the screenshot menu is closed; mango's keyboard leave clears
   the focus it already had. Checked over the keybind sheet: arrows and
   letters reach the menu, Escape closes only the menu.
+
+### 25. Weather in the bar's clock
+- **Status:** done (2026-11-12). The clock ends with ` | <icon> <temp>`
+  (like `08:59 Thu 12 Nov | 󰖙 3°`), the weather now, from the same forecast
+  as the calendar; nothing after the date until the first forecast is in.
+- **Hooks in:** `src/clock.rs` `view` calls `weather::refresh_for_bar()` on
+  every redraw (once a minute), which fetches when the forecast is over 2 h
+  old (`BAR_STALE`), or 10 min after a failed fetch (`BAR_RETRY`), so curl
+  doesn't run every minute while offline. The calendar keeps its 30 min / 1
+  min (`due()` takes a `Window`). `weather refresh` and `weather location`
+  now take effect within a minute, without opening the calendar. Test:
+  `the_bar_waits_longer`.
