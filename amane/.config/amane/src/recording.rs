@@ -5,10 +5,11 @@
  *
  * the bar shows the time recorded while it runs; clicking it, SUPER+P (`record
  * menu`) or `record stop` sends wf-recorder SIGINT, which finishes the file.
- * a notification then says where it went, or why it failed
+ * a notification then says where it went, or why it failed. a recorded region
+ * is framed in the accent, just outside it (frame_view)
  *
- * the recording's pid, start and file are kept in the runtime folder, so a
- * recording still running after a shell restart is picked up again
+ * the recording's pid, start, file and frame are kept in the runtime folder,
+ * so a recording still running after a shell restart is picked up again
  */
 
 use std::env;
@@ -21,11 +22,15 @@ use std::sync::{Mutex, PoisonError};
 use std::thread;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
-use amane::{Service, Urgency};
+use amane::{
+    Color, Full, Keyboard, Layer, LayerWindow, Monitor, Rectangle, Service, Size::Parent, Stack,
+    Urgency, Widget, Zone,
+};
 
 use crate::json::{self, Value};
 use crate::panels::{Panels, SCREENSHOT};
 use crate::screenshot::{self, Area};
+use crate::theme::theme;
 use crate::{clock, command, notifications, state};
 
 const APP_NAME: &str = "Screen recording";
@@ -58,6 +63,10 @@ const LOG_LINES: usize = 3;
 
 // sent to wf-recorder to stop; it finishes the file before exiting
 const SIGINT: c_int = 2;
+
+// the frame around a recorded region, and the room between it and the region
+const FRAME_THICKNESS: f32 = 2.0;
+const FRAME_GAP: f32 = 1.0;
 
 // nerd font md-record_rec
 pub const ICON_RECORD: &str = "\u{f044b}";
@@ -103,6 +112,46 @@ struct Running {
 
     // None for a recorder picked up after a restart, which another process reaps
     child: Option<Child>,
+
+    // the region being recorded, framed on screen; None for a whole monitor
+    frame: Option<Frame>,
+}
+
+/*
+ * a recorded region in its monitor's own widget units, for the frame drawn
+ * around it. slurp gives the region across all monitors, so it's moved by the
+ * position of the monitor it starts on
+ */
+#[derive(Debug, Clone, PartialEq)]
+pub struct Frame {
+    monitor: String,
+    x: f32,
+    y: f32,
+    width: f32,
+    height: f32,
+}
+
+/*
+ * the region the frame window draws around; its own service, since Recording
+ * changes every second and the frame only at the start and end
+ */
+pub struct RecordedRegion {
+    frame: Option<Frame>,
+}
+
+impl Service for RecordedRegion {
+    fn new() -> Self {
+        Self { frame: None }
+    }
+
+    // written by Recording's thread and begin
+    fn listen() {}
+}
+
+fn show_frame(frame: Option<Frame>) {
+    if RecordedRegion::read().frame != frame {
+        RecordedRegion::write().frame = frame;
+    }
 }
 
 static RUNNING: Mutex<Option<Running>> = Mutex::new(None);
@@ -177,11 +226,17 @@ fn begin(area: Area) -> Result<(), String> {
         return Err(log_tail(&log));
     };
 
+    let frame = match &place {
+        Place::Region(geometry) => region_frame(geometry),
+        Place::Monitor(_) => None,
+    };
+
     let running = Running {
         pid: child.id(),
         started: SystemTime::now(),
         file,
         child: Some(child),
+        frame: frame.clone(),
     };
 
     remember(&running);
@@ -190,7 +245,92 @@ fn begin(area: Area) -> Result<(), String> {
 
     Recording::write().elapsed = Some(0);
 
+    show_frame(frame);
+
     Ok(())
+}
+
+// where on which monitor slurp's region is; None when mango doesn't say, then nothing is framed
+fn region_frame(geometry: &str) -> Option<Frame> {
+    let answer = command::read(
+        Command::new("mmsg").args(["get", "all-monitors"]),
+        MMSG_TIMEOUT,
+    )?;
+
+    locate(&json::parse(&answer)?, parse_geometry(geometry)?)
+}
+
+// slurp's "x,y wxh"
+fn parse_geometry(geometry: &str) -> Option<[f32; 4]> {
+    let (position, size) = geometry.trim().split_once(' ')?;
+    let (x, y) = position.split_once(',')?;
+    let (width, height) = size.split_once('x')?;
+
+    Some([
+        x.parse().ok()?,
+        y.parse().ok()?,
+        width.parse().ok()?,
+        height.parse().ok()?,
+    ])
+}
+
+// the monitor the region's top-left corner is on, from mango's monitor list
+fn locate(monitors: &Value, [x, y, width, height]: [f32; 4]) -> Option<Frame> {
+    monitors.get("monitors").list().iter().find_map(|monitor| {
+        let left = monitor.get("x").number()? as f32;
+        let top = monitor.get("y").number()? as f32;
+        let right = left + monitor.get("width").number()? as f32;
+        let bottom = top + monitor.get("height").number()? as f32;
+
+        let inside = (left..right).contains(&x) && (top..bottom).contains(&y);
+
+        inside.then(|| Frame {
+            monitor: String::from(monitor.get("name").text()),
+            x: x - left,
+            y: y - top,
+            width,
+            height,
+        })
+    })
+}
+
+/*
+ * a click-through window over each monitor that draws a frame in the accent
+ * just outside the region being recorded, so the frame isn't in the video.
+ * it's always mapped and never resizes (see the layer-surface crash rule);
+ * without a region it draws nothing
+ */
+pub fn frame_view(monitor: &Monitor) -> LayerWindow {
+    let frame = RecordedRegion::read()
+        .frame
+        .clone()
+        .filter(|frame| frame.monitor == monitor.name);
+
+    let mut layers: Vec<Box<dyn Widget>> = Vec::new();
+
+    if let Some(frame) = frame {
+        // the border is drawn inside a rectangle's edge, so the rectangle reaches past the region
+        let outside = FRAME_GAP + FRAME_THICKNESS;
+
+        layers.push(Box::new(
+            Rectangle::new()
+                .width(frame.width + 2.0 * outside)
+                .height(frame.height + 2.0 * outside)
+                .fill(Color::TRANSPARENT)
+                .border(FRAME_THICKNESS, theme().accent)
+                .translate(frame.x - outside, frame.y - outside),
+        ));
+    }
+
+    LayerWindow::new()
+        .width(Full)
+        .height(Full)
+        .layer(Layer::Overlay)
+        .space(Zone::Ignore)
+        .keyboard(Keyboard::None)
+        .namespace("amane-recording-frame")
+        .child(Stack::new(layers).width(Parent).height(Parent))
+        .click_through()
 }
 
 enum Place {
@@ -331,6 +471,8 @@ fn tick() {
     }
 
     if let Some(recording) = finished {
+        show_frame(None);
+
         finish(&recording);
     }
 }
@@ -380,7 +522,10 @@ fn log_tail(log: &Path) -> String {
     lines[lines.len().saturating_sub(LOG_LINES)..].join("\n")
 }
 
-// the runtime file: pid, start in seconds since 1970, and the file, one per line
+/*
+ * the runtime file: pid, start in seconds since 1970, the file, and for a
+ * region its frame as "monitor x y width height", one per line
+ */
 fn remember(recording: &Running) {
     let Some(path) = state::runtime_path(STATE) else {
         return;
@@ -392,11 +537,18 @@ fn remember(recording: &Running) {
         .unwrap_or_default()
         .as_secs();
 
-    let contents = format!(
+    let mut contents = format!(
         "{}\n{started}\n{}\n",
         recording.pid,
         recording.file.display()
     );
+
+    if let Some(frame) = &recording.frame {
+        contents.push_str(&format!(
+            "{} {} {} {} {}\n",
+            frame.monitor, frame.x, frame.y, frame.width, frame.height
+        ));
+    }
 
     let _ = state::write_atomically(&path, &contents);
 }
@@ -411,34 +563,75 @@ fn adopt() {
         return;
     };
 
-    let adopted = read_remembered(&contents).filter(|(pid, _, _)| {
-        alive(*pid)
+    let adopted = read_remembered(&contents).filter(|remembered| {
+        let pid = remembered.pid;
+
+        alive(pid)
             && fs::read_to_string(format!("/proc/{pid}/comm"))
                 .is_ok_and(|name| name.trim() == RECORDER)
     });
 
-    let Some((pid, started, file)) = adopted else {
+    let Some(remembered) = adopted else {
         let _ = fs::remove_file(path);
 
         return;
     };
 
+    show_frame(remembered.frame.clone());
+
     *RUNNING.lock().unwrap_or_else(PoisonError::into_inner) = Some(Running {
-        pid,
-        started: UNIX_EPOCH + Duration::from_secs(started),
-        file,
+        pid: remembered.pid,
+        started: UNIX_EPOCH + Duration::from_secs(remembered.started),
+        file: remembered.file,
         child: None,
+        frame: remembered.frame,
     });
 }
 
-fn read_remembered(contents: &str) -> Option<(u32, u64, PathBuf)> {
+#[derive(Debug, PartialEq)]
+struct Remembered {
+    pid: u32,
+    started: u64,
+    file: PathBuf,
+    frame: Option<Frame>,
+}
+
+fn read_remembered(contents: &str) -> Option<Remembered> {
     let mut lines = contents.lines();
 
     let pid = lines.next()?.trim().parse().ok()?;
     let started = lines.next()?.trim().parse().ok()?;
     let file = lines.next()?.trim();
 
-    (!file.is_empty()).then(|| (pid, started, PathBuf::from(file)))
+    if file.is_empty() {
+        return None;
+    }
+
+    // a line that doesn't read leaves the recording unframed rather than lost
+    let frame = lines.next().and_then(read_frame);
+
+    Some(Remembered {
+        pid,
+        started,
+        file: PathBuf::from(file),
+        frame,
+    })
+}
+
+// "DP-1 100 200 640 480", as remember writes it
+fn read_frame(line: &str) -> Option<Frame> {
+    let mut words = line.split_whitespace();
+
+    let monitor = String::from(words.next()?);
+    let mut number = || words.next()?.parse::<f32>().ok();
+
+    Some(Frame {
+        monitor,
+        x: number()?,
+        y: number()?,
+        width: number()?,
+        height: number()?,
+    })
 }
 
 // running, and not a zombie waiting to be reaped
@@ -512,14 +705,65 @@ mod tests {
     fn the_remembered_recording_reads_back() {
         assert_eq!(
             read_remembered("4242\n1762970000\n/home/me/Videos/Screencasts/1.mp4\n"),
-            Some((
-                4242,
-                1762970000,
-                PathBuf::from("/home/me/Videos/Screencasts/1.mp4")
-            ))
+            Some(Remembered {
+                pid: 4242,
+                started: 1762970000,
+                file: PathBuf::from("/home/me/Videos/Screencasts/1.mp4"),
+                frame: None,
+            })
         );
         assert_eq!(read_remembered("4242\n"), None);
         assert_eq!(read_remembered("not a pid\n1\n/file\n"), None);
+    }
+
+    #[test]
+    fn a_remembered_region_keeps_its_frame() {
+        let frame = Frame {
+            monitor: String::from("DP-1"),
+            x: 100.0,
+            y: 200.5,
+            width: 640.0,
+            height: 480.0,
+        };
+
+        let remembered = read_remembered("1\n2\n/file\nDP-1 100 200.5 640 480\n");
+
+        assert_eq!(
+            remembered.and_then(|remembered| remembered.frame),
+            Some(frame)
+        );
+
+        // a broken frame line still adopts the recording, unframed
+        let broken = read_remembered("1\n2\n/file\nDP-1 wide\n").expect("the recording");
+
+        assert_eq!(broken.frame, None);
+    }
+
+    #[test]
+    fn slurps_geometry_reads() {
+        assert_eq!(
+            parse_geometry("100,200 640x480\n"),
+            Some([100.0, 200.0, 640.0, 480.0])
+        );
+        assert_eq!(parse_geometry("100,200"), None);
+        assert_eq!(parse_geometry(""), None);
+    }
+
+    #[test]
+    fn a_region_is_framed_on_the_monitor_it_starts_on() {
+        let monitors = json::parse(
+            r#"{"monitors": [
+                {"name": "DP-1", "x": 0, "y": 0, "width": 2560, "height": 1440},
+                {"name": "HDMI-A-1", "x": 2560, "y": 0, "width": 1920, "height": 1080}]}"#,
+        )
+        .expect("valid json");
+
+        let frame = locate(&monitors, [2660.0, 50.0, 300.0, 200.0]).expect("a monitor");
+
+        assert_eq!(frame.monitor, "HDMI-A-1");
+        assert_eq!((frame.x, frame.y), (100.0, 50.0));
+
+        assert!(locate(&monitors, [5000.0, 50.0, 10.0, 10.0]).is_none());
     }
 
     #[test]

@@ -73,6 +73,8 @@ fn main() {
         .window_per_monitor(panels::backdrop::view)
         .window_per_monitor(notifications::popups::view)
         .window_per_monitor(osd::view)
+        // under the panels, so a panel opened while recording a region covers the frame
+        .window_per_monitor(recording::frame_view)
         .window_per_monitor(panels::launcher::view)
         .window_per_monitor(panels::clipboard::view)
         .window_per_monitor(panels::session::view)

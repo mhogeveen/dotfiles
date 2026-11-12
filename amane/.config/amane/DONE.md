@@ -353,13 +353,22 @@ are kept, so references between the two files still work.
   clicking it, SUPER+P or `amane ipc call record stop` stops it (SIGINT, so
   the file is finished). A notification then says where it was saved, or
   quotes wf-recorder's last lines. Sound, webm/gif and copying the path were
+  offered and not wanted. A recorded region gets a 2 px accent frame 1 px
+  outside it, so the frame isn't in the video (slurp itself can't stay up:
+  it holds the pointer until you drag). Dimming outside it, like slurp, was
   offered and not wanted.
 - **Hooks in:** `src/recording.rs` (`Recording` service ticking each second,
   `start`, `stop`, the `record` IPC: `stop`, and `menu`, which stops a
   recording or toggles the screenshot menu); `src/panels/screenshot.rs`
   (`Action::Record`); `src/bar.rs` `recording_time`;
-  `src/keybinds.rs` names the new SUPER+P command. The pid, start and file
-  are kept in `$XDG_RUNTIME_DIR/amane-shell/recording`, so a recording
+  `src/keybinds.rs` names the new SUPER+P command. The frame is
+  `recording::frame_view`, a full-screen overlay window per monitor that is
+  always mapped and click-through and draws nothing without a region (the
+  layer-surface crash rule); it reads `RecordedRegion`, a separate service
+  so it doesn't redraw with the bar's time each second. The region is moved
+  into its monitor's own units with `mmsg get all-monitors`. The pid,
+  start, file and frame are kept in
+  `$XDG_RUNTIME_DIR/amane-shell/recording`, so a recording
   survives a shell restart (checked against `/proc/<pid>/comm`).
   wf-recorder is started without `LD_LIBRARY_PATH`: the shell's holds an
   alsa-lib built against a newer glibc, which wf-recorder fails to load.

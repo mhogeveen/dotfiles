@@ -122,6 +122,8 @@ bar, backdrop, notification popups, osd, every panel, and the lock screen.
 - `recording.rs`: `Recording` (seconds recorded, for the bar), wf-recorder
   start/stop (SIGINT), the `record` IPC; picks up a recording still running
   after a restart from `$XDG_RUNTIME_DIR/amane-shell/recording`.
+  `frame_view`: an always-mapped, click-through overlay window per monitor
+  that frames a recorded region (`RecordedRegion`), just outside it.
 - `system.rs`: `SystemInfo` (os, kernel, uptime, disk, network speed).
 - `theme.rs`: `Theme` colors, `Accent` service and the `accent` IPC.
 - `animations.rs`: the `Animations` on/off setting (state file

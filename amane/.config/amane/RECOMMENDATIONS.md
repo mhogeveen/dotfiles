@@ -38,6 +38,10 @@ Settled earlier, no need to revisit:
   the dependencies' build scripts need amane's `pkg-config` setup; a
   `rust-analyzer.toml` ignored the override commands, and changing the Neovim
   config was declined.
+- SUPER+P runs `amane ipc call record menu`, not `panel toggle screenshot`
+  like the other panel binds: it stops a running recording, else toggles the
+  screenshot menu. Kept explicit rather than hiding a stop inside `panel
+  toggle`, or adding a second stop key (2026-11-12).
 - No interim polkit agent (like `polkit_gnome`); wait for amane instead (item
   10).
 
