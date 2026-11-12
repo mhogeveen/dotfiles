@@ -119,17 +119,6 @@ a screen color picker, calendar events, OCR of a screenshot region.
 - **To settle:** own panel or launcher prefix; emoji, glyphs or both; where
   the data files come from.
 
-### 31. Screen recording
-- **Status:** open
-- **Why:** the screenshot menu only takes stills.
-- **Hooks in:** `src/panels/screenshot.rs` (more menu rows) and
-  `src/screenshot.rs`: wf-recorder on the whole monitor or a slurp region;
-  an accent indicator with the elapsed time in `src/bar.rs` while recording,
-  clicked (or an IPC call / mango bind) to stop; a notification with the file
-  afterwards, like screenshots.
-- **To settle:** with or without audio (which source); format (mp4/webm,
-  gif?); save folder; the stop key.
-
 ### 32. Timer and pomodoro
 - **Status:** open
 - **Why:** no timers or reminders.

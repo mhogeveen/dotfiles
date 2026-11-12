@@ -1,9 +1,10 @@
 /*
  * screenshot menu, the same choices as the old fuzzel menu in screenshot.sh plus
- * a region to annotate in satty: press a choice's number to take it right away, or pick one with up/down or tab
- * and press enter, or click it
+ * a region to annotate in satty and screen recordings: press a choice's number
+ * to take it right away, or pick one with up/down or tab and press enter, or
+ * click it
  *
- * the capture itself happens in src/screenshot.rs
+ * the capture itself happens in src/screenshot.rs, recording in src/recording.rs
  */
 
 use std::thread;
@@ -13,6 +14,7 @@ use amane::{LayerWindow, Monitor};
 
 use super::SCREENSHOT;
 use super::menu::{self, Menu};
+use crate::recording;
 use crate::screenshot::{self, Area, Target};
 
 /*
@@ -24,35 +26,45 @@ const HIDE_DELAY: Duration = Duration::from_millis(250);
 #[derive(Clone, Copy)]
 pub struct Choice {
     label: &'static str,
-    area: Area,
-    target: Target,
+    action: Action,
+}
+
+#[derive(Clone, Copy)]
+enum Action {
+    Shot(Area, Target),
+
+    // fullscreen is the focused monitor
+    Record(Area),
 }
 
 static CHOICES: &[Choice] = &[
     Choice {
         label: "Fullscreen (copy)",
-        area: Area::Fullscreen,
-        target: Target::Clipboard,
+        action: Action::Shot(Area::Fullscreen, Target::Clipboard),
     },
     Choice {
         label: "Fullscreen (save)",
-        area: Area::Fullscreen,
-        target: Target::File,
+        action: Action::Shot(Area::Fullscreen, Target::File),
     },
     Choice {
         label: "Region (copy)",
-        area: Area::Region,
-        target: Target::Clipboard,
+        action: Action::Shot(Area::Region, Target::Clipboard),
     },
     Choice {
         label: "Region (save)",
-        area: Area::Region,
-        target: Target::File,
+        action: Action::Shot(Area::Region, Target::File),
     },
     Choice {
         label: "Region (annotate)",
-        area: Area::Region,
-        target: Target::Annotate,
+        action: Action::Shot(Area::Region, Target::Annotate),
+    },
+    Choice {
+        label: "Fullscreen (record)",
+        action: Action::Record(Area::Fullscreen),
+    },
+    Choice {
+        label: "Region (record)",
+        action: Action::Record(Area::Region),
     },
 ];
 
@@ -78,7 +90,10 @@ impl Menu for Screenshot {
         thread::spawn(move || {
             thread::sleep(HIDE_DELAY);
 
-            screenshot::take(choice.area, choice.target);
+            match choice.action {
+                Action::Shot(area, target) => screenshot::take(area, target),
+                Action::Record(area) => recording::start(area),
+            }
         });
     }
 }

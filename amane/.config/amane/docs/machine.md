@@ -19,7 +19,7 @@ The machine the shell runs on (host `prometheus`).
 - polkit daemon on, no agent (item 10). hypridle and `wlopm` via
   home-manager. `ddcutil` and `hardware.i2c.enable` in the host config.
 - **Mango binds the shell relies on:** `SUPER+space` launcher, `SUPER+c`
-  clipboard, `SUPER+s` system, `SUPER+n` layout, `SUPER+p` screenshot,
+  clipboard, `SUPER+s` system, `SUPER+n` layout, `SUPER+p` screenshot (stops a recording),
   `SUPER+w` wallpaper, `SUPER+d` calendar, `SUPER+u` notifications,
   `SUPER+m` session, `SUPER+/` keybind sheet, `SUPER+SHIFT+a` audio,
   `SUPER+SHIFT+n` network, `SUPER+SHIFT+b` bluetooth;

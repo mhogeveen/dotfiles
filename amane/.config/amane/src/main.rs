@@ -27,6 +27,7 @@ mod network;
 mod notifications;
 mod osd;
 mod panels;
+mod recording;
 mod screenshot;
 mod session;
 mod state;
@@ -65,6 +66,7 @@ fn main() {
         .ipc("weather", weather::ipc)
         .ipc("media", osd::media_ipc)
         .ipc("brightness", brightness::ipc)
+        .ipc("record", recording::ipc)
         // first, so it is the bottom-most window
         .window_per_monitor(wallpaper::view)
         .window_per_monitor(bar::view)

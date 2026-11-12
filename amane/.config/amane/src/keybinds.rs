@@ -228,6 +228,7 @@ fn key_name(key: &str) -> String {
 const PANEL_TOGGLE: &str = "amane ipc call panel toggle ";
 const MEDIA: &str = "amane ipc call media ";
 const BRIGHTNESS: &str = "amane ipc call brightness ";
+const RECORD_MENU: &str = "amane ipc call record menu";
 
 fn describe(dispatcher: &str, arguments: &str) -> String {
     if dispatcher == "spawn" || dispatcher == "spawn_shell" {
@@ -338,6 +339,10 @@ fn describe_command(command: &str) -> String {
             "previous" => String::from("previous track"),
             other => format!("media {other}"),
         };
+    }
+
+    if command == RECORD_MENU {
+        return String::from("screenshot menu, or stop recording");
     }
 
     if let Some(direction) = command.strip_prefix(BRIGHTNESS) {

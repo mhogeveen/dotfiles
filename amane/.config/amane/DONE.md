@@ -343,6 +343,30 @@ are kept, so references between the two files still work.
   `privacy_dot`. Tested live with a recording from a temporary virtual
   source; the screen share is untested live. Tests: `audio::privacy::`.
 
+### 31. Screen recording
+- **Status:** done (2026-11-12). The screenshot menu's rows 6 and 7,
+  "Fullscreen (record)" (the focused monitor) and "Region (record)" (slurp),
+  record with wf-recorder to `~/Videos/Screencasts/<stamp>.mp4`, no sound,
+  h264 on the AMD gpu (`h264_vaapi`, `/dev/dri/renderD128`), falling back to
+  `libx264` when the gpu try exits within a second. The bar shows the record
+  glyph and the time (`1:09`) in the accent at the left of its right side;
+  clicking it, SUPER+P or `amane ipc call record stop` stops it (SIGINT, so
+  the file is finished). A notification then says where it was saved, or
+  quotes wf-recorder's last lines. Sound, webm/gif and copying the path were
+  offered and not wanted.
+- **Hooks in:** `src/recording.rs` (`Recording` service ticking each second,
+  `start`, `stop`, the `record` IPC: `stop`, and `menu`, which stops a
+  recording or toggles the screenshot menu); `src/panels/screenshot.rs`
+  (`Action::Record`); `src/bar.rs` `recording_time`;
+  `src/keybinds.rs` names the new SUPER+P command. The pid, start and file
+  are kept in `$XDG_RUNTIME_DIR/amane-shell/recording`, so a recording
+  survives a shell restart (checked against `/proc/<pid>/comm`).
+  wf-recorder is started without `LD_LIBRARY_PATH`: the shell's holds an
+  alsa-lib built against a newer glibc, which wf-recorder fails to load.
+  Tests: `recording::`.
+- **Outside the shell:** `wf-recorder` in `~/.nixos/home/packages.nix`;
+  mango's SUPER+P now runs `amane ipc call record menu`.
+
 ### 35. Screenshot annotation
 - **Status:** done (2026-11-12). The screenshot menu's fifth row, "Region
   (annotate)", opens the dragged region in satty (arrows, boxes, text, blur,

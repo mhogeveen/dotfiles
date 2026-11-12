@@ -26,6 +26,7 @@ use crate::bluetooth::{
 use crate::layout::MangoLayout;
 use crate::network::{self, Status};
 use crate::panels::{AUDIO, BLUETOOTH, NETWORK, Panels, SYSTEM, audio::volume_icon, layout, ui};
+use crate::recording::{self, Recording};
 use crate::theme::{Theme, theme};
 use crate::vpn::{self, Vpn};
 use crate::{clock, notifications};
@@ -233,11 +234,16 @@ fn status(t: &Theme) -> Rectangle {
 }
 
 /*
- * left to right: the privacy dot (only while recording or sharing), audio,
- * network, bluetooth (only on machines that have it), system
+ * left to right: the screen recording's time (only while recording), the
+ * privacy dot (only while the microphone records or the screen is shared),
+ * audio, network, bluetooth (only on machines that have it), system
  */
 fn status_icons(t: &Theme) -> Vec<Box<dyn Widget>> {
     let mut icons: Vec<Box<dyn Widget>> = Vec::new();
+
+    if let Some(elapsed) = Recording::read().elapsed() {
+        icons.push(Box::new(recording_time(t, elapsed)));
+    }
 
     if Privacy::read().active() {
         icons.push(Box::new(privacy_dot(t)));
@@ -372,6 +378,23 @@ fn privacy_dot(t: &Theme) -> Rectangle {
             .radius(Full)
             .fill(t.error),
     )
+}
+
+// the record glyph and the time recorded, in the accent; clicking stops the recording
+fn recording_time(t: &Theme, elapsed: u64) -> Rectangle {
+    let text = format!(
+        "{} {}",
+        recording::ICON_RECORD,
+        recording::elapsed_text(elapsed)
+    );
+
+    Rectangle::new()
+        .width(ui::text_width(&text, ICON_SIZE))
+        .height(Parent)
+        .align_child(Center, Center)
+        .cursor(Pointer)
+        .on_click(|_| recording::stop())
+        .child(Text::new(text).size(ICON_SIZE).color(t.accent))
 }
 
 // the speaker by volume, dimmed while muted; opens the audio panel

@@ -128,7 +128,7 @@ fn capture(area: Area, target: Target) -> Result<Option<Done>, String> {
 }
 
 // None when the selection was cancelled
-fn pick_region() -> Result<Option<String>, String> {
+pub fn pick_region() -> Result<Option<String>, String> {
     let picked = Command::new("slurp")
         .arg("-d")
         .output()

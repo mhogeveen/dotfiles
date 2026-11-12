@@ -29,10 +29,11 @@ anything. More detail, read when the task touches it:
 ## Workflow
 - Build `amane compile` (zero warnings, fix every one); format
   `rustfmt --edition 2024 src/main.rs`; test `./test.sh` (`./test.sh system::`
-  filters; 137 tests), add tests for pure logic.
+  filters; 141 tests), add tests for pure logic.
 - Restart `amane restart` after a compile (loses panel state; fine for checks).
 - IPC `amane ipc call <name> ...`: `panel open|close|toggle <name>`,
-  `close-all`, `list`; `lock`; `accent`; `weather`; `media`; `brightness up|down`.
+  `close-all`, `list`; `lock`; `accent`; `weather`; `media`; `brightness up|down`;
+  `record stop|menu` (menu: stops a recording, else toggles the screenshot menu).
 - Screenshots: `grim -g "x,y wxh"` takes logical coordinates (amane's widget
   units); the png comes out at physical size (× scale). On the AOC U27B3AF
   (`docs/machine.md`; 2560×1440 logical, scale 1.5): top-right panels

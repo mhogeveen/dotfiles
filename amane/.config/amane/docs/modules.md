@@ -60,8 +60,9 @@ bar, backdrop, notification popups, osd, every panel, and the lock screen.
 - `clipboard.rs` (Picker): cliphist history, × deletes, "Clear history"
   clicked twice, preview pane (`clipboard_preview.rs`).
 - `layout.rs` (Picker): mango layouts, the one in use striped.
-- `screenshot.rs` (Menu): fullscreen/region × copy/save, and region annotate
-  in satty (`../screenshot.rs`).
+- `screenshot.rs` (Menu): fullscreen/region × copy/save, region annotate in
+  satty (`../screenshot.rs`), and fullscreen/region record
+  (`../recording.rs`).
 - `session.rs` (Menu): lock, suspend, logout, reboot, shutdown.
 - `notifications.rs`: the notification center (live, then "Earlier").
 - `network/mod.rs` (+ `vpn_cards.rs`, the Tailscale card and tunnel lines): Wi-Fi (`w` toggles, `r` rescans while on), the list (j/k or
@@ -118,6 +119,9 @@ bar, backdrop, notification popups, osd, every panel, and the lock screen.
 - `session.rs`: session actions, the `lock` IPC, logind watcher.
 - `screenshot.rs`: grim/slurp/wl-copy, notification after capture; annotate
   pipes the capture into satty (configured in `~/.nixos/home/satty.nix`).
+- `recording.rs`: `Recording` (seconds recorded, for the bar), wf-recorder
+  start/stop (SIGINT), the `record` IPC; picks up a recording still running
+  after a restart from `$XDG_RUNTIME_DIR/amane-shell/recording`.
 - `system.rs`: `SystemInfo` (os, kernel, uptime, disk, network speed).
 - `theme.rs`: `Theme` colors, `Accent` service and the `accent` IPC.
 - `animations.rs`: the `Animations` on/off setting (state file
