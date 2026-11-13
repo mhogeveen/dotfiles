@@ -29,7 +29,7 @@ Settled earlier, no need to revisit:
 - Every accent, warning and error uses the accent picked in the system panel;
   there are no separate warning/error colors. Five fixed status colors
   (error, warning, ok, hint, info) were tried and reverted. The one exception
-  is `theme.error` (`#d25780`), used only for the bar's privacy dot (item 26),
+  is `theme.error` (`#d25780`), used only for the bar's privacy dot (item 26) and recording time,
   which must stand out whatever accent is picked (2026-11-12).
 - Panels have a fixed size (showing, hiding or resizing a layer surface while
   another changes can crash the shell, see the upstream list).

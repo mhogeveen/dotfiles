@@ -83,6 +83,9 @@ const BADGE_Y: f32 = -4.0;
 // the privacy dot's diameter, like a workspace dot
 const PRIVACY_DOT: f32 = WORKSPACE_DOT;
 
+// between the recording dot and its time
+const RECORDING_GAP: f32 = 4.0;
+
 // nerd font linux-nixos
 const ICON_NIXOS: &str = "\u{f313}";
 
@@ -380,21 +383,28 @@ fn privacy_dot(t: &Theme) -> Rectangle {
     )
 }
 
-// the record glyph and the time recorded, in the accent; clicking stops the recording
+// a red dot and the time recorded, both in the error color; clicking stops the recording
 fn recording_time(t: &Theme, elapsed: u64) -> Rectangle {
-    let text = format!(
-        "{} {}",
-        recording::ICON_RECORD,
-        recording::elapsed_text(elapsed)
-    );
+    let text = recording::elapsed_text(elapsed);
 
     Rectangle::new()
-        .width(ui::text_width(&text, ICON_SIZE))
+        .width(PRIVACY_DOT + RECORDING_GAP + ui::text_width(&text, ICON_SIZE))
         .height(Parent)
         .align_child(Center, Center)
         .cursor(Pointer)
         .on_click(|_| recording::stop())
-        .child(Text::new(text).size(ICON_SIZE).color(t.accent))
+        .child(
+            Row::new(children![
+                Rectangle::new()
+                    .width(PRIVACY_DOT)
+                    .height(PRIVACY_DOT)
+                    .radius(Full)
+                    .fill(t.error),
+                Text::new(text).size(ICON_SIZE).color(t.error),
+            ])
+            .gap(RECORDING_GAP)
+            .align(Center),
+        )
 }
 
 // the speaker by volume, dimmed while muted; opens the audio panel

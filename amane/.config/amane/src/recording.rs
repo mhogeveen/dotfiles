@@ -68,9 +68,6 @@ const SIGINT: c_int = 2;
 const FRAME_THICKNESS: f32 = 2.0;
 const FRAME_GAP: f32 = 1.0;
 
-// nerd font md-record_rec
-pub const ICON_RECORD: &str = "\u{f044b}";
-
 // what the bar shows: the whole seconds recorded, None while not recording
 pub struct Recording {
     elapsed: Option<u64>,

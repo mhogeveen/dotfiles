@@ -79,5 +79,5 @@ anything. More detail, read when the task touches it:
   `TextInput` takes every character.
 - UI, decided: the accent picked in the system panel for every highlight,
   warning and error (no status colors; the one exception is `theme.error`,
-  only for the bar's privacy dot); font `BlexMono Nerd Font`
+  only for the bar's privacy dot and recording time); font `BlexMono Nerd Font`
   (monospaced: width = chars × size × 0.6); no Do Not Disturb.

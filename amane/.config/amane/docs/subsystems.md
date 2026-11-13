@@ -148,7 +148,8 @@ reads PipeWire in a loop. After 300 ms without node events (`SETTLE`) one
 `pw-dump Node` is parsed with `json.rs`; a failed read keeps the dot as it
 was. Microphone: a running `Stream/Input/Audio` not flagged
 `stream.capture.sink`/`stream.monitor`. Screen: a `Video/Source` named
-`xdpw*`. The dot is `theme.error`, the one non-accent color.
+`xdpw*`. The dot is `theme.error`, the one non-accent color (also used for the
+bar's recording dot and time).
 The same dump feeds `audio/streams.rs` (the audio panel's per-app volume):
 every `Stream/Output/Audio`, its percent the cube root of the mean
 `channelVolumes` in `info.params.Props` (as wpctl shows it), `mute`, and
