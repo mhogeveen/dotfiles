@@ -1,11 +1,16 @@
 /*
  * audio panel, top-right: what's playing with its controls, volume and mute
- * for the default output and microphone, and the devices to pick the default from
+ * for the default output and microphone, the devices to pick the default from,
+ * and a volume and mute for each app playing sound
  *
  * volume and mute are amane's Audio, live; the device lists come from wpctl,
  * read while the panel is open (see src/audio). "Now playing" is amane's Media,
  * its active player: the one playing, else the one shown last; covers come
- * from src/covers.rs
+ * from src/covers.rs. the apps come from src/audio/streams.rs
+ *
+ * Tab selects the next app, and after the last one the output again; j, k and
+ * m act on whatever is selected. the selection goes back to the output when
+ * the panel closes
  */
 
 use std::time::Duration;
@@ -14,13 +19,15 @@ use amane::{
     Align::{Center, Start},
     Audio, Column,
     Cursor::Pointer,
-    Image, Key, LayerWindow, Media, MediaPlayer, Monitor, Rectangle, Row, ScrollArea, Service,
+    Image, Key, LayerWindow, Media, MediaPlayer, Monitor, Padding, Rectangle, Row, ScrollArea,
+    Service,
     Size::Parent,
     Text, Weight, Widget, children,
 };
 
 use super::ui::{self, BUTTON, CORNER_WIDTH, PADDING, SIDES};
 use super::{AUDIO, hints, panel};
+use crate::audio::streams::{Stream, Streams};
 use crate::audio::{Device, Devices, State};
 use crate::covers;
 use crate::theme::Theme;
@@ -32,8 +39,8 @@ const PERCENT: f32 = 40.0;
 // sized for Unmute, the longer of its two labels
 const MUTE: f32 = ui::fit("Unmute");
 
-// fits "Now playing" and the device lists at their full room (OUTPUT_LIST, INPUT_LIST)
-const HEIGHT: f32 = 460.0 + PLAYING_SECTION + GAP * 2.0;
+// fits "Now playing", the device lists at their full room (OUTPUT_LIST, INPUT_LIST) and the apps
+const HEIGHT: f32 = 460.0 + PLAYING_SECTION + GAP * 2.0 + APPS_SECTION + GAP * 2.0;
 
 // the slider takes what's left of the row
 const SLIDER: f32 =
@@ -78,7 +85,15 @@ const KEY_MIC_LOUDER: char = 'K';
 // how far j and k move the volume
 const STEP: i32 = 5;
 
+pub fn reset() {
+    Streams::select_output();
+}
+
 fn key_pressed(key: Key) {
+    if matches!(key, Key::Tab) {
+        return Streams::select_next();
+    }
+
     let Key::Character(letter) = key else {
         return;
     };
@@ -90,7 +105,27 @@ fn key_pressed(key: Key) {
         _ => {}
     }
 
-    match letter.to_ascii_lowercase() {
+    let letter = letter.to_ascii_lowercase();
+
+    // read into a copy, so no read lock is held while the stream is changed
+    let selected = Streams::read()
+        .selected()
+        .map(|stream| (stream.id, stream.volume));
+
+    if let Some((id, volume)) = selected {
+        match letter {
+            KEY_MUTE => Streams::toggle_mute(id),
+            KEY_QUIETER => step_stream(id, volume, -STEP),
+            KEY_LOUDER => step_stream(id, volume, STEP),
+            _ => {}
+        }
+
+        if matches!(letter, KEY_MUTE | KEY_QUIETER | KEY_LOUDER) {
+            return;
+        }
+    }
+
+    match letter {
         KEY_MUTE => Audio::toggle_mute(),
         KEY_MIC_MUTE => Audio::toggle_microphone_mute(),
         KEY_QUIETER => step(-STEP),
@@ -116,9 +151,18 @@ fn step_microphone(by: i32) {
     Audio::set_microphone_volume((volume + by).clamp(0, 100) as u8);
 }
 
+// an app's volume, the same way
+fn step_stream(id: u32, volume: u8, by: i32) {
+    Streams::set_volume(id, (i32::from(volume) + by).clamp(0, 100) as u8);
+}
+
 fn content(t: &Theme) -> Rectangle {
     let audio = Audio::read();
     let devices = Devices::read();
+    let streams = Streams::read();
+
+    // j, k and m go to the selected app, so the output stops showing them
+    let app_selected = streams.selected().is_some();
 
     let output = Level {
         icon: volume_icon(audio.volume(), audio.muted()),
@@ -126,8 +170,8 @@ fn content(t: &Theme) -> Rectangle {
         muted: audio.muted(),
         set_volume: Audio::set_volume,
         toggle_mute: Audio::toggle_mute,
-        mute_key: KEY_MUTE,
-        volume_keys: Some((KEY_QUIETER, KEY_LOUDER)),
+        mute_key: (!app_selected).then_some(KEY_MUTE),
+        volume_keys: (!app_selected).then_some((KEY_QUIETER, KEY_LOUDER)),
     };
 
     let input = Level {
@@ -140,7 +184,7 @@ fn content(t: &Theme) -> Rectangle {
         muted: audio.microphone_muted(),
         set_volume: Audio::set_microphone_volume,
         toggle_mute: Audio::toggle_microphone_mute,
-        mute_key: KEY_MIC_MUTE,
+        mute_key: Some(KEY_MIC_MUTE),
         volume_keys: Some((KEY_MIC_QUIETER, KEY_MIC_LOUDER)),
     };
 
@@ -163,6 +207,7 @@ fn content(t: &Theme) -> Rectangle {
             devices.state(),
             INPUT_LIST
         ),
+        apps(t, &streams),
     ];
 
     ui::frame(t, GAP * 2.0, parts)
@@ -176,8 +221,8 @@ struct Level {
     set_volume: fn(u8),
     toggle_mute: fn(),
 
-    // what ? shows: the mute key, and the volume keys where there are any
-    mute_key: char,
+    // what ? shows: the mute key and the volume keys, while they act on this level
+    mute_key: Option<char>,
     volume_keys: Option<(char, char)>,
 }
 
@@ -250,13 +295,7 @@ fn level_row(t: &Theme, level: &Level) -> Rectangle {
 
     let toggle_mute = level.toggle_mute;
 
-    let mute = ui::key_text_button(
-        t,
-        if level.muted { "Unmute" } else { "Mute" },
-        MUTE,
-        level.mute_key,
-        move |_| toggle_mute(),
-    );
+    let mute = mute_button(t, level.muted, level.mute_key, move || toggle_mute());
 
     // while ? hints show, the percentage says which keys change the volume
     let percent = match (hints::shown(), level.volume_keys) {
@@ -292,6 +331,155 @@ fn level_row(t: &Theme, level: &Level) -> Rectangle {
         .height(BUTTON)
         .padding(SIDES)
         .child(row)
+}
+
+// Mute or Unmute; while ? hints show, its key, if it has one right now
+fn mute_button(
+    t: &Theme,
+    muted: bool,
+    key: Option<char>,
+    toggle: impl Fn() + 'static,
+) -> Rectangle {
+    let label = if muted { "Unmute" } else { "Mute" };
+
+    match key {
+        Some(key) => ui::key_text_button(t, label, MUTE, key, move |_| toggle()),
+        None => ui::button(t, label, MUTE, move |_| toggle()),
+    }
+}
+
+/*
+ *  Apps                                   Tab while ? hints show
+ *  ┌──────────────────────────────────────┐
+ *  │ 󰈹 Firefox · YouTube — lofi beats     │
+ *  │   ━━━━━━━━━━━━━━──────  62%  [Mute]  │
+ *  └──────────────────────────────────────┘
+ *
+ * room for APP_LIST_ROWS in the fixed-height panel; more scroll
+ */
+const APP_LIST_ROWS: usize = 3;
+const APP_NAME_LINE: f32 = 18.0;
+const APP_LINE_GAP: f32 = 4.0;
+const APP_ROW_PADDING: f32 = 6.0;
+const APP_ROW: f32 = APP_ROW_PADDING * 2.0 + APP_NAME_LINE + APP_LINE_GAP + BUTTON;
+const APPS_SECTION: f32 = ui::HEADING + GAP + APP_ROW * APP_LIST_ROWS as f32;
+
+fn apps(t: &Theme, streams: &Streams) -> Column {
+    let selected = streams.selected().map(|stream| stream.id);
+
+    let list: Vec<Box<dyn Widget>> = if streams.streams().is_empty() {
+        vec![note(t, "No apps playing")]
+    } else {
+        streams
+            .streams()
+            .iter()
+            .map(|stream| -> Box<dyn Widget> {
+                Box::new(app_row(t, stream, selected == Some(stream.id)))
+            })
+            .collect()
+    };
+
+    let height = if streams.streams().is_empty() {
+        ROW
+    } else {
+        APP_ROW * streams.streams().len().min(APP_LIST_ROWS) as f32
+    };
+
+    // while ? hints show, the heading says which key moves through the apps
+    let heading = if hints::shown() {
+        Row::new(children![
+            ui::heading(t, "Apps", ui::HEADING),
+            Text::new("Tab")
+                .size(ui::TEXT_NOTE)
+                .weight(Weight::Bold)
+                .color(t.accent),
+        ])
+        .align(Center)
+        .height(ui::HEADING)
+    } else {
+        Row::new(children![ui::heading(t, "Apps", ui::HEADING)]).height(ui::HEADING)
+    };
+
+    Column::new(children![
+        heading,
+        Rectangle::new()
+            .width(Parent)
+            .height(height)
+            .fill(t.bg0)
+            .border(1.0, t.bg3)
+            .clip()
+            .child(ScrollArea::new("audio-apps", Column::new(list))),
+    ])
+    .gap(GAP)
+}
+
+// the app and what it plays, then its slider, percentage and mute
+fn app_row(t: &Theme, stream: &Stream, selected: bool) -> Rectangle {
+    let dimmed = stream.muted || !stream.playing;
+    let color = if dimmed { t.comment } else { t.fg };
+
+    let id = stream.id;
+
+    let name = Row::new(children![
+        Rectangle::new()
+            .width(ICON)
+            .height(APP_NAME_LINE)
+            .align_child(Center, Center)
+            .child(Text::new(stream.icon).size(ui::ICON_SIZE).color(color)),
+        ui::line(
+            APP_NAME_LINE,
+            Text::new(source_text(&stream.app, &stream.media))
+                .size(ui::TEXT_NOTE)
+                .color(color)
+                .elide()
+        ),
+    ])
+    .gap(GAP)
+    .align(Center)
+    .height(APP_NAME_LINE);
+
+    // while ? hints show, the selected app's percentage says which keys change its volume
+    let percent = if selected && hints::shown() {
+        Text::new(format!("{KEY_QUIETER} {KEY_LOUDER}"))
+            .size(ui::TEXT_NOTE)
+            .weight(Weight::Bold)
+            .color(t.accent)
+    } else {
+        Text::new(format!("{}%", stream.volume))
+            .size(ui::TEXT_NOTE)
+            .color(color)
+    };
+
+    let controls = Row::new(children![
+        // under the icon, so the slider lines up with the name
+        Rectangle::new().width(ICON).height(BUTTON),
+        ui::slider(t, SLIDER, stream.volume, dimmed, move |volume| {
+            Streams::set_volume(id, volume)
+        }),
+        Rectangle::new()
+            .width(PERCENT)
+            .height(BUTTON)
+            .align_child(Center, Center)
+            .child(percent),
+        mute_button(t, stream.muted, selected.then_some(KEY_MUTE), move || {
+            Streams::toggle_mute(id)
+        }),
+    ])
+    .gap(GAP)
+    .align(Center)
+    .height(BUTTON);
+
+    Rectangle::new()
+        .width(Parent)
+        .height(APP_ROW)
+        .fill(if selected { t.bg3 } else { t.bg0 })
+        .padding(Padding {
+            top: APP_ROW_PADDING,
+            right: PADDING,
+            bottom: APP_ROW_PADDING,
+            left: PADDING,
+        })
+        .child(Column::new(children![name, controls]).gap(APP_LINE_GAP))
 }
 
 fn device_row(t: &Theme, device: &Device, choosable: bool) -> Rectangle {

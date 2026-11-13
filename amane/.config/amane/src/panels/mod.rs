@@ -136,7 +136,7 @@ static REGISTRY: &[PanelDef] = &[
     PanelDef {
         name: AUDIO,
         groups: &[PANELS],
-        on_close: None,
+        on_close: Some(audio::reset),
         corner: true,
     },
     PanelDef {

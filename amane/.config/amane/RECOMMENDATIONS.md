@@ -78,17 +78,6 @@ on 2026-11-12. Not wanted (from the same list): a system tray, the focused
 window's title in the bar, a caffeine/idle-inhibit toggle, a window switcher,
 a screen color picker, calendar events, OCR of a screenshot region.
 
-### 27. Per-app volume
-- **Status:** open
-- **Why:** the audio panel only sets device volume; one loud app can't be
-  turned down on its own.
-- **Hooks in:** `src/panels/audio.rs`: an "Apps" list under the devices, a
-  slider and mute per playback stream (`wpctl status` Streams, `wpctl
-  set-volume <id>` / `set-mute <id>`), parsed in `src/audio/mod.rs`. The
-  panel has a fixed size, so the list scrolls like the device lists.
-- **To settle:** how many rows before it scrolls; how to name a stream (app
-  name, media name) and whether to show app icons.
-
 ### 28. Night light
 - **Status:** open
 - **Why:** no warmer screen in the evening.

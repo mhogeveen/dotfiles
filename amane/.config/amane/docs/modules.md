@@ -77,7 +77,11 @@ bar, backdrop, notification popups, osd, every panel, and the lock screen.
   `c` cancels, `x` dismisses a notice or failure).
 - `audio.rs`: "Now playing" (`h` `p` `l`), output and input levels (`j`/`k`
   output volume, `J`/`K` (Shift) mic volume, `m` mute, `n` mic mute), device
-  lists (4 outputs, 2 inputs, then they scroll); `volume_icon`, mic icons.
+  lists (4 outputs, 2 inputs, then they scroll), an "Apps" list (3 two-line
+  rows, then it scrolls: slider, percent, Mute per playback stream; idle or
+  muted dimmed). `Tab` selects the next app, then the output again; `j`/`k`/`m`
+  act on the selection, which resets on close (`reset`). `volume_icon`, mic
+  icons.
 - The network and Bluetooth highlight (`list::step_highlight`,
   `follow_window`): None until a key moves it, then the list is drawn from a
   first row (a `FIRST_ROW` static per panel) instead of through its
@@ -103,6 +107,10 @@ bar, backdrop, notification popups, osd, every panel, and the lock screen.
 - `audio/privacy.rs`: `Privacy`, whether a microphone is recording or the
   screen is shared (a long-running `pw-mon` as the signal, `pw-dump Node` to
   read; see 5.12).
+- `audio/streams.rs`: `Streams`, the playback streams (`Stream/Output/Audio`)
+  and the audio panel's selection; filled from privacy.rs's `pw-dump Node`
+  (no polling of its own), changed through `wpctl set-volume`/`set-mute` on
+  one worker thread that sends only the newest change per stream.
 - `bluetooth/mod.rs`, `bluetooth/agent.rs`: BlueZ jobs and failures; the
   pairing agent (exports `org.bluez.Agent1`).
 - `network/mod.rs`, `details.rs`, `profiles.rs`: NetworkManager over D-Bus on

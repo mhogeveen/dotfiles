@@ -277,7 +277,13 @@ const SLIDER_HEIGHT: f32 = 8.0;
  * pointer is. the fill shows value, what the sound server says, so it follows
  * a drag as fast as the server answers
  */
-pub fn slider(t: &Theme, width: f32, value: u8, dimmed: bool, on_change: fn(u8)) -> Rectangle {
+pub fn slider(
+    t: &Theme,
+    width: f32,
+    value: u8,
+    dimmed: bool,
+    on_change: impl Fn(u8) + 'static,
+) -> Rectangle {
     let filled = width * f32::from(value.min(100)) / 100.0;
 
     let fill = Rectangle::new()

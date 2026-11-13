@@ -394,3 +394,23 @@ are kept, so references between the two files still work.
   `home/default.nix`): output file, `wl-copy`, Enter copies, early exit,
   font `BlexMono Nerd Font`. Kept there rather than as shell arguments, so
   satty behaves the same when started elsewhere.
+
+### 27. Per-app volume
+- **Status:** done (2026-11-13). The audio panel has an "Apps" list under
+  Input: one two-line row per playback stream (icon and "App · what it
+  plays", then a slider, percent and Mute), 3 rows before it scrolls, room
+  for all 3 kept in the fixed panel height. Every `Stream/Output/Audio` is
+  listed; paused/idle or muted ones are dimmed. Keys: `Tab` selects the next
+  app (row filled `bg3`), then the output again; `j`/`k`/`m` act on the
+  selection, `n`/`J`/`K` stay on the microphone. `?` shows `Tab` beside the
+  heading and the volume and mute keys only where they currently act. The
+  selection goes back to the output when the panel closes.
+- **Hooks in:** `src/audio/streams.rs` (`Streams`), filled from the
+  `pw-dump Node` that `src/audio/privacy.rs` already reads on every settled
+  burst of pipewire node changes, so there's no new polling; volume changes
+  made elsewhere follow. The percent is the cube root of `channelVolumes`,
+  like wpctl. Changes are stored at once and sent with `wpctl set-volume` /
+  `set-mute` from one worker thread that keeps only the newest per stream.
+  `ui::slider` takes a closure now. App glyphs (Firefox, Chrome/Chromium,
+  Spotify, Discord, VLC; else a note) from `application.process.binary`.
+  Tests: `audio::streams::`.

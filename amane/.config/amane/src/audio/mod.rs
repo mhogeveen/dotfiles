@@ -11,6 +11,7 @@
  */
 
 pub mod privacy;
+pub mod streams;
 
 use std::collections::HashMap;
 use std::process::Command;

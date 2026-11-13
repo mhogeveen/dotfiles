@@ -9,6 +9,9 @@
  * then only what changes. each settled burst of changes to nodes is answered
  * with one `pw-dump Node` (see NodeEvents for what counts)
  *
+ * the same dump lists the apps playing sound, handed to streams.rs for the
+ * audio panel's per-app volume
+ *
  * when pw-mon exits (pipewire restarted, or it isn't installed) the dot goes
  * away and pw-mon is started again after a pause
  */
@@ -22,6 +25,7 @@ use std::time::Duration;
 
 use amane::Service;
 
+use super::streams;
 use crate::command;
 use crate::json::{self, Value};
 
@@ -194,6 +198,7 @@ fn refresh() {
     // a failed read keeps what was shown, rather than hiding a recording
     if let Some(dump) = read {
         store(detect(&dump));
+        streams::store(streams::from_dump(&dump));
     }
 }
 

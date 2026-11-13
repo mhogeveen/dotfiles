@@ -149,3 +149,10 @@ reads PipeWire in a loop. After 300 ms without node events (`SETTLE`) one
 was. Microphone: a running `Stream/Input/Audio` not flagged
 `stream.capture.sink`/`stream.monitor`. Screen: a `Video/Source` named
 `xdpw*`. The dot is `theme.error`, the one non-accent color.
+The same dump feeds `audio/streams.rs` (the audio panel's per-app volume):
+every `Stream/Output/Audio`, its percent the cube root of the mean
+`channelVolumes` in `info.params.Props` (as wpctl shows it), `mute`, and
+`running` for not dimmed. Volume changes made elsewhere arrive as node
+events too. A change from the panel is stored at once (the slider follows the
+drag) and sent with wpctl by one worker thread that drops older volumes for
+the same stream. WirePlumber remembers each app's volume and mute.
