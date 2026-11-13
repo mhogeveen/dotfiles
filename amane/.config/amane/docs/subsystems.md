@@ -96,7 +96,8 @@ locks then waits 1 s (mango lacks the lock-notify protocol, so
 `brightness::changes()` (a counter bumped by every shell-made change). Any
 volume/mute/mic change, from any source, shows the popup (bottom center of the
 focused monitor, 300×48, 1.5 s, icon + `ui::meter` + percent, "Muted" dimmed);
-brightness only for shell-made changes. Not at startup, not for volume while
+brightness only for shell-made changes. Not while the sound server starts (the first 5 s,
+and while amane still reads its empty default), not for volume while
 the audio panel is open, not for brightness while the system panel is open.
 Media: amane's `Media` (MPRIS, polled every second once started, "active"
 player = playing one, else last shown). The `media` IPC and the audio panel's

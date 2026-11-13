@@ -2,8 +2,8 @@
  * the volume popup at the bottom of the focused monitor: the speaker or the
  * microphone, a level bar and the percentage, for a moment after either changes,
  * whatever changed it (the volume keys run wpctl, an app, a headset becoming the
- * default). not for the first reading at startup, and not while the audio panel
- * is open, which shows the levels already
+ * default). not while the sound server is still starting, and not while the
+ * audio panel is open, which shows the levels already
  *
  * the same for brightness, but only for changes made through the shell (the
  * shortcuts, the slider): the monitor can only be asked over DDC, slowly, so
@@ -51,6 +51,13 @@ const SHOWN_FOR: Duration = Duration::from_millis(1500);
 // how often the levels are looked at; amane already keeps them up to date from pipewire
 const LOOK_EVERY: Duration = Duration::from_millis(100);
 
+/*
+ * the shell starts with the session, before pipewire and wireplumber: the first
+ * readings are amane's empty default, then wireplumber picks the default devices.
+ * those aren't changes anyone made, so the levels only count after this long
+ */
+const SETTLE: Duration = Duration::from_secs(5);
+
 const WIDTH: f32 = 300.0;
 const HEIGHT: f32 = 48.0;
 const BOTTOM: i32 = 32;
@@ -70,7 +77,7 @@ pub enum Device {
 }
 
 // what the audio service says, the parts the popup shows
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
 struct Levels {
     volume: u8,
     muted: bool,
@@ -104,6 +111,14 @@ fn changed(before: Levels, now: Levels) -> Option<Device> {
     }
 }
 
+/*
+ * whether a reading can be compared with the last one: the session has been up
+ * long enough, and the sound server answered (with none, amane gives the default)
+ */
+fn settled(elapsed: Duration, reading: Levels) -> bool {
+    elapsed >= SETTLE && reading != Levels::default()
+}
+
 pub struct Osd {
     // what the popup shows, and until when
     showing: Option<(Device, Instant)>,
@@ -120,6 +135,7 @@ impl Service for Osd {
 
     fn listen() {
         // the first reading is what the volume already was, nothing changed yet
+        let started = Instant::now();
         let mut last = Levels::read();
         let mut brightness_changes = brightness::changes();
 
@@ -128,7 +144,11 @@ impl Service for Osd {
 
             // one lock at a time: the levels, then the panels, then this service
             let now = Levels::read();
-            let sound = changed(last, now);
+            let sound = if settled(started.elapsed(), now) {
+                changed(last, now)
+            } else {
+                None
+            };
 
             last = now;
 
@@ -339,5 +359,12 @@ mod tests {
         assert_eq!(changed(QUIET, muted), Some(Device::Output));
         assert_eq!(changed(QUIET, mic_muted), Some(Device::Microphone));
         assert_eq!(changed(QUIET, both), Some(Device::Output));
+    }
+
+    #[test]
+    fn nothing_counts_while_the_sound_server_starts() {
+        assert!(!settled(Duration::from_secs(1), QUIET));
+        assert!(!settled(SETTLE, Levels::default()));
+        assert!(settled(SETTLE, QUIET));
     }
 }
