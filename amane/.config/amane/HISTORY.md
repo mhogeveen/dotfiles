@@ -355,6 +355,26 @@ each finished recommendation by number; `AGENTS.md` and `docs/` the current stat
    would fight the slider). Switching off lasts only for the session, so the
    shell keeps no state of its own and asks systemd instead.
 
+## Session: dimming before the lock (2026-11-14)
+
+1. **Item 18.** The user wanted as much as possible in hypridle, so it's a
+   `ddcutil` script in `home/hypridle.nix` rather than a shell IPC; no shell
+   code. The popup stays away by itself, since it only follows the shell's
+   own brightness changes. 10% at 4.5 min. It restores the saved level, not
+   a fixed 100 like the old Hyprland config, and `flock` keeps a quick
+   resume from landing before the dim.
+
+## Session: logout quits mango first (2026-11-14)
+
+1. `loginctl terminate-session` alone killed mango before its exit cleanup
+   could stop `graphical-session.target`, so the session units stayed
+   active. A re-login within systemd's 10 s user-manager linger reused them:
+   the foot server hit its start limit, hypridle sat on a dead Wayland
+   socket (no dim, lock or suspend), and the health check warned. Logout now
+   runs `mmsg dispatch quit`, waits a second, then terminates the session
+   (cleanup, and the fallback off mango). mango's `config.conf` also resets
+   and restarts `mango-session.target` on every login as a safety net.
+
 ## Habits worth keeping
 
 - Verify before claiming: check the code, the running shell (`pgrep`, its

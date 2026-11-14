@@ -16,8 +16,8 @@ are kept, so references between the two files still work.
 - **Limits:** mango has no lock-notify protocol, so hypridle can't hold sleep
   until the lock screen is up (`inhibit_sleep = 3`); `before_sleep_cmd` waits
   a second after locking instead, like the session menu's
-  `LOCK_BEFORE_SUSPEND`. No dimming: the old Hyprland setup used ddcutil,
-  which needs I2C (`hardware.i2c.enable`) and isn't set up. Idle locking
+  `LOCK_BEFORE_SUSPEND`. Dimming before the lock came later (item 18). Idle
+  locking
   needs `XDG_SESSION_ID` in the shell's environment (mango's `exec_once`
   passes it); without it, `lock_cmd = "amane ipc call lock"` would be the
   fallback.
@@ -442,3 +442,18 @@ are kept, so references between the two files still work.
   warned set in `$XDG_RUNTIME_DIR/amane-shell/health-warned` so `amane
   restart` doesn't warn again; `SystemInfo.temperatures` read every 2 s while
   the panel is open. Tests: `health::`.
+
+### 18. Dimming before the lock
+- **Status:** done (2026-11-14) outside the shell: a hypridle listener in
+  `~/.nixos/home/hypridle.nix` dims the monitor to 10% at 4.5 min, half a
+  minute before the lock, and puts the earlier level back on activity.
+- **How it fits:** a small script (`dim-monitor`) calls `ddcutil --bus 5`
+  directly. `dim` saves the current level to
+  `$XDG_RUNTIME_DIR/hypridle-brightness` (only when above 10); `restore`
+  writes it back and removes the file, so it does nothing without a dim
+  before it. Both run under `flock`, so a quick resume can't overtake a dim
+  that is still writing. No popup: `osd.rs` only follows
+  `brightness::changes()`, which counts the shell's own changes.
+- **Limits:** the system panel's slider shows the old value until it reads
+  the monitor again (on opening, at most every `READ_EVERY`, 10 s). The bus
+  is fixed at 5; on another monitor, change `monitorBus`.

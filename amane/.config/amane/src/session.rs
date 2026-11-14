@@ -15,8 +15,20 @@ use crate::notifications;
 use crate::panels::Panels;
 
 /*
+ * asks mango to quit before the session ends: a quitting mango stops
+ * graphical-session.target, so the session's systemd units (foot server,
+ * hypridle, wlsunset) stop cleanly; killed by logind it can't, and a quick
+ * re-login then finds them failed or tied to the old compositor
+ */
+const QUIT_COMPOSITOR: &str = "mmsg dispatch quit";
+
+// seconds mango gets for that cleanup before logind ends the rest of the session
+const QUIT_GRACE_SECONDS: u32 = 1;
+
+/*
  * ends this login session through logind, so it works with any compositor and
- * login manager; every process in the session gets SIGTERM and ly comes back
+ * login manager; every process left in the session gets SIGTERM and ly comes
+ * back. also the fallback when mmsg can't reach mango
  */
 const LOGOUT: &str = "loginctl terminate-session";
 
@@ -110,7 +122,13 @@ fn logout() {
         return;
     }
 
-    spawn(&format!("{LOGOUT} {id}"));
+    /*
+     * one shell runs all three steps; it's its own process, so it carries on
+     * after the shell dies along with mango
+     */
+    spawn(&format!(
+        "{QUIT_COMPOSITOR}; sleep {QUIT_GRACE_SECONDS}; {LOGOUT} {id}"
+    ));
 }
 
 // `amane ipc call lock`, for keybinds or an idle daemon

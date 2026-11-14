@@ -85,7 +85,8 @@ shortened to fit; left-aligned).
 `session::watch_logind` locks on logind's `PrepareForSleep` and on this
 session's `Lock` signal (needs `XDG_SESSION_ID` in the shell's environment,
 which mango's `exec_once` passes). hypridle (home-manager,
-`~/.nixos/home/hypridle.nix`) only calls `loginctl lock-session` (5 min), turns
+`~/.nixos/home/hypridle.nix`) dims the monitor to 10% over DDC/CI (4.5 min,
+restored on activity; item 18), calls `loginctl lock-session` (5 min), turns
 the screen off with `wlopm` (5.5 min) and suspends (30 min); `before_sleep_cmd`
 locks then waits 1 s (mango lacks the lock-notify protocol, so
 `inhibit_sleep = 3` can't work). The session menu waits `LOCK_BEFORE_SUSPEND`

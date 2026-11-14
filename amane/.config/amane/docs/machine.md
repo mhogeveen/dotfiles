@@ -17,7 +17,7 @@ The machine the shell runs on (host `prometheus`).
   Stereo", an HDMI output on the monitor.
 - Tailscale on (`prometheus`, 100.67.176.75), Mullvad exit nodes.
 - polkit daemon on, no agent (item 10). hypridle and `wlopm` via
-  home-manager. `ddcutil` and `hardware.i2c.enable` in the host config.
+  home-manager (hypridle dims over DDC/CI at 4.5 min, item 18). `ddcutil` and `hardware.i2c.enable` in the host config.
 - **Mango binds the shell relies on:** `SUPER+space` launcher, `SUPER+c`
   clipboard, `SUPER+s` system, `SUPER+n` layout, `SUPER+p` screenshot (stops a recording),
   `SUPER+w` wallpaper, `SUPER+d` calendar, `SUPER+u` notifications,

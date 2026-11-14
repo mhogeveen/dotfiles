@@ -90,7 +90,9 @@ a screen color picker, calendar events, OCR of a screenshot region.
   notification when it runs low.
 
 ### 30. Emoji and glyph picker
-- **Status:** open
+- **Status:** blocked on amane. Emoji draw as blank space (no colour glyphs,
+  see the upstream list); tested 2026-11-14 with a notification. On hold
+  until amane can draw them.
 - **Why:** no way to search for and type an emoji or Nerd Font glyph.
 - **Hooks in:** a `Picker` (`src/panels/picker.rs`) with its own panel and
   mango bind, or a launcher prefix (`src/panels/launcher.rs`, like `=`);
@@ -100,6 +102,16 @@ a screen color picker, calendar events, OCR of a screenshot region.
   `src/usage.rs`.
 - **To settle:** own panel or launcher prefix; emoji, glyphs or both; where
   the data files come from.
+- **Notes for later:**
+  - emoji list: `${pkgs.unicode-emoji}/share/unicode/emoji/emoji-test.txt`
+    (17.0.0); `glyphnames.json` isn't in the nerd-fonts package, fetch it
+    pinned to the installed BlexMono's version (v3.4.0).
+  - `src/usage.rs` is hard-wired to the `launches` file, so recent picks need
+    a second state file.
+  - a glyph-only picker would work today (Nerd Font glyphs and outline
+    symbols like ♥ ★ draw fine). Emoji could only show by name, or with a
+    monochrome outline emoji font (untested whether fontconfig would pick it
+    over Noto Color Emoji).
 
 ### 32. Timer and pomodoro
 - **Status:** open
@@ -175,19 +187,6 @@ a screen color picker, calendar events, OCR of a screenshot region.
     is a git submodule that also holds macOS configs (hammerspoon, karabiner
     and others), so these may be used on another machine; check before
     deleting.
-
-### 18. Dimming before the lock
-- **Status:** open
-- **Why:** the old Hyprland setup dimmed the monitor with `ddcutil` before
-  locking; hypridle (item 1 in DONE.md) only locks, turns the screen off and
-  suspends.
-- **Hooks in:** a listener in `~/.nixos/home/hypridle.nix`. DDC/CI works now
-  (`hardware.i2c.enable` and `ddcutil` are in the host config, the monitor
-  answers on `/dev/i2c-5`, no `i2c` group needed), so the listener could call
-  `ddcutil --bus 5 setvcp 10 <low>` and restore on resume, or go through the
-  shell (`src/brightness.rs`) so the slider stays in step.
-- **To settle:** whether it's wanted, how dim, and when (e.g. at 4.5 min,
-  before the 5 min lock).
 
 ## Worth reporting to amane upstream
 
@@ -269,6 +268,15 @@ up as issue texts.
   window along with the selection instead.
 - **`Monitor` has no scale factor**, so the wallpaper is decoded at twice the
   monitor's size in widget units, a guess that covers scales up to 2.
+- **No colour glyphs.** Letters are rendered from outlines only
+  (`Render::new(&[Source::Outline])`, `Format::Alpha` into an `R8Unorm` atlas,
+  `graphics/letter.rs`), so bitmap (CBDT) and COLR fonts draw nothing. For
+  emoji the fallback (`graphics/font.rs`, Noto families first) picks Noto
+  Color Emoji, leaving a blank space: 😀, 🎉 and ❤ (with or without U+FE0F)
+  all draw empty. Suggested fix: try `Source::ColorBitmap(StrikeWith::BestFit)`
+  and `Source::ColorOutline(0)` before `Source::Outline`, keeping colour
+  glyphs in an RGBA atlas; at minimum, skip fonts without outlines in the
+  fallback search. Blocks item 30.
 - **The image decoder reads PNG and JPEG only**, not WebP.
 - **Every image asked for starts its own decode thread**, with no limit: many
   full-size pictures requested at once all decode in parallel.

@@ -18,6 +18,8 @@ them written up for upstream.
   returned as a built `Rectangle` can resolve to the `Widget` getter; pass
   sizes into helpers instead (why `ui::heading` takes a height).
   `Rectangle::fill` takes a `Color` or an `Image`.
+- **Text:** letters are drawn from outlines only, so colour emoji draw as
+  blank space; Nerd Font glyphs and outline symbols (♥ ★) are fine.
 - **Monitors:** `Monitor` has `name`, `width`, `height` in widget units, but no
   scale factor.
 - **Layers:** `Layer::Background|Bottom|Top|Overlay`, `Zone::Reserve|Respect|
