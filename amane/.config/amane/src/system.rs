@@ -1,11 +1,11 @@
 /*
  * facts about this machine for the system panel: who and where you are, the os,
- * kernel, core count, uptime and disk; cpu use, memory and battery come from amane's
- * own Cpu, Memory and Battery
+ * kernel, core count, uptime, disk and temperatures; cpu use, memory and battery
+ * come from amane's own Cpu, Memory and Battery
  *
  * the fixed facts are read once; uptime and disk are read again only while
- * the panel is open, when it opens and every 30 seconds after; the network
- * speed is sampled every second while it's open
+ * the panel is open, when it opens and every 30 seconds after; the temperatures
+ * every 2 seconds while it's open, and the network speed every second
  */
 
 use std::collections::VecDeque;
@@ -18,10 +18,14 @@ use std::time::{Duration, Instant};
 use amane::Service;
 
 use crate::command;
+use crate::health::{self, Temperatures};
 use crate::panels::{Panels, SYSTEM};
 
 // one-second ticks between reads while the panel is open
 const REFRESH_EVERY: u32 = 30;
+
+// one-second ticks between temperature reads while the panel is open; sysfs reads are cheap
+const TEMPERATURE_EVERY: u32 = 2;
 
 // readings kept for the network speed: four readings span the last 3 seconds
 const SAMPLES: usize = 4;
@@ -58,6 +62,9 @@ pub struct SystemInfo {
     // None when / couldn't be measured
     pub disk: Option<Disk>,
 
+    // the cpu and gpu sensors, each None when this machine has none
+    pub temperatures: Temperatures,
+
     // None while there's no default route
     pub network: Option<NetworkSpeed>,
 }
@@ -73,6 +80,7 @@ impl Service for SystemInfo {
             cores: thread::available_parallelism().map_or(0, usize::from),
             uptime_minutes: uptime_minutes(),
             disk: disk("/"),
+            temperatures: health::temperatures(),
             network: None,
         }
     }
@@ -103,6 +111,9 @@ impl Service for SystemInfo {
 
             let due = open && (!was_open || ticks % REFRESH_EVERY == 0);
 
+            let temperatures =
+                (open && (!was_open || ticks % TEMPERATURE_EVERY == 0)).then(health::temperatures);
+
             was_open = open;
 
             let fresh = due.then(|| (uptime_minutes(), disk("/")));
@@ -114,9 +125,10 @@ impl Service for SystemInfo {
 
                 fresh.is_some_and(|(uptime, disk)| {
                     uptime != info.uptime_minutes || disk != info.disk
-                }) || network
-                    .as_ref()
-                    .is_some_and(|network| *network != info.network)
+                }) || temperatures.is_some_and(|temperatures| temperatures != info.temperatures)
+                    || network
+                        .as_ref()
+                        .is_some_and(|network| *network != info.network)
             };
 
             if !changed {
@@ -128,6 +140,10 @@ impl Service for SystemInfo {
             if let Some((uptime, disk)) = fresh {
                 info.uptime_minutes = uptime;
                 info.disk = disk;
+            }
+
+            if let Some(temperatures) = temperatures {
+                info.temperatures = temperatures;
             }
 
             if let Some(network) = network {
@@ -181,7 +197,7 @@ fn uptime_minutes() -> u64 {
         .map_or(0, |seconds| seconds as u64 / 60)
 }
 
-fn disk(path: &str) -> Option<Disk> {
+pub(crate) fn disk(path: &str) -> Option<Disk> {
     statvfs::disk(path).or_else(|| df(path))
 }
 

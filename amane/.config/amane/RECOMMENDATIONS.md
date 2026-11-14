@@ -111,17 +111,6 @@ a screen color picker, calendar events, OCR of a screenshot region.
 - **To settle:** plain timers, pomodoro cycles (25/5) or both; one or several
   at once; where in the bar; cancel/pause from the bar.
 
-### 33. Health warnings
-- **Status:** open
-- **Why:** an overheating CPU, a full disk or a failed service goes unnoticed.
-- **Hooks in:** CPU/GPU temperature from `/sys/class/hwmon` in the system
-  panel's diagnostics card (`src/system.rs`, `src/panels/system.rs`); a
-  background check every few minutes for low disk space (`df`, already read
-  for the disk meter) and failed systemd units (`systemctl --failed`, system
-  and `--user`), sending one shell notification per new problem.
-- **To settle:** thresholds (disk %, temperature); how often to check;
-  which sensors to show.
-
 ### 34. Removable drives
 - **Status:** open
 - **Why:** plugging in a USB drive shows nothing, and mounting or ejecting

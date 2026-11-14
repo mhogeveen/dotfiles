@@ -91,7 +91,8 @@ bar, backdrop, notification popups, osd, every panel, and the lock screen.
   close. Lists sit in `ui::list_box`, which clips the rows inside its border
   (amane clips at the outer edge, border included), so rows can't cover it.
 - `system.rs`: user@host, OS/kernel/uptime, then two cards like the network
-  panel: CPU/memory/disk meters, network speed and battery on laptops; and
+  panel: CPU/memory/disk/temperature meters, network speed and battery on
+  laptops; and
   under a "Settings" heading the accent swatches, the brightness slider and
   the animations checkbox (`a`, `ui::checkbox`). Buttons for wallpaper
   (`w`), notifications (`n`), session (`s`).
@@ -132,7 +133,11 @@ bar, backdrop, notification popups, osd, every panel, and the lock screen.
   after a restart from `$XDG_RUNTIME_DIR/amane-shell/recording`.
   `frame_view`: an always-mapped, click-through overlay window per monitor
   that frames a recorded region (`RecordedRegion`), just outside it.
-- `system.rs`: `SystemInfo` (os, kernel, uptime, disk, network speed).
+- `system.rs`: `SystemInfo` (os, kernel, uptime, disk, temperatures, network
+  speed).
+- `health.rs`: cpu/gpu temperatures from `/sys/class/hwmon` (`Temperatures`,
+  also the system panel's Temp row) and the background health check that
+  notifies once per problem (see 5.14).
 - `theme.rs`: `Theme` colors, `Accent` service and the `accent` IPC.
 - `animations.rs`: the `Animations` on/off setting (state file
   `animations`), `DURATION` and `follow()` (see 5.11).

@@ -426,3 +426,19 @@ are kept, so references between the two files still work.
   Settings card (key `l`), which runs `systemctl --user start|stop`. No state
   file: the unit starts again at every login. "Not available" while the unit
   doesn't exist. Tests: `night_light::`.
+
+### 33. Health warnings
+- **Status:** done (2026-11-14). A "Temp" row in the system panel's
+  diagnostics card ("CPU 34° · GPU 34°", the meter is the CPU towards its
+  `tempN_crit`, else 100 °C); the panel grew by one row. A background check
+  (30 s after start, then every 2 minutes) sends one Critical notification
+  (it stays until dismissed) per new problem: a
+  temperature past its sensor's `tempN_max` (70 °C for k10temp) or 85 °C
+  without one (amdgpu edge), `/` at 90% full, and each failed systemd unit,
+  system and `--user`. A problem warns again only after it clears (5 °C under
+  the limit, the disk under 88%).
+- **Hooks in:** `src/health.rs` (`Temperatures` from `/sys/class/hwmon`,
+  `systemctl --failed --no-legend --plain`, problem keys, `update()`), the
+  warned set in `$XDG_RUNTIME_DIR/amane-shell/health-warned` so `amane
+  restart` doesn't warn again; `SystemInfo.temperatures` read every 2 s while
+  the panel is open. Tests: `health::`.

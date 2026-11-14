@@ -19,6 +19,7 @@ mod clipboard_preview;
 mod clock;
 mod command;
 mod covers;
+mod health;
 mod json;
 mod keybinds;
 mod layout;
@@ -58,6 +59,9 @@ fn main() {
 
     // the volume popup follows every change from the start
     osd::start();
+
+    // warns once about a hot cpu or gpu, a nearly full disk or a failed unit
+    health::start();
 
     App::new()
         .font("BlexMono Nerd Font")

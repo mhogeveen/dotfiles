@@ -169,3 +169,19 @@ show -p LoadState,ActiveState` on a thread: once at start, then when the
 panel opens, at most every 10 s. A switch shows at once and is read back
 afterwards, and a read already under way doesn't overwrite it. Without the
 unit (not rebuilt yet) the row says "Not available".
+
+## 5.14 Health warnings
+`health::start()` runs one thread from launch: after 30 s, then every 2
+minutes, it reads `/` (statvfs), the cpu and gpu temperatures
+(`/sys/class/hwmon`: k10temp/zenpower/coretemp, amdgpu/nouveau/radeon) and
+`systemctl [--user] --failed`, and turns them into problem keys (`disk:/`,
+`temp:cpu`, `temp:gpu`, `unit:system:<unit>`, `unit:user:<unit>`). A key not
+warned about yet sends one notification (app "System"; every one is
+Critical, so it stays until dismissed). The warned keys are kept in
+`$XDG_RUNTIME_DIR/amane-shell/health-warned`, so `amane restart` doesn't warn
+again and a new login does. Limits: a temperature past its sensor's
+`tempN_max`, or 85 °C without one; `/` at 90%. A warned temperature clears
+only 5 °C under its limit and the disk under 88%, so a reading that hovers
+doesn't warn repeatedly. Something that can't be read this time keeps its
+warned state. The system panel's Temp row reads the same sensors every 2 s
+while open; its meter runs to the sensor's `tempN_crit` (else 100 °C).

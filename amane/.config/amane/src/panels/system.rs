@@ -20,6 +20,7 @@ use super::ui::{self, BUTTON, CORNER_WIDTH, PADDING};
 use super::{NOTIFICATIONS, Panels, SESSION, SYSTEM, WALLPAPER, panel};
 use crate::animations::Animations;
 use crate::brightness::{self, Level};
+use crate::health::Temperatures;
 use crate::night_light::{self, State};
 use crate::notifications::{self, ICON_BELL, ICON_BELL_OUTLINE};
 use crate::system::{self, NetworkSpeed, SystemInfo};
@@ -29,8 +30,8 @@ use crate::vpn::{self, Vpn};
 const GAP: f32 = 8.0;
 const LINE: f32 = 20.0;
 
-// the diagnostics rows at most: cpu, memory, disk, network and a laptop's battery
-const DIAGNOSTICS_MOST: f32 = 5.0;
+// the diagnostics rows at most: cpu, memory, disk, temperatures, network and a laptop's battery
+const DIAGNOSTICS_MOST: f32 = 6.0;
 
 // the settings card: accent, brightness, animations and night light
 const SETTINGS_ROWS: f32 = 4.0;
@@ -242,6 +243,10 @@ fn meters(t: &Theme, info: &SystemInfo) -> Vec<Box<dyn Widget>> {
         )));
     }
 
+    if let Some(row) = temperature_row(t, &info.temperatures) {
+        rows.push(Box::new(row));
+    }
+
     rows.push(Box::new(network_row(t, info.network.as_ref())));
 
     // desktops have none, a mouse's battery doesn't count
@@ -287,6 +292,26 @@ fn meter_row(t: &Theme, name: &str, percent: u8, numbers: String) -> Row {
     .gap(GAP)
     .align(Center)
     .height(BUTTON)
+}
+
+/*
+ * the meter follows the cpu (the gpu's when there's no cpu sensor), towards
+ * its critical temperature; None when there's neither sensor. degrees without
+ * the C, so "CPU 33° · GPU 33°" fits beside the meter
+ */
+fn temperature_row(t: &Theme, temperatures: &Temperatures) -> Option<Row> {
+    let shown = [("CPU", temperatures.cpu), ("GPU", temperatures.gpu)];
+
+    let numbers: Vec<String> = shown
+        .iter()
+        .filter_map(|(name, temperature)| {
+            temperature.map(|temperature| format!("{name} {}°", temperature.celsius))
+        })
+        .collect();
+
+    let meter = temperatures.cpu.or(temperatures.gpu)?;
+
+    Some(meter_row(t, "Temp", meter.percent(), numbers.join(" · ")))
 }
 
 // down and up speed of the default-route interface, no bar since a speed has no maximum
