@@ -157,3 +157,15 @@ every `Stream/Output/Audio`, its percent the cube root of the mean
 events too. A change from the panel is stored at once (the slider follows the
 drag) and sent with wpctl by one worker thread that drops older volumes for
 the same stream. WirePlumber remembers each app's volume and mute.
+
+## 5.13 Night light
+wlsunset does the work, as a home-manager user service
+(`~/.nixos/home/wlsunset.nix`, on `mango-session.target`: sun-based at the
+weather place, 4000 K at night) through mango's wlr-gamma-control. The system
+panel's "Night light" checkbox (key `l`) only runs `systemctl --user
+start|stop wlsunset.service`, so switching it off lasts until the next login
+and the shell keeps no state file. The state comes from `systemctl --user
+show -p LoadState,ActiveState` on a thread: once at start, then when the
+panel opens, at most every 10 s. A switch shows at once and is read back
+afterwards, and a read already under way doesn't overwrite it. Without the
+unit (not rebuilt yet) the row says "Not available".

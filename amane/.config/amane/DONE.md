@@ -414,3 +414,15 @@ are kept, so references between the two files still work.
   `ui::slider` takes a closure now. App glyphs (Firefox, Chrome/Chromium,
   Spotify, Discord, VLC; else a note) from `application.process.binary`.
   Tests: `audio::streams::`.
+
+### 28. Night light
+- **Status:** done (2026-11-14). wlsunset as a home-manager service in
+  `~/.nixos/home/wlsunset.nix` (on `mango-session.target`, like hypridle):
+  sun-based at the weather place (52.2, 5.2), 4000 K at night. Mango has
+  `zwlr_gamma_control_manager_v1`. DDC brightness is left alone.
+- **Hooks in:** `src/night_light.rs` (`NightLight`: `Reading`,
+  `Unavailable`, `Active(bool)` from `systemctl --user show
+  wlsunset.service`), a "Night light" checkbox in the system panel's
+  Settings card (key `l`), which runs `systemctl --user start|stop`. No state
+  file: the unit starts again at every login. "Not available" while the unit
+  doesn't exist. Tests: `night_light::`.

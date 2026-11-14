@@ -20,6 +20,7 @@ use super::ui::{self, BUTTON, CORNER_WIDTH, PADDING};
 use super::{NOTIFICATIONS, Panels, SESSION, SYSTEM, WALLPAPER, panel};
 use crate::animations::Animations;
 use crate::brightness::{self, Level};
+use crate::night_light::{self, State};
 use crate::notifications::{self, ICON_BELL, ICON_BELL_OUTLINE};
 use crate::system::{self, NetworkSpeed, SystemInfo};
 use crate::theme::{ACCENTS, Accent, Theme};
@@ -31,8 +32,8 @@ const LINE: f32 = 20.0;
 // the diagnostics rows at most: cpu, memory, disk, network and a laptop's battery
 const DIAGNOSTICS_MOST: f32 = 5.0;
 
-// the settings card: accent, brightness and animations
-const SETTINGS_ROWS: f32 = 3.0;
+// the settings card: accent, brightness, animations and night light
+const SETTINGS_ROWS: f32 = 4.0;
 
 /*
  * the header and the details line, the diagnostics card, and the settings
@@ -77,6 +78,7 @@ const KEY_NOTIFICATIONS: char = 'n';
 const KEY_SESSION: char = 's';
 const KEY_WALLPAPER: char = 'w';
 const KEY_ANIMATIONS: char = 'a';
+const KEY_NIGHT_LIGHT: char = 'l';
 
 pub fn view(monitor: &Monitor) -> LayerWindow {
     let base = ui::corner(HEIGHT, "amane-system");
@@ -98,6 +100,7 @@ fn content(t: &Theme, monitor: &str) -> Rectangle {
         Box::new(accent_setting(t)),
         Box::new(brightness_setting(t, monitor)),
         Box::new(animations_setting(t)),
+        Box::new(night_light_setting(t)),
     ];
 
     /*
@@ -132,6 +135,7 @@ fn key_pressed(key: Key) {
         Some(KEY_SESSION) => open_session(),
         Some(KEY_WALLPAPER) => open_wallpaper(),
         Some(KEY_ANIMATIONS) => Animations::toggle(),
+        Some(KEY_NIGHT_LIGHT) => night_light::toggle(),
         _ => {}
     }
 }
@@ -426,6 +430,50 @@ fn animations_setting(t: &Theme) -> Row {
     .gap(GAP)
     .align(Center)
     .height(BUTTON)
+}
+
+/*
+ * whether wlsunset warms the screen tonight (src/night_light.rs); the switch
+ * lasts until the next login. the name flips it too, like a checkbox's label
+ */
+fn night_light_setting(t: &Theme) -> Row {
+    night_light::follow();
+
+    let name = |switchable: bool| {
+        let name = Rectangle::new()
+            .width(NAME)
+            .height(BUTTON)
+            .align_child(Start, Center)
+            .child(Text::new("Night light").size(ui::TEXT_NOTE).color(t.fg));
+
+        if switchable {
+            name.cursor(Pointer).on_click(|_| night_light::toggle())
+        } else {
+            name
+        }
+    };
+
+    let note = |text: &str| {
+        Rectangle::new()
+            .width(NUMBERS + METER)
+            .height(BUTTON)
+            .align_child(Start, Center)
+            .child(Text::new(text).size(ui::TEXT_SMALL).color(t.comment))
+    };
+
+    let row = match night_light::state() {
+        State::Active(active) => children![
+            name(true),
+            ui::checkbox(t, active, KEY_NIGHT_LIGHT, |_| night_light::toggle()),
+        ],
+
+        State::Reading => children![name(false), note("…")],
+
+        // wlsunset isn't set up (home/wlsunset.nix not built yet)
+        State::Unavailable => children![name(false), note("Not available")],
+    };
+
+    Row::new(row).gap(GAP).align(Center).height(BUTTON)
 }
 
 /*

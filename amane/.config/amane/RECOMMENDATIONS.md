@@ -78,17 +78,6 @@ on 2026-11-12. Not wanted (from the same list): a system tray, the focused
 window's title in the bar, a caffeine/idle-inhibit toggle, a window switcher,
 a screen color picker, calendar events, OCR of a screenshot region.
 
-### 28. Night light
-- **Status:** open
-- **Why:** no warmer screen in the evening.
-- **Hooks in:** wlsunset or gammastep (wlr-gamma-control) as a home-manager
-  service, or started and stopped by the shell; a checkbox in the system
-  panel's Settings (`ui::checkbox`, a state file like `animations`), maybe a
-  key. The weather location's lat/lon could drive sunset times.
-- **To settle:** whether mango supports wlr-gamma-control (check first);
-  which tool; temperature; schedule (sun-based or fixed times); whether the
-  DDC brightness (`src/brightness.rs`) should drop too.
-
 ### 29. Bluetooth battery
 - **Status:** open
 - **Why:** headphones' and controllers' battery levels aren't shown anywhere.

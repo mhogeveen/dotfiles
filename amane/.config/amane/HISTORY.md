@@ -345,6 +345,16 @@ each finished recommendation by number; `AGENTS.md` and `docs/` the current stat
    `packages.nix`, so its options live in satty's config rather than as
    arguments from the shell.
 
+## Session: night light (2026-11-14)
+
+1. **Item 28.** `wayland-info` showed mango has wlr-gamma-control. The user
+   picked wlsunset over gammastep (smaller; the shell already has the
+   location and a place for the switch), configured in Nix
+   (`home/wlsunset.nix`) rather than started by the shell, with the shell
+   only switching the unit. Sun-based, 4000 K, no DDC dimming (slow and it
+   would fight the slider). Switching off lasts only for the session, so the
+   shell keeps no state of its own and asks systemd instead.
+
 ## Habits worth keeping
 
 - Verify before claiming: check the code, the running shell (`pgrep`, its

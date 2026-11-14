@@ -136,6 +136,8 @@ bar, backdrop, notification popups, osd, every panel, and the lock screen.
 - `theme.rs`: `Theme` colors, `Accent` service and the `accent` IPC.
 - `animations.rs`: the `Animations` on/off setting (state file
   `animations`), `DURATION` and `follow()` (see 5.11).
+- `night_light.rs`: `NightLight` (whether wlsunset.service runs), read and
+  switched with `systemctl --user` on threads (see 5.13).
 - `json.rs`: small JSON reader (`parse`, `Value` getters) and `quote()`.
 - `command.rs`: `capture(command, timeout)`, a program's output with a time
   limit (kills and waits on timeout), `read` (its output on success),

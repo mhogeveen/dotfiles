@@ -24,6 +24,7 @@ mod keybinds;
 mod layout;
 mod lock;
 mod network;
+mod night_light;
 mod notifications;
 mod osd;
 mod panels;
