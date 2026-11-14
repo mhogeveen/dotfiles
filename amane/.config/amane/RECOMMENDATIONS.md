@@ -178,8 +178,6 @@ a screen color picker, calendar events, OCR of a screenshot region.
 - **What:**
   - `mango/.config/mango/scripts/screenshot*.sh` (the screenshot panel does
     this itself)
-  - `fuzzel` in `~/.nixos/home/packages.nix`, its config symlink there, and
-    the `fuzzel` config folder
   - the `wlogout` config (points at `uwsm stop`, which isn't installed)
   - the `hypr` folder: unused here, since hypridle's config is now generated
     by home-manager (`~/.nixos/home/hypridle.nix`)

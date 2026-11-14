@@ -1,5 +1,5 @@
 /*
- * screenshot menu, the same choices as the old fuzzel menu in screenshot.sh plus
+ * screenshot menu, fullscreen (copy+save), region (copy+save),
  * a region to annotate in satty and screen recordings: press a choice's number
  * to take it right away, or pick one with up/down or tab and press enter, or
  * click it
