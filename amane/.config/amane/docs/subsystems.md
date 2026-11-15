@@ -90,7 +90,17 @@ restored on activity; item 18), calls `loginctl lock-session` (5 min), turns
 the screen off with `wlopm` (5.5 min) and suspends (30 min); `before_sleep_cmd`
 locks then waits 1 s (mango lacks the lock-notify protocol, so
 `inhibit_sleep = 3` can't work). The session menu waits `LOCK_BEFORE_SUSPEND`
-(1 s) too. mango also has a `sleep_monitor` dispatch, unused.
+(1 s) too. mango also has a `sleep_monitor` dispatch, unused. The system
+panel's "Idle" checkbox (key `i`, `src/idle.rs`, item 36) stops and starts
+`hypridle.service` the way night light does (5.13), to keep the screen on
+during a long task; off lasts until switched back or the next login, and
+the shell still locks on `PrepareForSleep` without hypridle. While it's off
+the bar shows a dot in `theme.warning` (#f4a21c) beside the privacy dot,
+opening the system panel; only then does the bar poll hypridle. mango's
+`idle_inhibit_when_fullscreen = 1` (set in `~/.nixos/home/mango.nix`; the
+default is 0) also pauses hypridle's timers while a fullscreen window is
+visible on its monitor; one on a hidden workspace doesn't count (no dot
+either way).
 
 ## 5.8 Volume/brightness popup and media
 `osd.rs`: the `Osd` service polls amane's `Audio` 10×/s and
@@ -163,7 +173,8 @@ the same stream. WirePlumber remembers each app's volume and mute.
 wlsunset does the work, as a home-manager user service
 (`~/.nixos/home/wlsunset.nix`, on `mango-session.target`: sun-based at the
 weather place, 4000 K at night) through mango's wlr-gamma-control. The system
-panel's "Night light" checkbox (key `l`) only runs `systemctl --user
+panel's "Night light" checkbox (key `l`) only runs (through
+`src/user_unit.rs`, shared with the Idle switch) `systemctl --user
 start|stop wlsunset.service`, so switching it off lasts until the next login
 and the shell keeps no state file. The state comes from `systemctl --user
 show -p LoadState,ActiveState` on a thread: once at start, then when the

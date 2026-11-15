@@ -21,10 +21,12 @@ use super::{NOTIFICATIONS, Panels, SESSION, SYSTEM, WALLPAPER, panel};
 use crate::animations::Animations;
 use crate::brightness::{self, Level};
 use crate::health::Temperatures;
-use crate::night_light::{self, State};
+use crate::idle;
+use crate::night_light;
 use crate::notifications::{self, ICON_BELL, ICON_BELL_OUTLINE};
 use crate::system::{self, NetworkSpeed, SystemInfo};
 use crate::theme::{ACCENTS, Accent, Theme};
+use crate::user_unit::State;
 use crate::vpn::{self, Vpn};
 
 const GAP: f32 = 8.0;
@@ -33,8 +35,8 @@ const LINE: f32 = 20.0;
 // the diagnostics rows at most: cpu, memory, disk, temperatures, network and a laptop's battery
 const DIAGNOSTICS_MOST: f32 = 6.0;
 
-// the settings card: accent, brightness, animations and night light
-const SETTINGS_ROWS: f32 = 4.0;
+// the settings card: accent, brightness, animations, night light and the idle timers
+const SETTINGS_ROWS: f32 = 5.0;
 
 /*
  * the header and the details line, the diagnostics card, and the settings
@@ -80,6 +82,7 @@ const KEY_SESSION: char = 's';
 const KEY_WALLPAPER: char = 'w';
 const KEY_ANIMATIONS: char = 'a';
 const KEY_NIGHT_LIGHT: char = 'l';
+const KEY_IDLE: char = 'i';
 
 pub fn view(monitor: &Monitor) -> LayerWindow {
     let base = ui::corner(HEIGHT, "amane-system");
@@ -102,6 +105,7 @@ fn content(t: &Theme, monitor: &str) -> Rectangle {
         Box::new(brightness_setting(t, monitor)),
         Box::new(animations_setting(t)),
         Box::new(night_light_setting(t)),
+        Box::new(idle_setting(t)),
     ];
 
     /*
@@ -127,7 +131,7 @@ const fn card_height(rows: f32) -> f32 {
 }
 
 /*
- * the header buttons and the animations switch by their letters, uppercase
+ * the header buttons and the settings switches by their letters, uppercase
  * too; escape is handled by the panel manager
  */
 fn key_pressed(key: Key) {
@@ -137,6 +141,7 @@ fn key_pressed(key: Key) {
         Some(KEY_WALLPAPER) => open_wallpaper(),
         Some(KEY_ANIMATIONS) => Animations::toggle(),
         Some(KEY_NIGHT_LIGHT) => night_light::toggle(),
+        Some(KEY_IDLE) => idle::toggle(),
         _ => {}
     }
 }
@@ -459,20 +464,45 @@ fn animations_setting(t: &Theme) -> Row {
 
 /*
  * whether wlsunset warms the screen tonight (src/night_light.rs); the switch
- * lasts until the next login. the name flips it too, like a checkbox's label
+ * lasts until the next login
  */
 fn night_light_setting(t: &Theme) -> Row {
     night_light::follow();
 
+    unit_setting(
+        t,
+        "Night light",
+        night_light::state(),
+        KEY_NIGHT_LIGHT,
+        night_light::toggle,
+    )
+}
+
+/*
+ * whether hypridle dims, locks, turns the screen off and suspends after a
+ * while without input (src/idle.rs); off keeps the screen on for a long task,
+ * until it's switched back or the next login
+ */
+fn idle_setting(t: &Theme) -> Row {
+    idle::follow();
+
+    unit_setting(t, "Idle", idle::state(), KEY_IDLE, idle::toggle)
+}
+
+/*
+ * a checkbox row for a user unit the panel starts and stops
+ * (src/user_unit.rs); the name flips it too, like a checkbox's label
+ */
+fn unit_setting(t: &Theme, label: &str, state: State, key: char, toggle: fn()) -> Row {
     let name = |switchable: bool| {
         let name = Rectangle::new()
             .width(NAME)
             .height(BUTTON)
             .align_child(Start, Center)
-            .child(Text::new("Night light").size(ui::TEXT_NOTE).color(t.fg));
+            .child(Text::new(label).size(ui::TEXT_NOTE).color(t.fg));
 
         if switchable {
-            name.cursor(Pointer).on_click(|_| night_light::toggle())
+            name.cursor(Pointer).on_click(move |_| toggle())
         } else {
             name
         }
@@ -486,15 +516,14 @@ fn night_light_setting(t: &Theme) -> Row {
             .child(Text::new(text).size(ui::TEXT_SMALL).color(t.comment))
     };
 
-    let row = match night_light::state() {
-        State::Active(active) => children![
-            name(true),
-            ui::checkbox(t, active, KEY_NIGHT_LIGHT, |_| night_light::toggle()),
-        ],
+    let row = match state {
+        State::Active(active) => {
+            children![name(true), ui::checkbox(t, active, key, move |_| toggle()),]
+        }
 
         State::Reading => children![name(false), note("…")],
 
-        // wlsunset isn't set up (home/wlsunset.nix not built yet)
+        // the unit isn't set up (its home-manager module not built yet)
         State::Unavailable => children![name(false), note("Not available")],
     };
 

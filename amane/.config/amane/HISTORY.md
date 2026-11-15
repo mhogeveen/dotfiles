@@ -375,6 +375,17 @@ each finished recommendation by number; `AGENTS.md` and `docs/` the current stat
    (cleanup, and the fallback off mango). mango's `config.conf` also resets
    and restarts `mango-session.target` on every login as a safety net.
 
+## Session: idle switch (2026-11-15)
+
+1. **Item 36.** A caffeine toggle had been turned down on 2026-11-12, but
+   the user wanted one after all, to keep the screen on during long tasks.
+   It stops `hypridle.service` rather than holding an idle inhibitor, the
+   same way night light handles wlsunset, so it survives `amane restart` and
+   needs no state. The shared systemctl code moved to `src/user_unit.rs`
+   instead of being copied.
+   Then a bar dot for "off" in a new `theme.warning` (#f4a21c), the user's
+   choice over the accent, beside the privacy dot.
+
 ## Habits worth keeping
 
 - Verify before claiming: check the code, the running shell (`pgrep`, its

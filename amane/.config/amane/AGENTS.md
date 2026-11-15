@@ -23,7 +23,9 @@ anything. More detail, read when the task touches it:
   relative `'src/main.rs'`.
 - State: `~/.local/state/amane-shell/` (survives reboots),
   `$XDG_RUNTIME_DIR/amane-shell/` (until logout).
-- Mango config: `~/.nixos/config/mango/.config/mango/config.conf`. NixOS
+- Mango config: `~/.nixos/home/mango.nix` (home-manager writes
+  `~/.config/mango/config.conf` from it; `~/.nixos/config/mango/` is unused,
+  edits there do nothing). NixOS
   host: `~/.nixos/hosts/prometheus/default.nix`; home-manager: `~/.nixos/home/`.
 
 ## Workflow
@@ -58,7 +60,7 @@ anything. More detail, read when the task touches it:
 - Git: the user commits; don't commit, push or stage. Check `git status` /
   `git log` first; don't revert the user's changes.
 - Recommendations: keep statuses current; built items move to `DONE.md` with
-  their number; new ideas get the next number (35 was the last).
+  their number; new ideas get the next number (36 was the last).
 - Code style: lowercase comments, `/* */` blocks, `//` lines, saying why;
   every module starts with a block comment; descriptive names, no
   abbreviations; constants for every size and timing.
@@ -78,6 +80,7 @@ anything. More detail, read when the task touches it:
   `Key::Other`; Shift arrives as an uppercase character; a focused
   `TextInput` takes every character.
 - UI, decided: the accent picked in the system panel for every highlight,
-  warning and error (no status colors; the one exception is `theme.error`,
-  only for the bar's privacy dot and recording time); font `BlexMono Nerd Font`
+  warning and error (no status colors; the exceptions are `theme.error`, only for the bar's
+  privacy dot and recording time, and `theme.warning` (#f4a21c), only for
+  the bar's idle-off dot); font `BlexMono Nerd Font`
   (monospaced: width = chars × size × 0.6); no Do Not Disturb.

@@ -475,3 +475,24 @@ are kept, so references between the two files still work.
   report their battery to bluez with it on.
 - **Limits:** the warned set lives in memory, so `amane restart` warns again
   about a device that is still low.
+
+### 36. Idle switch
+- **Status:** done (2026-11-15): an "Idle" checkbox in the system panel's
+  settings (key `i`) turns hypridle's dim, lock, screen off and suspend off,
+  to keep the screen on during a long task.
+- **How it fits:** `src/idle.rs` stops and starts `hypridle.service` with
+  `systemctl --user`, the same way night light handles wlsunset. The
+  systemctl calls and `state_from` moved to `src/user_unit.rs`, shared by
+  both, and the panel draws both rows with `unit_setting`. The settings card
+  went from 4 rows to 5. The shell locks before a suspend through logind's
+  `PrepareForSleep` by itself, so that still works while hypridle is stopped. A
+  stopped unit isn't failed, so the health check stays quiet. Tests:
+  `user_unit::`.
+- **Bar dot:** while it's off, the bar shows a dot in `theme.warning`
+  (#f4a21c, the second color besides the accent after `theme.error`) next
+  to the privacy dot; clicking it opens the system panel. The bar polls
+  hypridle (at most every 10 s) only while the dot shows, so an "off" read
+  before hypridle started at login corrects itself.
+- **Limits:** off lasts until it's switched back or the next login
+  (home-manager starts hypridle again). Stopping hypridle outside the shell
+  shows the dot only after the system panel next opens.

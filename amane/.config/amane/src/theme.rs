@@ -23,10 +23,12 @@ pub struct Theme {
     pub on_accent: Color,
 
     /*
-     * the one color besides the accent: the bar's privacy dot, which must stand
-     * out whatever accent is picked
+     * the two colors besides the accent, for bar dots that must stand out
+     * whatever accent is picked: error for the privacy dot and recording
+     * time, warning for the idle-off dot
      */
     pub error: Color,
+    pub warning: Color,
 
     pub fg: Color,
     pub fg_dim: Color,
@@ -51,6 +53,7 @@ pub fn theme() -> Theme {
         accent: accent.color(),
         on_accent: BG_DEEP,
         error: Color::rgb(0xd2, 0x57, 0x80),
+        warning: Color::rgb(0xf4, 0xa2, 0x1c),
         fg: Color::rgb(0xe6, 0xd5, 0xc2),
         fg_dim: Color::rgb(0xa0, 0x93, 0x84),
         comment: Color::rgb(0x73, 0x66, 0x5b),

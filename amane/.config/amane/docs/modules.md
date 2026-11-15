@@ -15,7 +15,8 @@ bar, backdrop, notification popups, osd, every panel, and the lock screen.
   monitor (wide accent block for the shown one, dots for urgent; width and
   color animate on a switch, see 5.11), the layout
   symbol `[S]` (opens the layout picker), the clock (opens the calendar),
-  and icons: a red privacy dot while recording or sharing the screen, audio, network with a VPN shield badge, bluetooth, and the NixOS
+  and icons: a red privacy dot while recording or sharing the screen, an orange
+  `theme.warning` dot while the idle timers are off (opens the system panel), audio, network with a VPN shield badge, bluetooth, and the NixOS
   snowflake (opens the system panel, accent while notifications are unread).
 - `clock.rs`: the `Clock` service, waking at each minute with
   `clock_nanosleep` on `CLOCK_REALTIME`; the bar's clock text ("17:05 Wed 11
@@ -143,7 +144,11 @@ bar, backdrop, notification popups, osd, every panel, and the lock screen.
 - `animations.rs`: the `Animations` on/off setting (state file
   `animations`), `DURATION` and `follow()` (see 5.11).
 - `night_light.rs`: `NightLight` (whether wlsunset.service runs), read and
-  switched with `systemctl --user` on threads (see 5.13).
+  switched on threads through `user_unit.rs` (see 5.13).
+- `idle.rs`: `Idle` (whether hypridle.service runs), the same shape as
+  night light; the system panel's "Idle" switch (see 5.7).
+- `user_unit.rs`: `State`, `read_state(unit)` and `switch(unit, wanted)`,
+  the `systemctl --user` calls behind both switches. Tests: `user_unit::`.
 - `json.rs`: small JSON reader (`parse`, `Value` getters) and `quote()`.
 - `command.rs`: `capture(command, timeout)`, a program's output with a time
   limit (kills and waits on timeout), `read` (its output on success),

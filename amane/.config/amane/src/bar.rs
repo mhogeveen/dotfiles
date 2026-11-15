@@ -23,11 +23,13 @@ use crate::bluetooth::{
     self,
     agent::{Agent, Request},
 };
+use crate::idle;
 use crate::layout::MangoLayout;
 use crate::network::{self, Status};
 use crate::panels::{AUDIO, BLUETOOTH, NETWORK, Panels, SYSTEM, audio::volume_icon, layout, ui};
 use crate::recording::{self, Recording};
 use crate::theme::{Theme, theme};
+use crate::user_unit::State;
 use crate::vpn::{self, Vpn};
 use crate::{clock, notifications};
 
@@ -239,6 +241,7 @@ fn status(t: &Theme) -> Rectangle {
 /*
  * left to right: the screen recording's time (only while recording), the
  * privacy dot (only while the microphone records or the screen is shared),
+ * the idle-off dot (only while the idle timers are switched off),
  * audio, network, bluetooth (only on machines that have it), system
  */
 fn status_icons(t: &Theme) -> Vec<Box<dyn Widget>> {
@@ -250,6 +253,10 @@ fn status_icons(t: &Theme) -> Vec<Box<dyn Widget>> {
 
     if Privacy::read().active() {
         icons.push(Box::new(privacy_dot(t)));
+    }
+
+    if let Some(dot) = idle_off_dot(t) {
+        icons.push(Box::new(dot));
     }
 
     icons.push(Box::new(audio(t)));
@@ -381,6 +388,32 @@ fn privacy_dot(t: &Theme) -> Rectangle {
             .radius(Full)
             .fill(t.error),
     )
+}
+
+/*
+ * a warning-colored dot while the idle timers are off (src/idle.rs), so a
+ * screen kept on for a long task isn't forgotten; opens the system panel,
+ * where they switch back on
+ *
+ * the state is read at start and when the panel opens; while it says off,
+ * the bar asks again (at most every 10 s), so an "off" read too early in
+ * the login, before hypridle started, doesn't stay. while on, nothing is polled
+ */
+fn idle_off_dot(t: &Theme) -> Option<Rectangle> {
+    if idle::state() != State::Active(false) {
+        return None;
+    }
+
+    idle::follow();
+
+    Some(status_button(
+        SYSTEM,
+        Rectangle::new()
+            .width(PRIVACY_DOT)
+            .height(PRIVACY_DOT)
+            .radius(Full)
+            .fill(t.warning),
+    ))
 }
 
 // a red dot and the time recorded, both in the error color; clicking stops the recording

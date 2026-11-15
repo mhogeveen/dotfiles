@@ -66,8 +66,9 @@ decided").
 
 Common desktop-shell features the shell doesn't have yet, picked from a list
 on 2026-11-12. Not wanted (from the same list): a system tray, the focused
-window's title in the bar, a caffeine/idle-inhibit toggle, a window switcher,
-a screen color picker, calendar events, OCR of a screenshot region.
+window's title in the bar, a window switcher, a screen color picker, calendar
+events, OCR of a screenshot region. A caffeine/idle-inhibit toggle was on
+this list too, until it was wanted after all (item 36, in DONE.md).
 
 ### 30. Emoji and glyph picker
 - **Status:** blocked on amane. Emoji draw as blank space (no colour glyphs,
