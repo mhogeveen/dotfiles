@@ -457,3 +457,21 @@ are kept, so references between the two files still work.
 - **Limits:** the system panel's slider shows the old value until it reads
   the monitor again (on opening, at most every `READ_EVERY`, 10 s). The bus
   is fixed at 5; on another monitor, change `monitorBus`.
+
+### 29. Bluetooth battery
+- **Status:** done (2026-11-15): the Bluetooth panel shows a connected
+  device's battery beside its name, and a notification says when one drops to
+  15% or below.
+- **How it fits:** amane's `BluetoothDevice::battery()` already reads BlueZ's
+  `org.bluez.Battery1.Percentage`, and the panel showed it. The notification
+  comes from the 1 s tick in `src/bluetooth/mod.rs` (`battery_warnings`): one
+  warning per device on reaching `BATTERY_LOW` (15), not repeated until it
+  charges to `BATTERY_RECHARGED` (20) or disconnects, so a level wobbling at
+  the threshold doesn't notify each time. Sent on a thread of its own, so the
+  tick never waits on the daemon. Not on the bar's icon (decided). Tests:
+  `bluetooth::`.
+- **Outside the shell:** `hardware.bluetooth.settings.General.Experimental =
+  true` in `~/.nixos/hosts/prometheus/default.nix`, since many headsets only
+  report their battery to bluez with it on.
+- **Limits:** the warned set lives in memory, so `amane restart` warns again
+  about a device that is still low.

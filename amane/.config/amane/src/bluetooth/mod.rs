@@ -1,7 +1,8 @@
 /*
  * what the bluetooth panel adds on top of amane's Bluetooth service: scanning
  * only while the panel is open, power that gets past rfkill, and connect, pair
- * and forget that say whether they worked
+ * and forget that say whether they worked, and a notification when a connected
+ * device's battery runs low
  *
  * amane runs those calls without saying how they went, so they're made here
  * on a thread and the device is checked afterwards
@@ -13,13 +14,15 @@
 
 pub mod agent;
 
+use std::collections::BTreeSet;
 use std::process::Command;
 use std::thread;
 use std::time::Duration;
 
-use amane::{Argument, Bluetooth, BluetoothDevice, Bus, Service, Value};
+use amane::{Argument, Bluetooth, BluetoothDevice, Bus, Service, Urgency, Value};
 
 use crate::audio::{ICON_HEADPHONES, ICON_SPEAKER};
+use crate::notifications;
 use crate::panels::{BLUETOOTH, Panels};
 
 const BLUEZ: &str = "org.bluez";
@@ -28,6 +31,15 @@ const DEVICE: &str = "org.bluez.Device1";
 
 // how long rfkill takes to let go before the adapter can power up
 const UNBLOCK_SETTLE: Duration = Duration::from_millis(300);
+
+// a connected device at or below this many percent gets one notification
+const BATTERY_LOW: u8 = 15;
+
+/*
+ * and is warned again only after charging past this, so a level wobbling
+ * around the threshold doesn't notify each time
+ */
+const BATTERY_RECHARGED: u8 = 20;
 
 // nerd font material design glyphs
 pub const ICON_ON: &str = "\u{f00af}";
@@ -126,22 +138,43 @@ struct Previous {
     open: bool,
     available: bool,
     powered: bool,
+
+    // paths of the devices already warned about a low battery
+    battery_warned: BTreeSet<String>,
 }
 
 fn tick(last: &Previous) -> Previous {
     let open = Panels::read().is_open(BLUETOOTH);
 
-    let (available, powered, scanning) = {
+    let (available, powered, scanning, batteries) = {
         let bluetooth = Bluetooth::read();
 
         (
             bluetooth.available(),
             bluetooth.powered(),
             bluetooth.scanning(),
+            connected_batteries(&bluetooth),
         )
     };
 
     let (was_open, was_available, was_powered) = (last.open, last.available, last.powered);
+
+    let (low, battery_warned) = battery_warnings(&last.battery_warned, &batteries);
+
+    // the daemon's answer may take a moment, and the tick shouldn't wait on it
+    if !low.is_empty() {
+        thread::spawn(move || {
+            for device in low {
+                notifications::send(
+                    "Bluetooth",
+                    &format!("{} battery low", device.name),
+                    &format!("{}% left", device.level),
+                    Urgency::Normal,
+                    None,
+                );
+            }
+        });
+    }
 
     if available && !was_available {
         agent::register();
@@ -164,7 +197,60 @@ fn tick(last: &Previous) -> Previous {
         open,
         available,
         powered,
+        battery_warned,
     }
+}
+
+// a connected device that reports its battery
+#[derive(Debug, Clone, PartialEq)]
+struct DeviceBattery {
+    path: String,
+    name: String,
+    level: u8,
+}
+
+fn connected_batteries(bluetooth: &Bluetooth) -> Vec<DeviceBattery> {
+    bluetooth
+        .devices()
+        .iter()
+        .filter(|device| device.connected())
+        .filter_map(|device| {
+            Some(DeviceBattery {
+                path: String::from(device.path()),
+                name: String::from(device.name()),
+                level: device.battery()?,
+            })
+        })
+        .collect()
+}
+
+/*
+ * the devices to warn about now, and the ones warned about so far: a device is
+ * warned once on reaching BATTERY_LOW and stays warned until it charges to
+ * BATTERY_RECHARGED or disconnects, so reconnecting a flat device warns again
+ */
+fn battery_warnings(
+    warned: &BTreeSet<String>,
+    batteries: &[DeviceBattery],
+) -> (Vec<DeviceBattery>, BTreeSet<String>) {
+    let mut new = Vec::new();
+    let mut still = BTreeSet::new();
+
+    for device in batteries {
+        let was_warned = warned.contains(&device.path);
+
+        if device.level <= BATTERY_LOW {
+            if !was_warned {
+                new.push(device.clone());
+            }
+
+            still.insert(device.path.clone());
+        } else if was_warned && device.level < BATTERY_RECHARGED {
+            still.insert(device.path.clone());
+        }
+    }
+
+    (new, still)
 }
 
 /*
@@ -385,4 +471,72 @@ fn adapter() -> Option<String> {
         .iter()
         .find(|(_, interfaces)| interfaces.get(ADAPTER) != &Value::Nothing)
         .map(|(path, _)| path.clone())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn device(path: &str, level: u8) -> DeviceBattery {
+        DeviceBattery {
+            path: String::from(path),
+            name: String::from(path),
+            level,
+        }
+    }
+
+    fn set(paths: &[&str]) -> BTreeSet<String> {
+        paths.iter().map(|path| String::from(*path)).collect()
+    }
+
+    #[test]
+    fn warns_once_on_reaching_low() {
+        let (new, warned) = battery_warnings(&set(&[]), &[device("a", BATTERY_LOW)]);
+
+        assert_eq!(new, vec![device("a", BATTERY_LOW)]);
+        assert_eq!(warned, set(&["a"]));
+
+        let (new, warned) = battery_warnings(&warned, &[device("a", BATTERY_LOW - 5)]);
+
+        assert!(new.is_empty());
+        assert_eq!(warned, set(&["a"]));
+    }
+
+    #[test]
+    fn no_warning_above_low() {
+        let (new, warned) = battery_warnings(&set(&[]), &[device("a", BATTERY_LOW + 1)]);
+
+        assert!(new.is_empty());
+        assert!(warned.is_empty());
+    }
+
+    #[test]
+    fn wobbling_near_low_warns_once() {
+        let (new, warned) = battery_warnings(&set(&["a"]), &[device("a", BATTERY_LOW + 1)]);
+
+        assert!(new.is_empty());
+        assert_eq!(warned, set(&["a"]));
+
+        let (new, _) = battery_warnings(&warned, &[device("a", BATTERY_LOW)]);
+
+        assert!(new.is_empty());
+    }
+
+    #[test]
+    fn charging_past_recharged_warns_again() {
+        let (_, warned) = battery_warnings(&set(&["a"]), &[device("a", BATTERY_RECHARGED)]);
+
+        assert!(warned.is_empty());
+
+        let (new, _) = battery_warnings(&warned, &[device("a", BATTERY_LOW)]);
+
+        assert_eq!(new.len(), 1);
+    }
+
+    #[test]
+    fn disconnecting_forgets_the_warning() {
+        let (_, warned) = battery_warnings(&set(&["a"]), &[]);
+
+        assert!(warned.is_empty());
+    }
 }

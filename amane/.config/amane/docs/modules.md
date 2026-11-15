@@ -112,7 +112,8 @@ bar, backdrop, notification popups, osd, every panel, and the lock screen.
   and the audio panel's selection; filled from privacy.rs's `pw-dump Node`
   (no polling of its own), changed through `wpctl set-volume`/`set-mute` on
   one worker thread that sends only the newest change per stream.
-- `bluetooth/mod.rs`, `bluetooth/agent.rs`: BlueZ jobs and failures; the
+- `bluetooth/mod.rs`, `bluetooth/agent.rs`: BlueZ jobs and failures, the
+  low-battery notification (`battery_warnings`); the
   pairing agent (exports `org.bluez.Agent1`).
 - `network/mod.rs`, `details.rs`, `profiles.rs`: NetworkManager over D-Bus on
   top of amane's `Network` (connect attempts, details, forgetting).

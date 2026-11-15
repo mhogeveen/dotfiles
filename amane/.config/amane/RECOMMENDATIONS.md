@@ -44,6 +44,14 @@ Settled earlier, no need to revisit:
   toggle`, or adding a second stop key (2026-11-12).
 - No interim polkit agent (like `polkit_gnome`); wait for amane instead (item
   10).
+- The clipboard's "Clear history" stays click-only (click twice), with no key
+  (was item 15): the search box takes every typed character, and `?` is
+  already taken for the key hints (2026-11-15).
+- No decorations for floating windows (was item 17): layer surfaces can't
+  stack between app windows, and mango's `allow_csd`, borders and shadows
+  weren't wanted either (2026-11-15).
+- No timers or pomodoro (item 32) and no removable-drive handling (item 34)
+  for now; both kept below as open in case they come back (2026-11-15).
 
 ## Gaps worth closing first
 
@@ -51,25 +59,8 @@ Nothing open here right now (item 4, the keybinds, is in DONE.md).
 
 ## Polish on what exists
 
-### 15. A key for the clipboard's "Clear history"
-- **Status:** open
-- **Why:** clearing is click-only (click twice); every other action in the
-  panels has a key.
-- **Hooks in:** `src/panels/clipboard.rs`, arming and confirming like the
-  button does, e.g. with `!`.
-- **To settle:** which key, given that the search box takes every typed
-  character.
-
-### 17. Decorations for floating windows
-- **Status:** parked
-- **Why:** floating windows have no title bars.
-- **Hooks in:** not amane: layer surfaces can't stack between app windows
-  (they're above or below all of them), and moving them along with a window
-  risks the layer-surface crash. mango has `allow_csd` (apps draw their own
-  title bars), borders, `border_radius` and scenefx shadows; its group and tab
-  bars only decorate grouped windows.
-- **To settle:** whether `allow_csd` and the border/shadow options are enough,
-  after checking mango's docs.
+Nothing open here right now (items 15 and 17 were declined, see "Already
+decided").
 
 ## New features
 
@@ -77,17 +68,6 @@ Common desktop-shell features the shell doesn't have yet, picked from a list
 on 2026-11-12. Not wanted (from the same list): a system tray, the focused
 window's title in the bar, a caffeine/idle-inhibit toggle, a window switcher,
 a screen color picker, calendar events, OCR of a screenshot region.
-
-### 29. Bluetooth battery
-- **Status:** open
-- **Why:** headphones' and controllers' battery levels aren't shown anywhere.
-- **Hooks in:** `src/panels/bluetooth.rs`, a percentage beside connected
-  devices, from BlueZ's `org.bluez.Battery1.Percentage` (read in
-  `src/bluetooth/mod.rs`). Many headsets only report it with `Experimental =
-  true` in bluez's `main.conf` (`hardware.bluetooth.settings` in the host
-  config).
-- **To settle:** panel only, or also on the bar's Bluetooth icon; a
-  notification when it runs low.
 
 ### 30. Emoji and glyph picker
 - **Status:** blocked on amane. Emoji draw as blank space (no colour glyphs,
@@ -114,7 +94,7 @@ a screen color picker, calendar events, OCR of a screenshot region.
     over Noto Color Emoji).
 
 ### 32. Timer and pomodoro
-- **Status:** open
+- **Status:** open, not wanted for now (2026-11-15)
 - **Why:** no timers or reminders.
 - **Hooks in:** started from the launcher (a prefix like `t25m`, next to `=`
   and `>`) or `amane ipc call timer ...`; a countdown in `src/bar.rs`; a
@@ -124,14 +104,14 @@ a screen color picker, calendar events, OCR of a screenshot region.
   at once; where in the bar; cancel/pause from the bar.
 
 ### 34. Removable drives
-- **Status:** open
+- **Status:** open, not wanted for now (2026-11-15)
 - **Why:** plugging in a USB drive shows nothing, and mounting or ejecting
   needs a terminal.
 - **Hooks in:** udisks2 over D-Bus (`org.freedesktop.UDisks2`, its
   ObjectManager's `InterfacesAdded`/`Removed`): a notification when a drive
   arrives, with Mount (and Open in the file manager); mount, unmount and eject
-  in a list (system panel, or its own panel). Needs `services.udisks2.enable`
-  in the host config (check).
+  in a list (system panel, or its own panel). udisks2 is already installed
+  and D-Bus activated (checked 2026-11-15), so no host config change.
 - **To settle:** where the list lives; automount or ask; whether the
   notification's buttons are enough.
 
