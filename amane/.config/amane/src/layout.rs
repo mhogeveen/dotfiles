@@ -1,9 +1,11 @@
 /*
- * mango's layout on each monitor, for the bar's [S] and the layout panel
+ * mango's layout on each monitor, for the bar's [S] and the layout panel, and
+ * whether its overview is open, for the bar's workspaces
  *
  * amane already follows mango for the workspaces, but doesn't pass the layout
- * on, so this opens its own `watch all-monitors` on mango's socket; mango sends
- * the whole state as one json line on every change, read with src/json.rs
+ * or the overview on, so this opens its own `watch all-monitors` on mango's
+ * socket; mango sends the whole state as one json line on every change, read
+ * with src/json.rs
  */
 
 use std::env;
@@ -97,6 +99,12 @@ pub static LAYOUTS: &[Layout] = &[
 struct Monitor {
     name: String,
     symbol: String,
+
+    /*
+     * the overview shows every tag, so the workspace protocol calls them all
+     * active; mango's ipc says it's open by listing only tag 0 as active
+     */
+    overview: bool,
 }
 
 // each monitor's layout symbol, by monitor name
@@ -149,6 +157,13 @@ impl MangoLayout {
             .find(|candidate| candidate.name == monitor)
             .map(|candidate| candidate.symbol.as_str())
     }
+
+    // false for a monitor mango hasn't told about yet
+    pub fn overview(&self, monitor: &str) -> bool {
+        self.monitors
+            .iter()
+            .any(|candidate| candidate.name == monitor && candidate.overview)
+    }
 }
 
 // the focused monitor's current tag gets it, like a keybind would; waits on mango, so on a thread
@@ -176,12 +191,13 @@ fn send(command: &str) -> Option<UnixStream> {
 }
 
 /*
- * the name and layout_symbol of each object in the top-level "monitors" array:
+ * the name, layout_symbol and overview of each object in the top-level "monitors" array:
  *
  *   {"monitors":[{"name":"DP-1",...,"layout_symbol":"S","tags":[{..."layout":"S"}],...}]}
  *
  * only a monitor's own keys count, so the tags' "layout" and nested objects never
- * get mixed in; None when there's no monitors array, like mango's "ok"
+ * get mixed in; the overview is open when "active_tags" is just [0]. None when
+ * there's no monitors array, like mango's "ok"
  */
 fn parse(line: &str) -> Option<Vec<Monitor>> {
     let status = json::parse(line)?;
@@ -197,9 +213,17 @@ fn parse(line: &str) -> Option<Vec<Monitor>> {
             .map(|monitor| Monitor {
                 name: String::from(monitor.get("name").text()),
                 symbol: String::from(monitor.get("layout_symbol").text()),
+                overview: overview_open(monitor.get("active_tags").list()),
             })
             .collect(),
     )
+}
+
+// mango's own overview tag, the only one it lists as active while the overview is open
+const OVERVIEW_TAG: f64 = 0.0;
+
+fn overview_open(active_tags: &[Value]) -> bool {
+    matches!(active_tags, [tag] if tag.number() == Some(OVERVIEW_TAG))
 }
 
 #[cfg(test)]
@@ -218,6 +242,7 @@ mod tests {
             vec![Monitor {
                 name: String::from("DP-1"),
                 symbol: String::from("S"),
+                overview: false,
             }]
         );
     }
@@ -236,6 +261,33 @@ mod tests {
         assert_eq!(monitors[0].symbol, "VS");
         assert_eq!(monitors[1].name, "HDMI-A-1");
         assert_eq!(monitors[1].symbol, "\u{f3}");
+    }
+
+    #[test]
+    fn only_tag_zero_means_the_overview_is_open() {
+        let line = r#"{"monitors":[
+            {"name":"DP-1","layout_symbol":"S","active_tags":[0]},
+            {"name":"DP-2","layout_symbol":"S","active_tags":[1,2]},
+            {"name":"DP-3","layout_symbol":"S","active_tags":[0,1]},
+            {"name":"DP-4","layout_symbol":"S"}
+        ]}"#;
+
+        let monitors = parse(line).expect("a monitors array");
+
+        let open: Vec<bool> = monitors.iter().map(|monitor| monitor.overview).collect();
+
+        assert_eq!(open, vec![true, false, false, false]);
+    }
+
+    #[test]
+    fn overview_is_looked_up_by_monitor() {
+        let layout = MangoLayout {
+            monitors: parse(r#"{"monitors":[{"name":"DP-1","active_tags":[0]}]}"#)
+                .expect("a monitors array"),
+        };
+
+        assert!(layout.overview("DP-1"));
+        assert!(!layout.overview("HDMI-A-1"));
     }
 
     #[test]

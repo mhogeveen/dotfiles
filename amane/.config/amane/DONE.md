@@ -496,3 +496,13 @@ are kept, so references between the two files still work.
 - **Limits:** off lasts until it's switched back or the next login
   (home-manager starts hypridle again). Stopping hypridle outside the shell
   shows the dot only after the system panel next opens.
+
+### 37. Workspaces during the overview
+- **Status:** done (2026-11-16): while mango's overview is open, the bar's
+  workspaces are all dimmed dots (`fg_dim` with windows, `bg1` without)
+  instead of every one a wide accent block.
+- **How it fits:** the overview shows every tag, so the workspace protocol
+  reports them all active. Mango's ipc lists only tag 0 in `active_tags`
+  while the overview is open; `src/layout.rs` already watches that stream and
+  now keeps an `overview` flag per monitor (`MangoLayout::overview`). The
+  dots animate in and out like a workspace switch. Tests: `layout::`.

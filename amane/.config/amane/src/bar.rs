@@ -129,6 +129,9 @@ pub fn view(monitor: &Monitor) -> LayerWindow {
 }
 
 fn workspaces(t: &Theme, monitor: &Monitor) -> Rectangle {
+    // read before the workspaces, one service lock at a time
+    let overview = MangoLayout::read().overview(&monitor.name);
+
     let workspaces = Workspaces::read();
 
     let animate = Animations::read().enabled();
@@ -155,9 +158,19 @@ fn workspaces(t: &Theme, monitor: &Monitor) -> Rectangle {
     for workspace in own {
         /*
          * the one shown on this monitor is wide: in the accent when this monitor
-         * has focus, dimmer when another one does; an urgent one is a dot in the accent
+         * has focus, dimmer when another one does; an urgent one is a dot in the
+         * accent. mango's overview shows every tag at once, so while it's open
+         * they're all dimmed dots instead of all wide
          */
-        let (width, fill) = if workspace.active() {
+        let (width, fill) = if overview {
+            let fill = if workspace.windows() > 0 {
+                t.fg_dim
+            } else {
+                t.bg1
+            };
+
+            (WORKSPACE_DOT, fill)
+        } else if workspace.active() {
             let fill = if workspace.focused() {
                 t.accent
             } else {

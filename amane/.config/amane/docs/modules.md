@@ -13,7 +13,8 @@ bar, backdrop, notification popups, osd, every panel, and the lock screen.
 - `bar.rs`: the top bar (`bar::HEIGHT`, 32 px, reserves its space; the
   backdrop starts below it). Workspaces of its own
   monitor (wide accent block for the shown one, dots for urgent; width and
-  color animate on a switch, see 5.11), the layout
+  color animate on a switch, see 5.11; all dimmed dots while mango's
+  overview is open, see 37), the layout
   symbol `[S]` (opens the layout picker), the clock (opens the calendar),
   and icons: a red privacy dot while recording or sharing the screen, an orange
   `theme.warning` dot while the idle timers are off (opens the system panel), audio, network with a VPN shield badge, bluetooth, and the NixOS
@@ -126,7 +127,8 @@ bar, backdrop, notification popups, osd, every panel, and the lock screen.
   tracking (`Seen`), `send()` for the shell's own notifications, history.
 - `brightness.rs`: brightness over DDC/CI or a laptop backlight (see 5.9).
 - `covers.rs`: cover art paths/downloads for "Now playing".
-- `layout.rs`: mango's layout per monitor (own `watch all-monitors` socket).
+- `layout.rs`: mango's layout and overview state per monitor (own
+  `watch all-monitors` socket).
 - `session.rs`: session actions, the `lock` IPC, logind watcher.
 - `screenshot.rs`: grim/slurp/wl-copy, notification after capture; annotate
   pipes the capture into satty (configured in `~/.nixos/home/satty.nix`).
