@@ -101,7 +101,8 @@ bar, backdrop, notification popups, osd, every panel, and the lock screen.
   optional preview and footer, `?` in an empty search shows a help screen).
 - `menu.rs`: the `Menu` trait for numbered menus with confirm-twice rows.
 - `launcher.rs` (Picker): apps by frecency (`usage.rs`), `=sum` calculator
-  (`calculator.rs`, Enter copies), `>cmd` runs, `>>cmd` runs in foot.
+  (`calculator.rs`, Enter copies), `>cmd` runs, `>>cmd` runs in foot, `:name`
+  opens a panel (`panels::launchable`, by name or `PanelDef::description`).
 - `clipboard.rs` (Picker): cliphist history, × deletes, "Clear history"
   clicked twice, preview pane (`clipboard_preview.rs`).
 - `layout.rs` (Picker): mango layouts, the one in use striped.

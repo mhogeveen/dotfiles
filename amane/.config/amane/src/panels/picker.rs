@@ -277,7 +277,13 @@ fn submit<P: Picker>() {
 fn choose<P: Picker>(item: P::Item) {
     P::pick(item);
 
-    let _ = Panels::close(P::PANEL);
+    /*
+     * a pick can open another panel, which already replaced this one; closing
+     * it again would bump the generation and cancel that panel's delayed show
+     */
+    if Panels::read().is_open(P::PANEL) {
+        let _ = Panels::close(P::PANEL);
+    }
 }
 
 // how many rows the help takes, for the test that it fits

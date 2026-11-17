@@ -57,6 +57,9 @@ pub const KEYBINDS: &str = "keybinds";
 pub struct PanelDef {
     pub name: &'static str,
 
+    // what it's for, shown next to its name in the launcher's : list
+    pub description: &'static str,
+
     // opening a panel closes every open panel that shares at least one group with it
     pub groups: &'static [&'static str],
 
@@ -87,83 +90,107 @@ const PANELS: &str = "panels";
 static REGISTRY: &[PanelDef] = &[
     PanelDef {
         name: LAUNCHER,
+        description: "Search and start apps",
         groups: &[PANELS],
         on_close: Some(launcher::reset),
         corner: false,
     },
     PanelDef {
         name: CLIPBOARD,
+        description: "Clipboard history",
         groups: &[PANELS],
         on_close: Some(clipboard::reset),
         corner: false,
     },
     PanelDef {
         name: SCREENSHOT,
+        description: "Screenshots and recordings",
         groups: &[],
         on_close: Some(screenshot::reset),
         corner: false,
     },
     PanelDef {
         name: SESSION,
+        description: "Lock, suspend, log out, reboot, shut down",
         groups: &[PANELS],
         on_close: Some(session::reset),
         corner: false,
     },
     PanelDef {
         name: LAYOUT,
+        description: "Window layouts",
         groups: &[PANELS],
         on_close: Some(layout::reset),
         corner: false,
     },
     PanelDef {
         name: NOTIFICATIONS,
+        description: "Notification center",
         groups: &[PANELS],
         on_close: Some(notifications::reset),
         corner: true,
     },
     PanelDef {
         name: NETWORK,
+        description: "Wi-Fi and VPN",
         groups: &[PANELS],
         on_close: Some(network::reset),
         corner: true,
     },
     PanelDef {
         name: BLUETOOTH,
+        description: "Bluetooth devices",
         groups: &[PANELS],
         on_close: Some(bluetooth::reset),
         corner: true,
     },
     PanelDef {
         name: AUDIO,
+        description: "Volume, outputs and inputs",
         groups: &[PANELS],
         on_close: Some(audio::reset),
         corner: true,
     },
     PanelDef {
         name: SYSTEM,
+        description: "System info and settings",
         groups: &[PANELS],
         on_close: None,
         corner: true,
     },
     PanelDef {
         name: CALENDAR,
+        description: "Calendar and events",
         groups: &[PANELS],
         on_close: Some(calendar::reset),
         corner: false,
     },
     PanelDef {
         name: WALLPAPER,
+        description: "Choose from your wallpapers",
         groups: &[PANELS],
         on_close: Some(wallpaper::reset),
         corner: false,
     },
     PanelDef {
         name: KEYBINDS,
+        description: "Every keybind",
         groups: &[PANELS],
         on_close: Some(keybinds::reset),
         corner: false,
     },
 ];
+
+/*
+ * the panels the launcher's : list can open: all but the launcher itself and
+ * the screenshot menu, which shares no group with the launcher, so it would show
+ * while the launcher hides (the layer surface crash), and has nothing to capture
+ */
+pub fn launchable() -> impl Iterator<Item = &'static PanelDef> {
+    REGISTRY
+        .iter()
+        .filter(|panel| panel.name != LAUNCHER && panel.name != SCREENSHOT)
+}
 
 fn find(name: &str) -> Option<&'static PanelDef> {
     REGISTRY.iter().find(|panel| panel.name == name)

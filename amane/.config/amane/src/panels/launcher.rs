@@ -7,6 +7,7 @@
  *   =12*7      calculates, enter copies the answer
  *   >command   runs it in the background, like a keybind
  *   >>command  runs it in a foot terminal, then leaves your shell there
+ *   :wallpaper opens that panel, by name or what it's for
  */
 
 use std::process::Command;
@@ -14,9 +15,9 @@ use std::thread;
 
 use amane::{Apps, DesktopApp, LayerWindow, Monitor, Rectangle, Service, spawn};
 
-use super::LAUNCHER;
 use super::list::{self, fuzzy};
 use super::picker::{self, Picker};
+use super::{LAUNCHER, PanelDef, Panels};
 use crate::calculator;
 use crate::theme::Theme;
 use crate::usage::Usage;
@@ -24,6 +25,10 @@ use crate::usage::Usage;
 const CALCULATE: &str = "=";
 const RUN: &str = ">";
 const RUN_IN_TERMINAL: &str = ">>";
+const PANEL: &str = ":";
+
+// how far a match on a panel's description ranks below the same match on its name
+const DESCRIPTION_PENALTY: i32 = 10;
 
 // an app counts as used once its score is above this, for the empty search's top
 const USED: f64 = 0.1;
@@ -36,6 +41,8 @@ pub enum Entry {
     Answer(String),
 
     Run { command: String, terminal: bool },
+
+    Panel(&'static PanelDef),
 }
 
 // what the search asks for, by how it starts
@@ -43,6 +50,7 @@ enum Mode<'a> {
     Apps(&'a str),
     Calculate(&'a str),
     Run { command: &'a str, terminal: bool },
+    Panels(&'a str),
 }
 
 fn mode(query: &str) -> Mode<'_> {
@@ -61,6 +69,8 @@ fn mode(query: &str) -> Mode<'_> {
         }
     } else if let Some(sum) = query.strip_prefix(CALCULATE) {
         Mode::Calculate(sum)
+    } else if let Some(name) = query.strip_prefix(PANEL) {
+        Mode::Panels(name.trim())
     } else {
         Mode::Apps(query)
     }
@@ -98,6 +108,8 @@ impl Picker for Launcher {
             }],
 
             Mode::Run { .. } => Vec::new(),
+
+            Mode::Panels(query) => panels(query).into_iter().map(Entry::Panel).collect(),
         }
     }
 
@@ -113,6 +125,10 @@ impl Picker for Launcher {
                 let place = if *terminal { "in foot" } else { "background" };
 
                 list::detail_row(t, &format!("Run {command}"), place, selected, false)
+            }
+
+            Entry::Panel(panel) => {
+                list::detail_row(t, panel.name, panel.description, selected, false)
             }
         }
     }
@@ -136,6 +152,13 @@ impl Picker for Launcher {
                 command,
                 terminal: true,
             } => run_in_foot(command),
+
+            // replaces the launcher, which then needs no closing (see picker::choose)
+            Entry::Panel(panel) => {
+                if let Err(error) = Panels::open(panel.name) {
+                    eprintln!("launcher: {error}");
+                }
+            }
         }
     }
 
@@ -145,6 +168,7 @@ impl Picker for Launcher {
             ("=12*7", "calculate"),
             (">command", "run in the background"),
             (">>command", "run in foot, then your shell"),
+            (":wallpaper", "open a panel"),
             ("Enter", "start, copy the answer or run"),
         ]
     }
@@ -162,6 +186,7 @@ impl Picker for Launcher {
             },
 
             Mode::Run { .. } => "Type a command to run",
+            Mode::Panels(_) => "No panel by that name",
         }
     }
 }
@@ -209,6 +234,31 @@ fn ranked<'a>(apps: &'a [DesktopApp], usage: &Usage, query: &str) -> Vec<&'a Des
     scored.sort_by(|a, b| b.0.cmp(&a.0));
 
     scored.into_iter().map(|(_, app)| app).collect()
+}
+
+/*
+ * an empty search lists every panel in the registry's order; a search ranks by
+ * match on the name, or on what it's for, below a name match
+ */
+fn panels(query: &str) -> Vec<&'static PanelDef> {
+    if query.is_empty() {
+        return super::launchable().collect();
+    }
+
+    let mut scored: Vec<(i32, &'static PanelDef)> = super::launchable()
+        .filter_map(|panel| {
+            let name = fuzzy(query, panel.name);
+            let description =
+                fuzzy(query, panel.description).map(|score| score - DESCRIPTION_PENALTY);
+
+            name.max(description).map(|score| (score, panel))
+        })
+        .collect();
+
+    // stable, so equal scores keep the registry's order
+    scored.sort_by(|a, b| b.0.cmp(&a.0));
+
+    scored.into_iter().map(|(_, panel)| panel).collect()
 }
 
 // grows with use but slows down, and stops at 24 (about two letters' worth of match)
@@ -288,6 +338,28 @@ mod tests {
                 terminal: true
             }
         ));
+    }
+
+    #[test]
+    fn colon_lists_panels() {
+        assert!(matches!(mode(":wall"), Mode::Panels("wall")));
+        assert!(matches!(mode(": wall "), Mode::Panels("wall")));
+    }
+
+    #[test]
+    fn panels_rank_by_name_then_description() {
+        assert_eq!(panels("wall")[0].name, super::super::WALLPAPER);
+        assert_eq!(panels("wallpapers")[0].name, super::super::WALLPAPER);
+        assert_eq!(panels("wifi")[0].name, super::super::NETWORK);
+    }
+
+    #[test]
+    fn panels_never_list_the_launcher_or_screenshot_menu() {
+        let names: Vec<&str> = panels("").iter().map(|panel| panel.name).collect();
+
+        assert!(!names.contains(&LAUNCHER));
+        assert!(!names.contains(&super::super::SCREENSHOT));
+        assert!(names.contains(&super::super::WALLPAPER));
     }
 
     #[test]

@@ -661,3 +661,14 @@ are kept, so references between the two files still work.
   alone still never redraws. In the picker, every keep applies the design
   shown, a click on a design keeps it with the wallpaper selected (not None),
   and the empty click-to-close room above the strip is gone.
+
+### 48. Launcher `:` opens a panel
+- **Status:** done (2026-11-17): `:` in the launcher lists the panels, `:wall`
+  narrows by name (or by what each is for, ranked below a name match, so
+  `:wallpapers` and `:wifi` work too), Enter opens it.
+- **How it fits:** each `PanelDef` has a `description`; `panels::launchable`
+  leaves out the launcher and the screenshot menu (no shared group, so it
+  would show while the launcher hides, the layer-surface crash). The picked
+  panel replaces the launcher through `Panels::open`; `picker::choose` only
+  closes the picker if it's still open, since closing it again would bump the
+  generation and cancel the new panel's delayed show.
