@@ -29,6 +29,49 @@ bar, backdrop, notification popups, osd, every panel, and the lock screen.
   password box; the wallpaper blurred and darkened behind it.
 - `wallpaper.rs`: the `Wallpaper` service and the background-layer window per
   monitor (see 5.6).
+- `desktop.rs`: the page drawn on that window, over the picture or None, in
+  one of several designs: `Design` (list and names), the `Desktop` service
+  (`current`/`shown`, kept in the `desktop` state file), `Moment` (time, date,
+  weather, the UTC instant and offset, the weather's place; read once) and
+  `Page` (a size; designs scale from a 1440 high reference, so the picker
+  draws the same function as thumbnails). Shared: corner ticks, `placed`,
+  `date_line`, `short_date`, `in_days`, `date_after`, `Random` (xorshift,
+  seeded by the day and a salt per design, so generative pieces hold all
+  day) and `signature` (the art designs' small time). Rectangles and text
+  only, nothing rotated (`docs/amane.md`, Canvas). See 5.6.
+  - `desktop/sky.rs`: the moon's age, phase, light and lit side (mean lunar
+    month from a known new moon).
+  - `desktop/ledger.rs`: time, accent rule, date line, 24 hour cells.
+  - `desktop/almanac.rs`: the year as 12 rows of day cells (gone, weekends
+    lighter, today in the accent) beside the time and date.
+  - `desktop/prompt.rs`: a terminal session: `$ now` (time, date, week,
+    weather, uptime from `/proc/uptime`) and `$ left` (today, week, year), an
+    accent block cursor.
+  - `desktop/lunar.rs`: the moon tonight as a disc of rounded slices, its
+    phase, light and age, the next full and new moon, a lunar-month strip.
+  - `desktop/forecast.rs`: the fetched weather (`Moment::forecast`): now, the
+    next 24 h as temperature bars with rain in the accent, the week as
+    low–high range bars on one scale.
+  - `desktop/epoch.rs`: a binary clock and the minute as unix time, julian
+    day, iso week and ordinal date, swatch .beat, decimal, hexadecimal and
+    mars time.
+  - `desktop/orbit.rs`: the earth's distance from the sun (kepler, mean
+    elements), light time, speed, distance since new year, next perihelion
+    or aphelion; a distance gauge and the year's way around the sun.
+  - `Design::None` draws nothing (no ticks, no time): mango's `root_color`;
+    its picker tile is the crossed-out glyph like the wallpapers' None.
+  - `desktop/ridges.rs` (art): five hills of vertical strokes, light far to
+    dark near, each a sum of three seeded waves, an accent sun behind. Each
+    stroke stops where a nearer hill starts (`visible_spans`), so soft edges
+    at fractional positions never stack. The first version, where every
+    stroke ran to the page's bottom, is kept in `archive/desktop/` (source and
+    a screenshot); `archive/` is outside `src/` and never compiled.
+  - `desktop/pines.rs` (art): a pine forest at night, four rows far to near
+    (`bg4` to `bg1`) on their own ground bands, trees as stacked tiers
+    narrowing to the tip (`tree_bars`), an accent moon half behind the far
+    row, faint stars. Same-coloured shapes overlap rather than meet edge to
+    edge (tiers reach into the ground), so no light seams at fractional
+    positions; no trunks, which let the sky show as dashed lines.
 - `osd.rs`: the volume/brightness popup and the `media` IPC (see 5.8).
 - `notifications/popups.rs`: notification popups, top-right.
 
@@ -99,7 +142,8 @@ bar, backdrop, notification popups, osd, every panel, and the lock screen.
   the animations checkbox (`a`, `ui::checkbox`). Buttons for wallpaper
   (`w`), notifications (`n`), session (`s`).
 - `calendar.rs`: month + weather as two cards on one grid (see 5.5).
-- `wallpaper.rs`: the wallpaper strip along the bottom (see 5.6).
+- `wallpaper.rs`: the wallpaper strip along the bottom, with the desktop
+  designs as a second card above it (see 5.6).
 - `keybinds.rs`: the keybind sheet (`SUPER+/`): a search box over mango's
   binds in three columns (`layout`/`place` spread the sections evenly), the
   config re-read when its mtime changes, plus the keys every panel shares.

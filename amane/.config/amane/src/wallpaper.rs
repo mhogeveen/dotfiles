@@ -20,6 +20,7 @@ use amane::{
     Zone,
 };
 
+use crate::desktop;
 use crate::state;
 
 // the file in the state folder the choice is kept in: a path, or "none"
@@ -183,22 +184,26 @@ pub fn name(picture: &Path) -> String {
 /*
  * the background of every monitor: the picture shown, decoded at no more than
  * twice the monitor's size in widget units (enough for a scale of 2, and a big
- * file costs no more memory than that), or see-through for mango's root_color
+ * file costs no more memory than that), or see-through for mango's root_color,
+ * with the desktop design drawn on either (src/desktop.rs)
  *
- * the window is always there and only its fill changes, so the picker's preview
- * doesn't show or hide a layer surface
+ * the window is always there and only its fill and child change, so the
+ * picker's preview doesn't show or hide a layer surface
  */
 pub fn view(monitor: &Monitor) -> LayerWindow {
     let shown = Wallpaper::read().shown.clone();
 
     let background = Rectangle::new().width(Parent).height(Parent);
 
+    // the picture, or mango's root_color when there's none, with the desktop drawn on it
     let background = match shown {
         Some(picture) => {
             background.fill(Image::cover(picture).thumbnail(monitor.width * 2, monitor.height * 2))
         }
         None => background.fill(Color::TRANSPARENT),
     };
+
+    let background = background.child(desktop::view(monitor));
 
     LayerWindow::new()
         .width(Full)

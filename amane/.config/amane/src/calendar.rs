@@ -61,6 +61,16 @@ impl Date {
 
         ((thursday - first) / 7 + 1) as u32
     }
+
+    // days since 1970-01-01, for counting between dates and instants
+    pub fn days_since_epoch(self) -> i64 {
+        self.days()
+    }
+
+    // 1 for 1 January, 366 for 31 December of a leap year
+    pub fn day_of_year(self) -> u32 {
+        (self.days() - days_from_civil(self.year, 1, 1) + 1) as u32
+    }
 }
 
 // a month moved by some number of months, across years: (2026, 12) + 1 is (2027, 1)
@@ -171,6 +181,15 @@ mod tests {
         assert_eq!(Date::new(2021, 1, 1).iso_week(), 53);
         assert_eq!(Date::new(2026, 1, 1).iso_week(), 1);
         assert_eq!(Date::new(2027, 1, 3).iso_week(), 53);
+    }
+
+    #[test]
+    fn days_of_the_year() {
+        assert_eq!(Date::new(2026, 1, 1).day_of_year(), 1);
+        assert_eq!(Date::new(2026, 11, 16).day_of_year(), 320);
+        assert_eq!(Date::new(2026, 12, 31).day_of_year(), 365);
+        assert_eq!(Date::new(2024, 3, 1).day_of_year(), 61);
+        assert_eq!(Date::new(2024, 12, 31).day_of_year(), 366);
     }
 
     #[test]

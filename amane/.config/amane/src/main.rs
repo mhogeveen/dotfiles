@@ -19,6 +19,7 @@ mod clipboard_preview;
 mod clock;
 mod command;
 mod covers;
+mod desktop;
 mod health;
 mod idle;
 mod json;

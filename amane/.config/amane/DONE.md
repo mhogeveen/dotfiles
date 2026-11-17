@@ -506,3 +506,158 @@ are kept, so references between the two files still work.
   while the overview is open; `src/layout.rs` already watches that stream and
   now keeps an `overview` flag per monitor (`MangoLayout::overview`). The
   dots animate in and out like a workspace switch. Tests: `layout::`.
+
+### 38. A desktop for the None wallpaper
+- **Status:** done (2026-11-16): with the wallpaper set to None, the
+  background shows a page about the day instead of a plain colour: the time,
+  an accent rule under the hour, `MON 16 NOV 2026 · week 47 · day 320` with
+  the weather, 24 hour cells that fill with the accent as the day goes (the
+  current one by the minute), and 1 px `bg4` ticks in two corners.
+- **How it fits:** inspired by an editorial calendar-page desktop, redone in
+  the shell's own font, colours and blocks. `src/desktop.rs`, drawn as the
+  child of the wallpaper window's see-through fill, so no layer surface shows
+  or hides. Every size is a fraction of the monitor. A big day-of-year
+  watermark was tried (text lost its last letter in amane's 1024 px letter
+  atlas, so tiles) and dropped: too coarse next to the fine type. `Clock` now also keeps the hour and minute as numbers, and
+  `Date::day_of_year` is new. Tests: `desktop::`, `calendar::`.
+
+### 39. Desktop designs in the wallpaper picker
+- **Status:** done (2026-11-16): while None is selected, the picker shows a
+  second card, "Desktops", with every design for the bare background as a
+  live thumbnail; `k`/Up and `j`/Down move between the rows, h/l preview a
+  design on the real background, Enter or a click keeps it. Two designs:
+  **ledger** (item 38) and **rings**, the year, day and hour as rings of 52,
+  24 and 60 dots around the time. The choice is kept in the `desktop` state
+  file.
+- **How it fits:** `src/desktop.rs` holds the `Design` list and `Desktop`
+  service (current and shown, like `Wallpaper`); each design is a file in
+  `src/desktop/` drawing onto a `Page`, scaled from a 1440 high reference,
+  so the thumbnails are the same code. The picker window is always the
+  height of both cards, as panels never resize. Rings was first drawn with
+  `Canvas` arcs, which hung the GPU (see `docs/amane.md`); it's rectangles
+  only now. Tests: `desktop::`, `panels::wallpaper::`.
+
+### 40. Three more desktop designs
+- **Status:** done (2026-11-16): **almanac** (the year as a sheet of day
+  cells, a row per month: gone days filled, weekends a step lighter, today in
+  the accent, beside the time and date), **flaps** (the time on split-flap
+  cards in the shell's card style with a fold across each, the date on small
+  cards, an accent bar filling toward the next hour) and **prompt** (a
+  terminal session: `$ now` with time, date, week, weather and uptime, `$ left`
+  with what's left of today, the week and the year, an accent block cursor).
+- **How it fits:** each a file in `src/desktop/`, rectangles and text only,
+  sizes scaled from the page so the picker's thumbnails are the same code.
+  Five designs fit the picker's row side by side. Tests: `desktop::`.
+
+### 41. Daylight, lunar and horizon; rings and flaps removed
+- **Status:** done (2026-11-16): rings and flaps (items 39, 40) were dropped
+  as not liked; three designs showing less obvious information took their
+  place. **daylight**: the day's length for the weather's place, how much it
+  changed since yesterday, "sunset in …" / "dark for … more", and a 24 h band
+  of night, twilight and day with the moment marked. **lunar**: the moon
+  tonight as a disc of rounded slices lit on the right side, its phase, light
+  and age, the next full and new moon, a strip of the lunar month.
+  **horizon**: the next 150 days on a line with dutch holidays, the clocks
+  changing, solstices, equinoxes and full moons; the next one in the accent
+  and in words above.
+- **How it fits:** everything is worked out locally in `src/desktop/sky.rs`
+  (NOAA sun equations, mean lunar month) and `horizon.rs` (easter by
+  Meeus/Jones/Butcher, last sundays for the clocks), so nothing is fetched.
+  `Moment` gained the UTC instant, the offset (`clock::utc_offset_minutes`)
+  and the weather's place; `Date::days_since_epoch` is new. A saved "rings"
+  or "flaps" falls back to ledger. Tests: `desktop::`, `clock::`.
+
+### 42. Four more designs: forecast, terminator, epoch, orbit
+- **Status:** done (2026-11-16), filling the picker's row to ten.
+  **forecast**: the fetched weather as a page: now (icon, temperature,
+  feels-like, wind), the next 24 hours as bars with the rain chance in the
+  accent, the week as low-to-high range bars. **terminator**: where on earth
+  it's day right now, a map in scanline rows cut into night, twilight and
+  day, with 12 cities and their local times and the weather's place in the
+  accent. **epoch**: a binary clock and the minute in other systems (unix,
+  julian day, iso week, ordinal, swatch .beat, decimal, hexadecimal, mars).
+  **orbit**: the earth's distance from the sun, how old the sunlight is, its
+  speed, how far it went since new year, the next perihelion or aphelion, and
+  two gauges.
+- **How it fits:** all worked out locally except the forecast, which reads
+  what the weather service already has (`Moment::forecast`). `sky.rs` gained
+  `solar_position`, `subsolar_point` and `sun_elevation`. Ten designs is
+  what the picker's row holds side by side on this monitor. Tests:
+  `desktop::`.
+
+### 43. Art designs: composition, ridges, labyrinth
+- **Status:** done (2026-11-16): daylight, horizon and terminator (items 41,
+  42) were dropped as not liked, and three art pieces with no data took their
+  place, each generated fresh every day. **composition**: the page cut
+  again and again into blocks of warm grey, hatching and outlines, exactly
+  one in the accent. **ridges**: five hills of thin vertical strokes,
+  lightest far away and darkest close by, an accent sun sinking behind the
+  farthest. **labyrinth**: a perfect maze with its one way through traced in
+  the accent. Each has only the time, small, at the bottom left corner.
+- **How it fits:** `desktop::Random` (xorshift64*) is seeded by the day and a
+  salt per design, so a piece holds through every redraw and in its
+  thumbnail, and changes at midnight. The labyrinth was planned as diagonal
+  strokes (10 PRINT style), but a rotated `Rectangle` routes through vello
+  like `Canvas` does (`docs/amane.md`), so it became a maze of straight
+  walls. The sun maths left `sky.rs` with the designs that used it; the
+  moon stayed for lunar. Tests: `desktop::`.
+
+### 44. Ridges without slivers; labyrinth removed
+- **Status:** done (2026-11-16): labyrinth was dropped as not liked, leaving
+  nine designs. Ridges, liked, had a glitch: in the nearest, darkest hills
+  the gaps between strokes didn't line up cleanly, showing thin lighter
+  slivers in some columns and not others.
+- **How it fits:** strokes sit at fractional positions (220 across 2560 px,
+  ×1.5), so their edges are anti-aliased; every hill's strokes ran to the
+  page's bottom, so lower down up to five soft edges stacked per pixel, mixed
+  differently per column. Each stroke now stops where a nearer hill starts
+  (`ridges::visible_spans`), so every pixel belongs to one hill; a row
+  through the nearest hill went from 34 colours to 25. The original is kept
+  in `archive/desktop/` with a screenshot. Tests: `desktop::ridges::`.
+
+### 45. Tide
+- **Status:** done (2026-11-16), the tenth design, filling the picker's row:
+  a sea at dusk. The sun in the accent half sunk at a flat horizon; the water
+  as rows of horizontal dashes that draw apart and thicken toward you, light
+  far and dark near; the sun's reflection as a column of accent dashes that
+  widens and breaks up as it comes closer.
+- **How it fits:** the counterpart to ridges (strokes lying down instead of
+  standing up), seeded by the day like the other art designs. A dash that
+  crosses the reflection's edge is cut there (`tide::split`), so the
+  reflection reads as one column instead of long accent bars sticking out of
+  it. Rows never overlap, so the soft-edge stacking ridges had (item 44)
+  can't happen here. Rectangles only. Tests: `desktop::tide::`.
+- **Later (2026-11-16):** the Desktops row slides like the pictures strip,
+  showing as many as fit around the one shown (`fitting`, `window_start` in
+  `src/panels/wallpaper.rs`, shared by both rows), so designs past ten no
+  longer run off the card. Tests: `panels::wallpaper::`.
+
+### 46. Pines and a "none" desktop; composition and tide removed
+- **Status:** done (2026-11-17): composition and tide were dropped as not
+  liked. **none** is now the first desktop: it draws nothing, so wallpaper
+  None can be the bare `root_color` again. **pines**: a forest at night,
+  four rows of pines from far (light) to near (dark), an accent moon half
+  behind the farthest trees, faint stars; new each day like ridges.
+- **How it fits:** none is a `Design` like the others (no special case in
+  `wallpaper.rs`), so preview, apply, the state file and "in use" just work;
+  its tile is the crossed-out glyph. Ledger stays the default when nothing
+  (or a removed design) is saved. Pines learns from ridges (item 44):
+  same-coloured shapes overlap instead of meeting edge to edge, and the
+  first version's trunks were dropped, as the sky showed through between
+  them in a dashed line under every row. `Random::below` went with
+  composition. Tests: `desktop::pines::`.
+
+### 47. Desktops over picture wallpapers
+- **Status:** done (2026-11-17): the desktop designs draw over a picture
+  wallpaper too, not only over None. The Desktops row is always in the
+  picker (thumbnails on the dark page, the real background previews); one design
+  is kept for every wallpaper. Every design is allowed over a picture, the
+  art ones included, and drawn straight on it with nothing for contrast (all
+  three chosen by the user over a darkened picture, a backing card, or
+  separate choices for None and pictures).
+- **How it fits:** the wallpaper window's picture fill gets the same
+  `desktop::view` child as None; no new window, so no layer-surface risk.
+  `desktop::view` returns before reading the clock for none, so a picture
+  alone still never redraws. In the picker, every keep applies the design
+  shown, a click on a design keeps it with the wallpaper selected (not None),
+  and the empty click-to-close room above the strip is gone.

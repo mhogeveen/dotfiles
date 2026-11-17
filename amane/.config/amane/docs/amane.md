@@ -18,6 +18,20 @@ them written up for upstream.
   returned as a built `Rectangle` can resolve to the `Widget` getter; pass
   sizes into helpers instead (why `ui::heading` takes a height).
   `Rectangle::fill` takes a `Color` or an `Image`.
+- **Canvas hangs this GPU:** `Canvas` shapes (`Arc`, `Line`, `Circle`,
+  `Path`) are drawn through vello's compute shaders, and stroked arcs hung the
+  APU (gfx_v8; kernel "amdgpu: ring gfx timeout … Process amane-shell", then a
+  GPU reset that kills the shell, 2026-11-16). Signs before the crash: grim
+  takes 15+ s and keys seem ignored, as frames stop. Don't use `Canvas`; build
+  shapes from `Rectangle`s (`.radius(Full)` for dots, borders for outlines).
+  Rectangles only stay off vello while their transform moves and scales
+  evenly (`graphics/gpu/paint.rs`, `route`): `.rotate()`, gradients, blur,
+  shaders and rotated clips all go to vello too, so no diagonals either.
+  Check `journalctl -k | grep -i "gfx timeout"` after trying any new kind of
+  drawing.
+- **Letters share one 1024 px atlas** per renderer; letters that don't fit are
+  left out (a three-letter numeral at 600 px lost its last one), so keep text
+  under about 0.15 × the monitor height.
 - **Text:** letters are drawn from outlines only, so colour emoji draw as
   blank space; Nerd Font glyphs and outline symbols (♥ ★) are fine.
 - **Monitors:** `Monitor` has `name`, `width`, `height` in widget units, but no

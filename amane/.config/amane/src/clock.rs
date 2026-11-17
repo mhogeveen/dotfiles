@@ -27,6 +27,10 @@ pub struct Clock {
     time: String,
     date: String,
     today: Date,
+
+    // the same time as numbers, for the desktop's hour strip
+    hour: u32,
+    minute: u32,
 }
 
 // in english, like the calendar panel, whatever LC_TIME says
@@ -91,6 +95,31 @@ pub fn local_now() -> LocalTime {
     wall::local(since_epoch.as_secs() as i64)
 }
 
+// seconds since 1970 in UTC, for anything counted from an instant, like the moon's age
+pub fn epoch_seconds() -> i64 {
+    SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_secs() as i64
+}
+
+// how far local time is ahead of UTC right now, in minutes: 60 in winter here, 120 in summer
+pub fn utc_offset_minutes() -> i64 {
+    let since_epoch = epoch_seconds();
+
+    offset_between(wall::local(since_epoch), utc(since_epoch))
+}
+
+fn offset_between(local: LocalTime, utc: LocalTime) -> i64 {
+    let minutes = |time: LocalTime| {
+        time.date.days_since_epoch() * MINUTES_PER_DAY + i64::from(time.hour * 60 + time.minute)
+    };
+
+    minutes(local) - minutes(utc)
+}
+
+const MINUTES_PER_DAY: i64 = 24 * 60;
+
 fn now() -> Clock {
     let local = local_now();
 
@@ -98,6 +127,8 @@ fn now() -> Clock {
         time: local.time(),
         date: local.short_date(),
         today: local.date,
+        hour: local.hour,
+        minute: local.minute,
     }
 }
 
@@ -115,6 +146,15 @@ impl Clock {
     // changes at midnight, which is a minute turning, so the calendar keeps up
     pub fn today(&self) -> Date {
         self.today
+    }
+
+    // 0 to 23
+    pub fn hour(&self) -> u32 {
+        self.hour
+    }
+
+    pub fn minute(&self) -> u32 {
+        self.minute
     }
 }
 
@@ -385,6 +425,29 @@ mod tests {
 
         assert_eq!(utc.date, Date::new(2026, 11, 11));
         assert_eq!((utc.hour, utc.minute, utc.second), (8, 5, 3));
+    }
+
+    #[test]
+    fn offsets_cross_midnight() {
+        let at = |year, month, day, hour, minute| LocalTime {
+            date: Date::new(year, month, day),
+            hour,
+            minute,
+            second: 0,
+        };
+
+        assert_eq!(
+            offset_between(at(2026, 11, 16, 21, 0), at(2026, 11, 16, 20, 0)),
+            60
+        );
+        assert_eq!(
+            offset_between(at(2026, 11, 17, 0, 30), at(2026, 11, 16, 22, 30)),
+            120
+        );
+        assert_eq!(
+            offset_between(at(2026, 11, 16, 19, 0), at(2026, 11, 17, 0, 0)),
+            -300
+        );
     }
 
     #[test]

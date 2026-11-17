@@ -70,7 +70,10 @@ included.
 The background window per monitor fills with `Image::cover(path)
 .thumbnail(monitor.width*2, monitor.height*2)` (bounded memory, enough for
 scale 2), or `Color::TRANSPARENT` for None so mango's `root_color` (equal to
-`bg_deep`) shows. The picker (`panels/wallpaper.rs`, from the system panel's
+`bg_deep`) shows, with `desktop::view` drawn on it in the design shown (items
+38, 39): it reads `Clock`, so it redraws once a minute, and only for None (a
+picture never redraws). Text under about 0.15 × the monitor height, and no
+`Canvas` (see `docs/amane.md`). The picker (`panels/wallpaper.rs`, from the system panel's
 `w` or `panel toggle wallpaper`) is a full-width bottom strip: None, then the
 folder's pictures by name (recognized by their first bytes, `is_picture`),
 read each time it opens or on `r`. h/l/arrows/wheel move and preview on the
@@ -80,6 +83,23 @@ list (moved, deleted, or the folder still being read), nothing is selected and
 Enter only closes; `r` starts over from the one in use, preview included.
 Selected tile: 2 px accent border; in use: " · in use" after its name (names
 shortened to fit; left-aligned).
+
+A "Desktops" card above the strip shows the `Design`s as live thumbnails
+(`desktop::page` at tile size, on the dark page, not over the wallpaper), as many as fit
+and kept around the one shown, sliding like the pictures (`fitting` and
+`window_start`, shared by both rows; ten fit on this monitor). The first is
+none, which draws nothing, for the bare `root_color`. `k`/Up moves the
+keys into that row, `j`/Down back; there h/l/arrows/wheel preview a design on
+the background (`desktop::preview`), Enter or a click keeps it with the
+wallpaper selected below (`desktop::apply` on every keep), Escape or outside
+puts both back (`reset` cancels the design too). One design is kept for every
+wallpaper (item 47): it's drawn straight on a picture as on None, with nothing
+behind it for contrast, by choice. `desktop::view` returns before reading the
+clock for none, so a picture without a design doesn't redraw every minute.
+The row with the keys marks its selection in the accent, the other row in
+`bg5`. The window has the height of both cards (panels never resize). Adding
+a design: a file in `src/desktop/`, a `Design` variant and name, and a line in
+`desktop::page`.
 
 ## 5.7 Lock and session
 `session::watch_logind` locks on logind's `PrepareForSleep` and on this

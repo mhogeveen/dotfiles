@@ -31,7 +31,7 @@ anything. More detail, read when the task touches it:
 ## Workflow
 - Build `amane compile` (zero warnings, fix every one); format
   `rustfmt --edition 2024 src/main.rs`; test `./test.sh` (`./test.sh system::`
-  filters; 167 tests), add tests for pure logic.
+  filters; 207 tests), add tests for pure logic.
 - Restart `amane restart` after a compile (loses panel state; fine for checks).
 - IPC `amane ipc call <name> ...`: `panel open|close|toggle <name>`,
   `close-all`, `list`; `lock`; `accent`; `weather`; `media`; `brightness up|down`;
@@ -60,7 +60,7 @@ anything. More detail, read when the task touches it:
 - Git: the user commits; don't commit, push or stage. Check `git status` /
   `git log` first; don't revert the user's changes.
 - Recommendations: keep statuses current; built items move to `DONE.md` with
-  their number; new ideas get the next number (37 was the last).
+  their number; new ideas get the next number (47 was the last).
 - Code style: lowercase comments, `/* */` blocks, `//` lines, saying why;
   every module starts with a block comment; descriptive names, no
   abbreviations; constants for every size and timing.
@@ -74,6 +74,11 @@ anything. More detail, read when the task touches it:
   crash the shell (`Protocol error 0 on zwlr_layer_surface_v1`). Panels have
   fixed sizes; popups stay mapped and never resize. No windows that show and
   hide quickly.
+- No `Canvas` (arcs, lines, paths) and no `.rotate()`: both go through
+  vello, whose compute shaders hang this GPU
+  (amdgpu "ring gfx timeout", GPU reset, shell gone). Build shapes from
+  `Rectangle`s; after any new kind of drawing, check
+  `journalctl -k | grep -i "gfx timeout"` (`docs/amane.md`).
 - Panels: one open at a time (all in `PANELS`), except the screenshot menu;
   fixed size, reserve space rather than resize.
 - Keys in panels: no modifiers or key repeat; Delete, PgUp/PgDn, F-keys are
