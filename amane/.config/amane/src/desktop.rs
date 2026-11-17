@@ -515,7 +515,7 @@ mod tests {
             // 2026-11-16 22:30 UTC, 23:30 here
             epoch_seconds: 1_794_868_200,
             utc_offset_minutes: 60,
-            place: Place::default(),
+            place: crate::settings::Settings::default().weather,
             forecast: None,
         };
 

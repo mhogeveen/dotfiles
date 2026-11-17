@@ -1,15 +1,14 @@
 /*
  * taking screenshots: slurp picks a region, grim captures it, and the result goes
- * to the clipboard through wl-copy or to ~/Pictures/Screenshots as a png; a
- * notification says how it went. to annotate, the capture opens in satty
- * instead, which copies or saves it itself (its settings come from
- * home-manager, ~/.nixos/home/satty.nix)
+ * to the clipboard through wl-copy or to the screenshots folder as a png (both
+ * in src/settings.rs); a notification says how it went. to annotate, the
+ * capture opens in satty instead, which copies or saves it itself (its settings
+ * come from home-manager, ~/.nixos/home/satty.nix)
  *
  * everything here waits on other programs, slurp for as long as you take to drag
  * a region, so call take() from its own thread
  */
 
-use std::env;
 use std::fs;
 use std::path::PathBuf;
 use std::process::{Command, Stdio};
@@ -18,12 +17,10 @@ use std::time::Duration;
 use amane::Urgency;
 
 use crate::command::{self, Failure};
+use crate::settings::settings;
 use crate::{clock, notifications};
 
 const APP_NAME: &str = "Screenshots";
-
-// the annotation app; reads the png on stdin with `--filename -`
-const ANNOTATOR: &str = "satty";
 
 // grim takes well under a second for a whole screen; past this it's stuck
 const CAPTURE_TIMEOUT: Duration = Duration::from_secs(10);
@@ -184,32 +181,36 @@ fn copy(png: &[u8]) -> Result<(), String> {
  * without copying or saving isn't a failure
  */
 fn annotate(png: &[u8]) -> Result<(), String> {
-    // satty saves to the screenshots folder (its output-filename) but doesn't make it
+    /*
+     * satty saves to its own output-filename (satty.nix), which should be in the
+     * screenshots setting's folder; it doesn't make the folder, so that's done here
+     */
     screenshots_folder()?;
 
-    let satty = Command::new(ANNOTATOR)
+    // the annotation app from the settings; reads the png on stdin with `--filename -`
+    let annotator = settings().annotator;
+
+    let satty = Command::new(annotator)
         .args(["--filename", "-"])
         .stdin(Stdio::piped())
         .spawn()
-        .map_err(|error| format!("couldn't start {ANNOTATOR}: {error}"))?;
+        .map_err(|error| format!("couldn't start {annotator}: {error}"))?;
 
-    command::feed(satty, png).map_err(|error| format!("{ANNOTATOR}: {error}"))?;
+    command::feed(satty, png).map_err(|error| format!("{annotator}: {error}"))?;
 
     Ok(())
 }
 
-// ~/Pictures/Screenshots/20261106171503.png
+// <screenshots folder>/20261106171503.png
 fn new_file() -> Result<PathBuf, String> {
     let stamp = clock::local_now().stamp();
 
     Ok(screenshots_folder()?.join(format!("{stamp}.png")))
 }
 
-// ~/Pictures/Screenshots, made when missing
+// the screenshots setting, ~/Pictures/Screenshots unless set, made when missing
 fn screenshots_folder() -> Result<PathBuf, String> {
-    let home = env::var("HOME").map_err(|_| String::from("HOME is not set"))?;
-
-    let folder = PathBuf::from(home).join("Pictures").join("Screenshots");
+    let folder = settings().screenshots.clone();
 
     fs::create_dir_all(&folder)
         .map_err(|error| format!("couldn't create {}: {error}", folder.display()))?;

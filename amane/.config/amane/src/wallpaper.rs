@@ -1,5 +1,5 @@
 /*
- * the wallpaper: a picture from ~/Pictures/Wallpapers drawn on the background
+ * the wallpaper: a picture from the wallpapers folder (src/settings.rs, ~/Pictures/Wallpapers unless set) drawn on the background
  * layer of every monitor, or none, which leaves the background see-through so
  * mango's own root_color shows
  *
@@ -21,6 +21,7 @@ use amane::{
 };
 
 use crate::desktop;
+use crate::settings::settings;
 use crate::state;
 
 // the file in the state folder the choice is kept in: a path, or "none"
@@ -153,11 +154,9 @@ pub fn cancel() {
     }
 }
 
-// ~/Pictures/Wallpapers
+// the wallpapers setting, ~/Pictures/Wallpapers unless set
 pub fn folder() -> PathBuf {
-    let home = env::var_os("HOME").map(PathBuf::from).unwrap_or_default();
-
-    home.join("Pictures").join("Wallpapers")
+    settings().wallpapers.clone()
 }
 
 // like ~/Pictures/Wallpapers, for showing

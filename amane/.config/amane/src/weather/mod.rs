@@ -5,7 +5,7 @@
  * opening the calendar fetches when the forecast is over 30 minutes old, and the
  * bar's clock, which shows the weather now, when it's over 2 hours old; the
  * place is set with `amane ipc call weather location <latitude> <longitude> <name>`
- * and kept in ~/.local/state/amane-shell/weather, Hilversum until then
+ * and kept in ~/.local/state/amane-shell/weather; until then the settings' place
  */
 
 pub mod forecast;
@@ -19,6 +19,7 @@ use std::time::{Duration, Instant};
 use amane::Service;
 
 use crate::command::{self, Failure};
+use crate::settings::settings;
 use crate::{clock, state};
 
 pub use forecast::Forecast;
@@ -53,16 +54,6 @@ pub struct Place {
     pub name: String,
 }
 
-impl Default for Place {
-    fn default() -> Self {
-        Self {
-            latitude: 52.223,
-            longitude: 5.176,
-            name: String::from("Hilversum"),
-        }
-    }
-}
-
 pub struct Weather {
     place: Place,
     forecast: Option<Forecast>,
@@ -87,7 +78,7 @@ impl Service for Weather {
         let place = fs::read_to_string(state::path(STATE))
             .ok()
             .and_then(|text| parse_place(&text))
-            .unwrap_or_default();
+            .unwrap_or_else(|| settings().weather.clone());
 
         Self {
             place,
@@ -427,7 +418,11 @@ mod tests {
     fn places_read_back() {
         assert_eq!(
             parse_place("52.223\t5.176\tHilversum\n"),
-            Some(Place::default())
+            Some(Place {
+                latitude: 52.223,
+                longitude: 5.176,
+                name: String::from("Hilversum"),
+            })
         );
         assert_eq!(
             parse_place("51.92\t4.48\tRotterdam Centrum"),

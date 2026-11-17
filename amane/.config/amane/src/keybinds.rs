@@ -10,8 +10,9 @@
  * keys the keyboard here doesn't have (XF86 media keys) are left out
  */
 
-use std::env;
 use std::path::PathBuf;
+
+use crate::settings;
 
 // a line of the sheet: the keys to press and what they do
 #[derive(Clone, Debug, PartialEq)]
@@ -34,15 +35,7 @@ const HEADING_ENDS: [char; 4] = [',', ':', ';', '('];
 
 // where mango reads its config; ~/.config/mango links to the dotfiles, so edits show at once
 pub fn config_path() -> PathBuf {
-    let config = env::var_os("XDG_CONFIG_HOME")
-        .map(PathBuf::from)
-        .unwrap_or_else(|| {
-            let home = env::var_os("HOME").map(PathBuf::from).unwrap_or_default();
-
-            home.join(".config")
-        });
-
-    config.join("mango").join("config.conf")
+    settings::config_home().join("mango").join("config.conf")
 }
 
 // one bind as read, before folding

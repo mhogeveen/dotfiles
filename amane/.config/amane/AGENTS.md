@@ -9,6 +9,9 @@ anything. More detail, read when the task touches it:
   wallpaper, lock, popups, brightness and VPN work
 - `docs/amane.md`: amane's limits (keys, D-Bus, images, widgets, layers)
 - `docs/machine.md`: this machine (monitor, keyboard, audio, mango binds)
+- `README.md`: installing on a new machine, the dependencies, and the
+  per-host settings (`src/settings.rs`); update it when a dependency or a
+  setting changes
 - `RECOMMENDATIONS.md` (open items and the "Already decided" list, read before
   proposing anything), `DONE.md` (built, by number), `HISTORY.md` (why)
 
@@ -21,6 +24,9 @@ anything. More detail, read when the task touches it:
   No crates: only `std`, `amane`, and libc via `unsafe extern "C"`.
 - `Cargo.toml` here is for the editor; its `[[bin]] path` must stay the
   relative `'src/main.rs'`.
+- Per-machine values (programs, units, gpu, sensors, folders, weather place):
+  `Settings::default()` in `src/settings.rs`, a host changing only what it
+  needs in `src/settings/<hostname>.rs` (compiled; picked by hostname).
 - State: `~/.local/state/amane-shell/` (survives reboots),
   `$XDG_RUNTIME_DIR/amane-shell/` (until logout).
 - Mango config: `~/.nixos/home/mango.nix` (home-manager writes
@@ -31,7 +37,9 @@ anything. More detail, read when the task touches it:
 ## Workflow
 - Build `amane compile` (zero warnings, fix every one); format
   `rustfmt --edition 2024 src/main.rs`; test `./test.sh` (`./test.sh system::`
-  filters; 207 tests), add tests for pure logic.
+  filters; 224 tests), add tests for pure logic.
+- Check a host `~/.cache/amane/amane-shell doctor` (runs instead of the shell;
+  lists missing programs, units, services; exit 1 when a required one is missing).
 - Restart `amane restart` after a compile (loses panel state; fine for checks).
 - IPC `amane ipc call <name> ...`: `panel open|close|toggle <name>`,
   `close-all`, `list`; `lock`; `accent`; `weather`; `media`; `brightness up|down`;
@@ -60,7 +68,7 @@ anything. More detail, read when the task touches it:
 - Git: the user commits; don't commit, push or stage. Check `git status` /
   `git log` first; don't revert the user's changes.
 - Recommendations: keep statuses current; built items move to `DONE.md` with
-  their number; new ideas get the next number (47 was the last).
+  their number; new ideas get the next number (50 was the last).
 - Code style: lowercase comments, `/* */` blocks, `//` lines, saying why;
   every module starts with a block comment; descriptive names, no
   abbreviations; constants for every size and timing.

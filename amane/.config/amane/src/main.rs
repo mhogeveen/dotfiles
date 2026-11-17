@@ -20,6 +20,7 @@ mod clock;
 mod command;
 mod covers;
 mod desktop;
+mod doctor;
 mod health;
 mod idle;
 mod json;
@@ -34,6 +35,7 @@ mod panels;
 mod recording;
 mod screenshot;
 mod session;
+mod settings;
 mod state;
 mod system;
 mod theme;
@@ -44,6 +46,11 @@ mod wallpaper;
 mod weather;
 
 fn main() {
+    // `amane-shell doctor` checks the host instead of starting the shell
+    if std::env::args().nth(1).as_deref() == Some("doctor") {
+        std::process::exit(doctor::run());
+    }
+
     // locks on suspend and `loginctl lock-session`
     session::watch_logind();
 

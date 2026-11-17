@@ -3,6 +3,8 @@
 The machine the shell runs on (host `prometheus`).
 
 - Host `prometheus`, NixOS 26.05, user `maarten`, home-manager as a NixOS module.
+  Its shell settings: `src/settings/prometheus.rs` (only the render node; the
+  rest is `Settings::default()`).
 - One monitor: `DP-1`, AOC U27B3AF, 3840×2160 at scale 1.5 (mango's
   `monitorrule`), so 2560×1440 logical, which is also amane's widget units;
   DDC/CI on `/dev/i2c-5` (works without the `i2c` group). These numbers

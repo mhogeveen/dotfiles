@@ -17,10 +17,8 @@ use std::time::{Duration, Instant};
 
 use amane::Service;
 
+use crate::settings::settings;
 use crate::user_unit::{self, State};
-
-// the home-manager unit
-const UNIT: &str = "wlsunset.service";
 
 // the panel asks systemd again when it's been open this long
 const READ_EVERY: Duration = Duration::from_secs(10);
@@ -72,7 +70,7 @@ pub fn follow() {
     }
 
     thread::spawn(|| {
-        let state = user_unit::read_state(UNIT);
+        let state = user_unit::read_state(settings().night_light_unit);
 
         // a switch still on its way wins over what systemd said before it
         if !SWITCHING.load(Ordering::Acquire) {
@@ -101,7 +99,7 @@ pub fn toggle() {
     NightLight::write().state = State::Active(wanted);
 
     thread::spawn(move || {
-        let state = user_unit::switch(UNIT, wanted);
+        let state = user_unit::switch(settings().night_light_unit, wanted);
 
         NightLight::write().state = state;
 

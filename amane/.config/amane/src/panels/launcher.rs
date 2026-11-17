@@ -6,7 +6,7 @@
  *
  *   =12*7      calculates, enter copies the answer
  *   >command   runs it in the background, like a keybind
- *   >>command  runs it in a foot terminal, then leaves your shell there
+ *   >>command  runs it in a terminal, then leaves your shell there
  *   :wallpaper opens that panel, by name or what it's for
  */
 
@@ -19,6 +19,7 @@ use super::list::{self, fuzzy};
 use super::picker::{self, Picker};
 use super::{LAUNCHER, PanelDef, Panels};
 use crate::calculator;
+use crate::settings::settings;
 use crate::theme::Theme;
 use crate::usage::Usage;
 
@@ -122,7 +123,11 @@ impl Picker for Launcher {
             }
 
             Entry::Run { command, terminal } => {
-                let place = if *terminal { "in foot" } else { "background" };
+                let place = if *terminal {
+                    "in a terminal"
+                } else {
+                    "background"
+                };
 
                 list::detail_row(t, &format!("Run {command}"), place, selected, false)
             }
@@ -151,7 +156,7 @@ impl Picker for Launcher {
             Entry::Run {
                 command,
                 terminal: true,
-            } => run_in_foot(command),
+            } => run_in_terminal(command),
 
             // replaces the launcher, which then needs no closing (see picker::choose)
             Entry::Panel(panel) => {
@@ -167,7 +172,7 @@ impl Picker for Launcher {
             ("firefox", "search apps, most used first"),
             ("=12*7", "calculate"),
             (">command", "run in the background"),
-            (">>command", "run in foot, then your shell"),
+            (">>command", "run in a terminal, then your shell"),
             (":wallpaper", "open a panel"),
             ("Enter", "start, copy the answer or run"),
         ]
@@ -291,27 +296,34 @@ fn copy(answer: String) {
 }
 
 /*
- * runs the command in foot, then hands the terminal to your own shell, so the
- * output stays readable above the prompt and the window closes like any other.
- * the command is passed as $1 rather than pasted into the script, so its quotes
- * and $ can't break it; the wrapper ignores ctrl+c, which stops the command but
- * would otherwise close the window too
+ * runs the command in the terminal from the settings (foot unless set; its
+ * words come before `sh -c ...`, so `alacritty -e` works too), then hands the
+ * terminal to your own shell, so the output stays readable above the prompt
+ * and the window closes like any other. the command is passed as $1 rather
+ * than pasted into the script, so its quotes and $ can't break it; the wrapper
+ * ignores ctrl+c, which stops the command but would otherwise close the window
+ * too
  */
-const IN_FOOT: &str = r#"trap : INT; eval "$1"; exec "${SHELL:-/bin/sh}""#;
+const IN_TERMINAL: &str = r#"trap : INT; eval "$1"; exec "${SHELL:-/bin/sh}""#;
 
-fn run_in_foot(command: String) {
+fn run_in_terminal(command: String) {
     thread::spawn(move || {
-        let started = Command::new("foot")
-            .args(["sh", "-c", IN_FOOT, "sh"])
+        let terminal = settings().terminal;
+        let mut words = terminal.split_whitespace();
+        let program = words.next().unwrap_or_default();
+
+        let started = Command::new(program)
+            .args(words)
+            .args(["sh", "-c", IN_TERMINAL, "sh"])
             .arg(&command)
             .spawn();
 
         match started {
-            Ok(mut foot) => {
+            Ok(mut child) => {
                 // a finished child nobody waits for stays behind as a zombie
-                let _ = foot.wait();
+                let _ = child.wait();
             }
-            Err(error) => eprintln!("launcher: couldn't start foot: {error}"),
+            Err(error) => eprintln!("launcher: couldn't start {terminal}: {error}"),
         }
     });
 }

@@ -1,6 +1,6 @@
 /*
  * wallpaper picker, full width along the bottom: None, then the pictures in
- * ~/Pictures/Wallpapers as thumbnails. h and l or the arrow keys move along and
+ * the wallpapers folder (~/Pictures/Wallpapers unless set) as thumbnails. h and l or the arrow keys move along and
  * show the picture on the real background right away; enter or a click keeps
  * it, escape or clicking outside puts back the one in use. r reads the folder
  * again

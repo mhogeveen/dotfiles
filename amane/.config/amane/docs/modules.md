@@ -207,6 +207,18 @@ bar, backdrop, notification popups, osd, every panel, and the lock screen.
 - `keybinds.rs`: mango's binds from `~/.config/mango/config.conf` as
   sections of keys and actions in words (`parse`, folding, `matches` for
   the search; see DONE.md item 23).
+- `doctor.rs`: `amane-shell doctor` (main() checks the argument before the
+  app starts): what this host is missing, from programs on `$PATH`, `systemctl`,
+  `busctl`, `fc-list`, `/dev/i2c-*` and `tailscale debug prefs`, each with the
+  feature and a fix; reads the settings for terminal, annotator, recorder,
+  units, render node (DONE.md 50).
+- `settings.rs`: the per-machine values (terminal, annotator, recorder, the
+  idle and night-light units, the gpu render node, cpu/gpu hwmon drivers, the
+  wallpaper/screenshot/screencast folders, the default weather place), compiled
+  in: `Settings::default()`, and `src/settings/<hostname>.rs` changing what a
+  host needs, picked by `/proc/sys/kernel/hostname`; `settings()` is a plain
+  static, safe in views. `config_home()` is also how `keybinds.rs` finds
+  mango's config (DONE.md 49).
 - `state.rs`: `path(name)`/`save(name, text)` in the state folder, saved
   through `write_atomically` (temp file + rename, also used by the
   notification history); `runtime_dir()` and `runtime_path(name)` for

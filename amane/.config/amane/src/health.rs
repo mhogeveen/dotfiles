@@ -22,6 +22,7 @@ use amane::Urgency;
 
 use crate::command;
 use crate::notifications;
+use crate::settings::settings;
 use crate::state;
 use crate::system::{self, Disk};
 
@@ -54,10 +55,8 @@ const WARNED_FILE: &str = "health-warned";
 
 const APP_NAME: &str = "System";
 
-const CPU_DRIVERS: [&str; 3] = ["k10temp", "zenpower", "coretemp"];
 const CPU_LABELS: [&str; 2] = ["Tctl", "Package id 0"];
 
-const GPU_DRIVERS: [&str; 3] = ["amdgpu", "nouveau", "radeon"];
 const GPU_LABELS: [&str; 1] = ["edge"];
 
 const KEY_DISK: &str = "disk:/";
@@ -96,11 +95,13 @@ pub struct Temperatures {
 }
 
 pub fn temperatures() -> Temperatures {
-    temperatures_in(Path::new(HWMON))
+    let settings = settings();
+
+    temperatures_in(Path::new(HWMON), settings.cpu_drivers, settings.gpu_drivers)
 }
 
-// the first cpu and gpu sensor under a hwmon folder, in hwmon number order
-fn temperatures_in(root: &Path) -> Temperatures {
+// the first cpu and gpu sensor under a hwmon folder, in hwmon number order, by driver name (the settings)
+fn temperatures_in(root: &Path, cpu_drivers: &[&str], gpu_drivers: &[&str]) -> Temperatures {
     let mut folders: Vec<_> = fs::read_dir(root)
         .map(|entries| entries.flatten().map(|entry| entry.path()).collect())
         .unwrap_or_default();
@@ -112,9 +113,9 @@ fn temperatures_in(root: &Path) -> Temperatures {
     for folder in folders {
         let name = read_trimmed(&folder.join("name")).unwrap_or_default();
 
-        if found.cpu.is_none() && CPU_DRIVERS.contains(&name.as_str()) {
+        if found.cpu.is_none() && cpu_drivers.contains(&name.as_str()) {
             found.cpu = sensor(&folder, &CPU_LABELS);
-        } else if found.gpu.is_none() && GPU_DRIVERS.contains(&name.as_str()) {
+        } else if found.gpu.is_none() && gpu_drivers.contains(&name.as_str()) {
             found.gpu = sensor(&folder, &GPU_LABELS);
         }
     }
@@ -367,6 +368,7 @@ pub fn start() {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::settings::Settings;
 
     use std::env;
     use std::path::PathBuf;
@@ -419,6 +421,8 @@ mod tests {
 
     #[test]
     fn sensors_are_picked_by_driver_and_label() {
+        let defaults = Settings::default();
+
         let root = hwmon(
             "pick",
             &[
@@ -446,7 +450,7 @@ mod tests {
             ],
         );
 
-        let found = temperatures_in(&root);
+        let found = temperatures_in(&root, defaults.cpu_drivers, defaults.gpu_drivers);
 
         assert_eq!(
             found.cpu,
@@ -472,11 +476,20 @@ mod tests {
 
     #[test]
     fn no_sensors_reads_as_none() {
+        let defaults = Settings::default();
+
         let root = hwmon("none", &[("hwmon0", "acpitz", &[("temp1_input", "40000")])]);
 
-        assert_eq!(temperatures_in(&root), Temperatures::default());
         assert_eq!(
-            temperatures_in(&root.join("missing")),
+            temperatures_in(&root, defaults.cpu_drivers, defaults.gpu_drivers),
+            Temperatures::default()
+        );
+        assert_eq!(
+            temperatures_in(
+                &root.join("missing"),
+                defaults.cpu_drivers,
+                defaults.gpu_drivers
+            ),
             Temperatures::default()
         );
 

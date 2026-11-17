@@ -12,7 +12,6 @@
  * so a recording still running after a shell restart is picked up again
  */
 
-use std::env;
 use std::fs::{self, File};
 use std::os::raw::c_int;
 use std::path::{Path, PathBuf};
@@ -30,15 +29,16 @@ use amane::{
 use crate::json::{self, Value};
 use crate::panels::{Panels, SCREENSHOT};
 use crate::screenshot::{self, Area};
+use crate::settings::settings;
 use crate::theme::theme;
 use crate::{clock, command, notifications, state};
 
+// /proc/<pid>/comm keeps this much of a program's name
+const PROCESS_NAME_BYTES: usize = 15;
+
 const APP_NAME: &str = "Screen recording";
 
-const RECORDER: &str = "wf-recorder";
-
-// the gpu's render node, which vaapi encodes on; this machine has one gpu
-const RENDER_NODE: &str = "/dev/dri/renderD128";
+// the program and the gpu it encodes on are in src/settings.rs
 const GPU_CODEC: &str = "h264_vaapi";
 const SOFTWARE_CODEC: &str = "libx264";
 
@@ -204,8 +204,18 @@ fn begin(area: Area) -> Result<(), String> {
 
     let mut child = None;
 
-    for codec in [GPU_CODEC, SOFTWARE_CODEC] {
-        let mut recorder = spawn(&place, codec, &file, &log)?;
+    // the gpu first when there's a render node to encode on, then software
+    let gpu = settings().render_node.path();
+    let mut tries = Vec::new();
+
+    if let Some(node) = &gpu {
+        tries.push((GPU_CODEC, Some(node.as_path())));
+    }
+
+    tries.push((SOFTWARE_CODEC, None));
+
+    for (codec, render_node) in tries {
+        let mut recorder = spawn(&place, codec, render_node, &file, &log)?;
 
         thread::sleep(START_GRACE);
 
@@ -338,8 +348,15 @@ enum Place {
     Region(String),
 }
 
-fn spawn(place: &Place, codec: &str, file: &Path, log: &Path) -> Result<Child, String> {
-    let mut recorder = Command::new(RECORDER);
+// render_node is the gpu a vaapi codec encodes on, None for a software one
+fn spawn(
+    place: &Place,
+    codec: &str,
+    render_node: Option<&Path>,
+    file: &Path,
+    log: &Path,
+) -> Result<Child, String> {
+    let mut recorder = Command::new(settings().recorder);
 
     match place {
         Place::Monitor(Some(name)) => {
@@ -353,8 +370,8 @@ fn spawn(place: &Place, codec: &str, file: &Path, log: &Path) -> Result<Child, S
 
     recorder.args(["-c", codec]);
 
-    if codec == GPU_CODEC {
-        recorder.args(["-d", RENDER_NODE]);
+    if let Some(node) = render_node {
+        recorder.arg("-d").arg(node);
     }
 
     let output = File::create(log).map_err(|error| format!("{}: {error}", log.display()))?;
@@ -375,7 +392,7 @@ fn spawn(place: &Place, codec: &str, file: &Path, log: &Path) -> Result<Child, S
         .stdout(output)
         .stderr(errors)
         .spawn()
-        .map_err(|error| format!("couldn't start {RECORDER}: {error}"))
+        .map_err(|error| format!("couldn't start {}: {error}", settings().recorder))
 }
 
 // the monitor mango has focus on; None when mango doesn't say
@@ -513,7 +530,7 @@ fn log_tail(log: &Path) -> String {
         .collect();
 
     if lines.is_empty() {
-        return format!("{RECORDER} stopped without saying why");
+        return format!("{} stopped without saying why", settings().recorder);
     }
 
     lines[lines.len().saturating_sub(LOG_LINES)..].join("\n")
@@ -565,7 +582,7 @@ fn adopt() {
 
         alive(pid)
             && fs::read_to_string(format!("/proc/{pid}/comm"))
-                .is_ok_and(|name| name.trim() == RECORDER)
+                .is_ok_and(|name| name.trim() == process_name(settings().recorder))
     });
 
     let Some(remembered) = adopted else {
@@ -661,11 +678,28 @@ fn signal(pid: u32, signal: c_int) {
     }
 }
 
-// ~/Videos/Screencasts/20261112190503.mp4, the folder made when missing
-fn new_file() -> Result<PathBuf, String> {
-    let home = env::var("HOME").map_err(|_| String::from("HOME is not set"))?;
+/*
+ * the name a running recorder has in /proc/<pid>/comm: the file name of the
+ * program, cut to the 15 bytes the kernel keeps
+ */
+fn process_name(program: &str) -> &str {
+    let name = Path::new(program)
+        .file_name()
+        .and_then(|name| name.to_str())
+        .unwrap_or(program);
 
-    let folder = PathBuf::from(home).join("Videos").join("Screencasts");
+    let mut end = name.len().min(PROCESS_NAME_BYTES);
+
+    while !name.is_char_boundary(end) {
+        end -= 1;
+    }
+
+    &name[..end]
+}
+
+// the screencasts folder (~/Videos/Screencasts unless the settings say else)/20261112190503.mp4, made when missing
+fn new_file() -> Result<PathBuf, String> {
+    let folder = settings().screencasts.clone();
 
     fs::create_dir_all(&folder)
         .map_err(|error| format!("couldn't create {}: {error}", folder.display()))?;
@@ -779,5 +813,15 @@ mod tests {
     fn this_process_is_alive() {
         assert!(alive(std::process::id()));
         assert!(!alive(u32::MAX));
+    }
+
+    #[test]
+    fn a_recorder_is_known_by_its_file_name_as_the_kernel_cuts_it() {
+        assert_eq!(process_name("wf-recorder"), "wf-recorder");
+        assert_eq!(
+            process_name("/run/current-system/sw/bin/wf-recorder"),
+            "wf-recorder"
+        );
+        assert_eq!(process_name("a-very-long-recorder-name"), "a-very-long-rec");
     }
 }

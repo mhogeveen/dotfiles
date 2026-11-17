@@ -672,3 +672,38 @@ are kept, so references between the two files still work.
   panel replaces the launcher through `Panels::open`; `picker::choose` only
   closes the picker if it's still open, since closing it again would bump the
   generation and cancel the new panel's delayed show.
+
+### 49. Host settings
+- **Status:** done (2026-11-17): the values that differ between machines are
+  gathered in `Settings::default()` (`src/settings.rs`), and a host changes only
+  what it needs in `src/settings/<hostname>.rs` (`..Settings::default()`),
+  picked at start by `/proc/sys/kernel/hostname`: terminal, annotator,
+  recorder, the idle and night-light units, the gpu render node
+  (`RenderNode::Auto`, `Path`, or `None` for software encoding), cpu/gpu hwmon
+  drivers (`i915` and `xe` added), the wallpaper, screenshot and screencast
+  folders, and the default weather place (the one set over IPC still wins).
+- **How it fits:** compiled, not read from a file: a conf file
+  (`settings/default.conf` + `settings/<hostname>.conf`) was built first and
+  replaced the same day, since a typo or a wrong type then fails `amane
+  compile` instead of surfacing after a restart, and the shell is compiled on
+  every machine anyway. What can only fail at run time (a program not
+  installed, a missing folder) fails where it's used. `settings()` is a
+  `OnceLock`, a plain static, so views read it without the service lock rules.
+  The terminal's words go before `sh -c ...`, so `alacritty -e` works.
+  Tests: `settings::`.
+
+### 50. Doctor check
+- **Status:** done (2026-11-17): `~/.cache/amane/amane-shell doctor` lists
+  what a host is missing, for NixOS and other distros alike: required and
+  per-feature programs on `$PATH` (the terminal, annotator and recorder from
+  the host's settings), the idle and night-light units, the render node, the
+  font, brightness access (backlight or a usable `/dev/i2c-*`), another
+  notification daemon holding the name, NetworkManager, BlueZ and the
+  Tailscale operator. Each line names the feature it breaks and the fix;
+  exit status 1 when a required one is missing.
+- **How it fits:** an argument to the compiled binary, checked in `main()`
+  before `App::new()`, not an IPC handler: those run on amane's Wayland event
+  loop, where a slow `systemctl` would freeze the shell, and a new host needs
+  the check before the shell has ever started. Every call has a time limit;
+  checks that need `systemctl` or `busctl` say unknown, not missing, when
+  those aren't there. Tests: `doctor::`.
